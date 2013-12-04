@@ -1,0 +1,93 @@
+
+1) Initializing a main remote repository in "/users/rg/projects/git" for each the project "Chimeras_mapping_pipeline"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This step has to be done only once. This repository is not for working, you need to build your clone working directory (see 2.))
+
+	cd ..
+    mkdir Chimera_mapping; cd Chimeras_mapping			 # by using --bare flag we specify that it is a remote repository. this kind of repositories do not 		
+    git init --bare									     # have copies of the files in the project, it just contain git information
+    
+
+
+2. Creating a working clone of the remote repository         
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+
+Move to a folder where you want to store it and run this command::
+
+	cd /users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline
+		
+	git clone /users/rg/projects/git/Chimeras_mapping/
+
+
+If you want to give a different name to the copy repository just do: "git clone /users/rg/projects/git/Chimeras_mapping/ newname"
+	
+If you never used git you need to configure your username and email (replace with yours). You can configure them project-wise removing the ``--global`` option::
+
+    cd /users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimeras_mapping
+    git config --global user.name "Bernardo Rdgz"
+    git config --global user.email rodriguezmartinbernardo@gmail.com
+
+3. Preparing the directories organization for the "Chimeras mapping pipeline"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+I will make the following directories: "Workdir" (where I am going to work on the project), "Versions" (To store backups of the different version of the pipeline) and "Test" ("Test" which contains all the information regarding the testing of each version).
+
+	cd Chimeras_detection_pipeline
+	git status  					# This command shows a summary for those files and directories detected by git. 
+
+3.1) I will make one directory called "Workdir" where I am going to implement the pipeline, another one called "Test" to store the outputs that i am going to produce in the testing of the pipeline and finally a last one to store .
+
+So I only want the Workdir to be tracked by git, I will make git ignores the others through:
+
+	mkdir /users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimeras_mapping/Test /users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimeras_mapping/Versions 
+	
+
+	echo Test > .gitignore 			# Now git ignore the folder Testing and its content
+	echo Versions >> .gitignore
+	echo mapping_pipeline_git.txt >> .gitignore
+	echo mapping_pipeline_git.txt~ >> .gitignore
+	echo bin >> .gitignore
+	echo .gitignore >> .gitignore 
+	git status      				# After using gitignore only the directory Workdir is detected by git
+	
+4. Uploading to my local repository the version 0.0.1 of the "chimera mapping pipeline"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/blueprint.pipeline.sh Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt	# You need to add the files to the stack before to be commited into the repository
+	
+	git status						# Now there are changes that I can commit
+	
+	git commit -m "First version of the chimera mapping pipeline"
+	
+	git tag -a 0.0.1 -m 'Chimera mapping pipeline version 0.0.1'		
+
+To get a summary of the commits done use the following command:
+
+	git log --pretty=oneline
+	
+	
+#_------------------------------------------------------#	
+	git add v0.0.1 
+
+	git commit -m "First version of chimsplice"
+	
+	git tag -a 0.0.1 -m 'Chimsplice version 0.0.1'
+	
+
+
+3.2) Puting the content of the folder "Workdir" under the tracking system of git:
+
+	git add /users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimeras_mapping/Workdir/
+	
+	
+3.3) I will work with just two branches: "master", I will use that just to track the versions of the pipeline (0.0.1, 0.0.2 ....etc..) and "develop", It is where I will do the implementation of the pipeline. 
+
+The master branch is built by default the other not, i need to do that:
+
+	git checkout -b develop 
+	
+3.3) 
+
+
+
+	
