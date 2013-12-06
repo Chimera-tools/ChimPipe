@@ -28,21 +28,28 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 
 ** Mandatory arguments:
 
-	-f	Input ".fastq" file.
-	-i	Index for the reference genome (".gem" format).
-	-a	Reference annotation (".gtf" format).
-	-q	Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
+	-f	<INPUT_FILE> FASTQ file.
+	-i	<GEM>		 Index for the reference genome (".gem" format).
+	-a	<GTF>		 Reference annotation (".gtf" format).
+	-q	<NUMBER>	 Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
 	
 ** [options] can be:
  
-   -s	Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
-   -d	Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE). Default "NONE".
-   -m	Max number of mismatches. Default 4.
-   -o	Output directory (By default it uses the current working directory).
-   -e	Experiment identificator (By default it takes the id from the name of the ".fastq" input file).
-   -l	Log level (error, warn, info, debug). Default "info".
-   -h	Flag to display usage information.
-   -t	Flag to test the pipeline. Writes the commands to the standard output.
+   -s				 Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
+   -d	<STRING>	 Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE). Default "NONE".
+   -m	<NUMBER>	 Max number of mismatches. Default 4.
+   -M   <NUMBER>	 Max read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
+   -c	<couple_1>, ... ,<couple_s>
+     	with <couple> := <donor_consensus>+<acceptor_consensus>
+                          	  (list of couples of donor/acceptor
+                              splice site consensus sequences,
+                              default='GT+AG')
+   -s 	<NUMBER>	 Minimum split size. Default 15
+   -o	<PATH>		 Output directory (By default it uses the current working directory).
+   -e	<STRING>	 Experiment identificator (By default it takes the id from the name of the ".fastq" input file).
+   -l	<STRING>	 Log level (error, warn, info, debug). Default "info".
+   -h				 Flag to display usage information.
+   -t				 Flag to test the pipeline. Writes the commands to the standard output.
 	exit 0
 instructions
 }
@@ -77,7 +84,7 @@ function run {
 
 # PARSING INPUT ARGUMENTS 
 #########################
-while getopts ":f:i:a:q:sd:m:o:e:l:ht" opt; do
+while getopts ":f:i:a:q:sd:m:M:c:s:o:e:l:ht" opt; do
   case $opt in
     f)
       input="$OPTARG"
@@ -100,6 +107,15 @@ while getopts ":f:i:a:q:sd:m:o:e:l:ht" opt; do
     m)
       mism=$OPTARG
       ;;
+    M)
+      maxReadLength=$OPTARG 
+      ;; 
+ 	c)
+ 	  spliceSites=$OPTARG
+ 	  ;;
+ 	s)
+ 	  splitSize=$OPTARG
+ 	  ;;  
  	o)
       outDir=$OPTARG
       ;;
@@ -132,12 +148,30 @@ if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERR
 if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; exit -1; fi
 if [[ $quality == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
 if [[ $stranded == "" ]]; then stranded=0; fi
-if [[ $readDirectionality == "" ]]; then readDirectionality="NONE"; fi
-if [[ $mism == "" ]]; then mism="4"; fi
+if [[ $readDirectionality == "" ]]; then readDirectionality='NONE'; fi
+if [[ $mism == "" ]]; then mism='4'; fi
+if [[ $maxReadLength == "" ]]; then maxReadLength='150'; fi
+if [[ $spliceSites ==  "" ]]; then spliceSites='GT+AG' ; fi
+if [[ $splitSize == "" ]]; then splitSize='15'; fi
 if [[ ! -d $outDir ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
 if [[ $lid == "" ]]; then lid=`basename ${input%.*.gz}`; fi
-if [[ $loglevel == "" ]]; then loglevel="info"; fi
+if [[ $loglevel == "" ]]; then loglevel='info'; fi
 
+# Test
+
+#echo $input
+#echo $index
+#echo $annot
+#echo $quality
+#echo $stranded
+#echo $readDirectionality
+#echo $mism
+#echo $maxReadLength
+#echo $spliceSites
+#echo $splitSize
+#echo $outDir
+#echo $lid
+#echo $loglevel
 
 
 # SETTING UP THE ENVIRONMENT
@@ -189,7 +223,7 @@ pipelineStart=$(date +%s)
 # - $outDir/$lid\_filtered_cuff.bam
 printHeader "Executing first mapping step with the Blueprint pipeline"
 
-run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism" "$ECHO"
+run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLength" "$ECHO"
 
 # 2) extract the reads that do not map with an edit distance strictly greater than round(read_length/20) 
 ####################################################################################################
@@ -216,7 +250,7 @@ printHeader "Extracting unmapped reads completed in $(echo "($endTime-$startTime
 startTime=$(date +%s)
 printHeader "Mapping the unmapped reads with the rna mapper"
 
-run "$rnaMapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
+run "$rnaMapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
 
 endTime=$(date +%s)
 printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"

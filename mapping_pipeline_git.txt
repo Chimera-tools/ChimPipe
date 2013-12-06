@@ -66,28 +66,20 @@ To get a summary of the commits done use the following command:
 	git log --pretty=oneline
 	
 	
-#_------------------------------------------------------#	
-	git add v0.0.1 
+4. Uploading to my local repository the version 0.0.1 of the "chimera mapping pipeline"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	git commit -m "First version of chimsplice"
+	git add Workdir/blueprint.pipeline.sh Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt	# You need to add the files to the stack before to be commited into the repository
 	
-	git tag -a 0.0.1 -m 'Chimsplice version 0.0.1'
+	git status						# Now there are changes that I can commit
 	
-
-
-3.2) Puting the content of the folder "Workdir" under the tracking system of git:
-
-	git add /users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimeras_mapping/Workdir/
+	git commit -m "V0.0.2. Added three additional optional parameters to be set by the user: "Max read length", "Splice site consensus" and "Minimum split size".
 	
-	
-3.3) I will work with just two branches: "master", I will use that just to track the versions of the pipeline (0.0.1, 0.0.2 ....etc..) and "develop", It is where I will do the implementation of the pipeline. 
+	git tag -a 0.0.2 -m 'Chimera mapping pipeline version 0.0.2'		
 
-The master branch is built by default the other not, i need to do that:
+To get a summary of the commits done use the following command:
 
-	git checkout -b develop 
-	
-3.3) 
-
+	git log --pretty=oneline
 
 
 	

@@ -20,6 +20,7 @@ function usage {
     echo ""
     echo "Options:"
     printf "\t-m\tMax number of mismatches. Default \"4\"\n"
+    printf "\t-M \tMax read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default \"150\"\n"
     printf "\t-s\tflag to specify whether the sample has strandness information for the reads. Default \"false\"\n"
     printf "\t-d\tdirectionality of the reads (MATE1_SENSE, MATE2_SENSE, NONE). Default \"NONE\".\n"
     printf "\t-l\tLog level (error, warn, info, debug). Default \"info\".\n"
@@ -142,7 +143,7 @@ function copyToTmp {
 ## Parsing arguments
 #
 
-while getopts ":i:m:g:q:a:std:l:ph" opt; do
+while getopts ":i:m:M:g:q:a:std:l:ph" opt; do
   case $opt in
     i)
       input="$OPTARG"
@@ -159,6 +160,9 @@ while getopts ":i:m:g:q:a:std:l:ph" opt; do
     m)
       mism=$OPTARG
       ;;
+    M)
+      maxReadLength=$OPTARG 
+      ;; 
     s)
       stranded=1
       ;;
@@ -186,6 +190,7 @@ while getopts ":i:m:g:q:a:std:l:ph" opt; do
       ;;
   esac
 done
+
 
 ## Setting up the environment
 #
@@ -215,6 +220,10 @@ if [[ $quality == "" ]];then
     exit -1
 fi
 
+if [[ $stranded == "" ]];then
+   stranded="0"
+fi
+
 if [[ $readStrand == "" ]];then
     readStrand="NONE"
 fi
@@ -226,6 +235,27 @@ fi
 if [[ $mism == "" ]];then
     mism="4"
 fi
+
+if [[ $maxReadLength == "" ]];then
+   maxReadLength="150"
+fi
+
+
+
+## Test
+
+#echo $input
+#echo $index
+#echo $annotation
+#echo $quality
+#echo $mism
+#echo $maxReadLength
+#echo $stranded
+#echo $ECHO
+#echo $readStrand
+#echo $loglevel
+#echo $profile
+
 
 basename=$(basename $input)
 sample=${basename%_1*}
@@ -273,7 +303,7 @@ if [ ! -e $sample.stats.all.json ];then
     copyToTmp "index,annotation,t-index,keys"
 
     log "Running gemtools rna pipeline on ${sample}" $step
-    run "gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality --max-intron-length 300000000 -t $threads --no-bam " "$ECHO" 
+    run "gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam " "$ECHO" 
     #gemtools --loglevel $loglevel rna-pipeline -f $TMPDIR/$basename -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -t $threads -o $TMPDIR --no-bam
     #gemtools --loglevel $loglevel rna-pipeline -f $TMPDIR/$basename -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -m 150 -t $threads -o $TMPDIR --no-sam
 
@@ -294,6 +324,7 @@ if [ ! -e $sample.stats.all.json ];then
 else
     printHeader "Map file already present...skipping mapping step"
 fi
+
 
 ## Converting to bam
 ##
@@ -355,7 +386,7 @@ else
     printHeader "Filtered map file is present...skipping fltering step"
 fi
 
-## Filtering the map file
+## Stats from the filtered file
 ##
 filteredGemStats=${filteredGem%.map.gz}.stats
 
