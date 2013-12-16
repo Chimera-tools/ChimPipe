@@ -66,14 +66,14 @@ To get a summary of the commits done use the following command:
 	git log --pretty=oneline
 	
 	
-4. Uploading to my local repository the version 0.0.1 of the "chimera mapping pipeline"
+4. Uploading to my local repository the version 0.0.2 of the "chimera mapping pipeline"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	git add Workdir/blueprint.pipeline.sh Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt	# You need to add the files to the stack before to be commited into the repository
 	
 	git status						# Now there are changes that I can commit
 	
-	git commit -m "V0.0.2. Added three additional optional parameters to be set by the user: "Max read length", "Splice site consensus" and "Minimum split size".
+	git commit -m "V0.0.2. Added three additional optional parameters to be set by the user: Max read length, Splice site consensus and Minimum split size."
 	
 	git tag -a 0.0.2 -m 'Chimera mapping pipeline version 0.0.2'		
 
@@ -81,5 +81,17 @@ To get a summary of the commits done use the following command:
 
 	git log --pretty=oneline
 
-
+4. Uploading to my local repository the version 0.1.0 of the "chimera mapping pipeline"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	
+	git add Workdir/blueprint.pipeline.sh Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt	# You need to add the files to the stack before to be commited into the repository
+	
+	git status						# Now there are changes that I can commit
+	
+	git commit -m "V0.1.0 Produce just one output (not one for exotic and another one for normal). Merging at the level of echo the paths of the ".gff.gz" files into a single text file and give this file as input to chimsplice)"
+	
+	git tag -a 0.1.0 -m 'Chimera mapping pipeline version 0.1.0'		
+
+To get a summary of the commits done use the following command:
+
+	git log --pretty=oneline
