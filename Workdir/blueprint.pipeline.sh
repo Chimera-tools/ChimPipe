@@ -242,21 +242,6 @@ fi
 
 
 
-## Test
-
-#echo $input
-#echo $index
-#echo $annotation
-#echo $quality
-#echo $mism
-#echo $maxReadLength
-#echo $stranded
-#echo $ECHO
-#echo $readStrand
-#echo $loglevel
-#echo $profile
-
-
 basename=$(basename $input)
 sample=${basename%_1*}
 threads=${NSLOTS-1}
@@ -283,8 +268,27 @@ if [[ $hthreads == 0 ]];then
     hthreads=1
 fi
 
+
+## DISPLAY PIPELINE CONFIGURATION  
+##################################
+
+
+printf "\n"
+printf "*****Blueprint pipeline configuration*****\n"
+printf "Input: $input\n"
+printf "Index: $index\n"
+printf "Annotation: $annotation\n"
+printf "Quality: $quality\n"
+printf "Strand: $stranded\n"
+printf "Directionality: $readStrand\n"
+printf "Number mismatches: $mism\n"
+printf "Max read length: $maxReadLength\n"
+printf "Outdir: $outDir\n"
+printf "Log level: $loglevel\n"
+printf "\n"
+
 ## START
-#
+########
 printHeader "Starting Blueprint pipeline (only bam file generation) for $sample"
 pipelineStart=$(date +%s)
 

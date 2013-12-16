@@ -28,13 +28,14 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 
 ** Mandatory arguments:
 
-	-f	<INPUT_FILE> FASTQ file.
+	-f	<INPUT_FILE> FASTQ file by Default. BAM file if the flag -b is specified (see options)
 	-i	<GEM>		 Index for the reference genome (".gem" format).
 	-a	<GTF>		 Reference annotation (".gtf" format).
 	-q	<NUMBER>	 Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
 	
 ** [options] can be:
  
+   -b				 Flag to specify that the input file has BAM format (Already mapped reads) 
    -s				 Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
    -d	<STRING>	 Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE). Default "NONE".
    -m	<NUMBER>	 Max number of mismatches. Default 4.
@@ -84,7 +85,7 @@ function run {
 
 # PARSING INPUT ARGUMENTS 
 #########################
-while getopts ":f:i:a:q:sd:m:M:c:S:o:e:l:ht" opt; do
+while getopts ":f:i:a:q:bsd:m:M:c:S:o:e:l:ht" opt; do
   case $opt in
     f)
       input="$OPTARG"
@@ -97,6 +98,9 @@ while getopts ":f:i:a:q:sd:m:M:c:S:o:e:l:ht" opt; do
       ;;
     q)
       quality=$OPTARG
+      ;;
+    b)
+      bam=1
       ;;
     s)
       stranded=1
@@ -123,7 +127,7 @@ while getopts ":f:i:a:q:sd:m:M:c:S:o:e:l:ht" opt; do
       lid=$OPTARG
       ;;   
  	l)
-      loglevel=$OPTARG
+      logLevel=$OPTARG
       ;;
     h)
       usage
@@ -147,6 +151,7 @@ if [[ ! -e $input ]]; then log "Please specify a valid input file\n" "ERROR" >&2
 if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; exit -1; fi
 if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; exit -1; fi
 if [[ $quality == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
+if [[ $bam == "" ]]; then bam=0; fi
 if [[ $stranded == "" ]]; then stranded=0; fi
 if [[ $readDirectionality == "" ]]; then readDirectionality='NONE'; fi
 if [[ $mism == "" ]]; then mism='4'; fi
@@ -155,24 +160,7 @@ if [[ $spliceSites ==  "" ]]; then spliceSites='GT+AG' ; fi
 if [[ $splitSize == "" ]]; then splitSize='15'; fi
 if [[ ! -d $outDir ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
 if [[ $lid == "" ]]; then lid=`basename ${input%.*.gz}`; fi
-if [[ $loglevel == "" ]]; then loglevel='info'; fi
-
-# Test
-
-#echo $input
-#echo $index
-#echo $annot
-#echo $quality
-#echo $stranded
-#echo $readDirectionality
-#echo $mism
-#echo $maxReadLength
-#echo $spliceSites
-#echo $splitSize
-#echo $outDir
-#echo $lid
-#echo $loglevel
-
+if [[ $logLevel == "" ]]; then logLevel='info'; fi
 
 # SETTING UP THE ENVIRONMENT
 ############################
@@ -187,7 +175,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.1.1/blueprint.pipeline.sh 
 chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.2.0/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.2.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -206,8 +194,29 @@ unmapped=~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/bin/filter_unmapped.
 source ~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/gemtools/environment/bin/activate
 
 
-## TO START CHIMERA MAPPING PIPELINE 
-####################################
+## DISPLAY PIPELINE CONFIGURATION  
+##################################
+
+printf "\n"
+printf "*****Chimera Mapping pipeline configuration*****\n"
+printf "Pipeline Version: V0.1.1\n"
+printf "Input: $input\n"
+printf "Index: $index\n"
+printf "Annotation: $annot\n"
+printf "Quality: $quality\n"
+printf "Strand: $stranded\n"
+printf "Directionality: $readDirectionality\n"
+printf "Number mismatches: $mism\n"
+printf "Max read length: $maxReadLength\n"
+printf "Consensus split sites: $spliceSites\n"
+printf "Max split size: $splitSize\n"
+printf "Outdir: $outDir\n"
+printf "Exp. id: $lid\n"
+printf "Log level: $logLevel\n"	
+printf "\n"
+
+## START CHIMERA MAPPING PIPELINE 
+#################################
 
 printHeader "Starting Chimera Mapping pipeline for $lid"
 pipelineStart=$(date +%s)
@@ -224,7 +233,7 @@ pipelineStart=$(date +%s)
 # - $outDir/$lid\_filtered_cuff.bam
 printHeader "Executing first mapping step with the Blueprint pipeline"
 
-run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLength" "$ECHO"
+run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLength -l $logLevel" "$ECHO"
 
 # 2) extract the reads that do not map with an edit distance strictly greater than round(read_length/20) 
 ####################################################################################################
