@@ -100,14 +100,28 @@ To get a summary of the commits done use the following command:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	
 	git add Workdir/blueprint.pipeline.sh Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt	# You need to add the files to the stack before to be commited into the repository
-	
+
 	git status						# Now there are changes that I can commit
 	
-	git commit -m "V0.1.1 Enabled log level option. Now it also displays information regarding the configuration of the chimera mapping and blueprint pipelines"
+	git commit -m "V0.1.1 Enabled log level options. Now it also displays information regarding the configuration of the chimera mapping and blueprint pipelines"
 	
 	git tag -a 0.1.1 -m 'Chimera mapping pipeline version 0.1.1'		
 
 To get a summary of the commits done use the following command:
 
 	git log --pretty=oneline	
+
+4. Putting under version control all programs the pipeline depend on. Uploading to my local repository the version 0.1.2 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/bin Workdir/Awk Workdir/chimera_mapping_pipeline.sh Workdir/blueprint.pipeline.sh mapping_pipeline_git.txt
 	
+	git commit -m "V0.1.2 Putting under version control programs the pipeline depend on. Changed the paths to this programs"
+	
+	git tag -a 0.1.1 -m 'Chimera mapping pipeline version 0.1.2'		
+
+	git log --pretty=oneline	
+	
+	git push origin master
+	
+

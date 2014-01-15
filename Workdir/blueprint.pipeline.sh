@@ -194,8 +194,8 @@ done
 
 ## Setting up the environment
 #
-BASEDIR=`dirname ${SGE_O_WORKDIR-$PWD}`
-BINDIR=~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/bin/
+baseDir=`dirname ${SGE_O_WORKDIR-$PWD}`
+binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin
 export PATH=/software/rg/el6.3/gemtools/bin:/software/rg/el6.3/flux-capacitor-1.2.4-SNAPSHOT/bin:$HOME/bin:$PATH
 
 ## Setting variables and input files
@@ -250,18 +250,13 @@ annName=`basename $annotation`
 
 ## Binaries
 #
-gem2sam="$BINDIR/gem-2-sam"
-samtools="$BINDIR/samtools"
-addXS="$BINDIR/sam2cufflinks.sh"
-trToGn="$BINDIR/TrtoGn_RPKM.sh"
-trToEx="$BINDIR/TrtoEx_RPKM.sh"
-bamToContigs="$BINDIR/bamToContigs.sh"
-gt_quality="$BINDIR/gt.quality"
-gt_filter="$BINDIR/gt.filter.remove"
-gt_stats="$BINDIR/gt.stats"
-pigz="$BINDIR/pigz"
-BAMFLAG="/users/rg/dmitri/bamflag/trunk/bamflag"
-makecontig="$BINDIR/contigsNew.py"
+gem2sam="$binDir/gem-2-sam"
+samtools="$binDir/samtools"
+addXS="$binDir/sam2cufflinks.sh"
+gt_filter="$binDir/gt.filter.remove"
+gt_stats="$binDir/gt.stats"
+pigz="$binDir/pigz"
+
 
 hthreads=$((threads/2))
 if [[ $hthreads == 0 ]];then
@@ -271,7 +266,6 @@ fi
 
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
-
 
 printf "\n"
 printf "*****Blueprint pipeline configuration*****\n"
@@ -301,7 +295,7 @@ if [ ! -e $sample.stats.all.json ];then
     printHeader "Executing mapping step"
 
     ## Activate the python virtualenv
-    #run ". $BASEDIR/venv/bin/activate" "$ECHO"
+    #run ". $baseDir/venv/bin/activate" "$ECHO"
 
     ## Copy needed files to TMPDIR
     copyToTmp "index,annotation,t-index,keys"

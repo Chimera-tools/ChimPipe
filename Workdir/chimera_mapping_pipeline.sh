@@ -166,8 +166,8 @@ if [[ $logLevel == "" ]]; then logLevel='info'; fi
 ############################
 
 # = Directories = #
-binDir=~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/bin/
-awkDir=~sdjebali/Awk
+binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin/
+awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk/
 if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
@@ -175,7 +175,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.1.1/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.1.2/blueprint.pipeline.sh 
 chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.2.0/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.2.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -188,7 +188,7 @@ gff2Gff=$awkDir/gff2gff.awk
 gemToGff=$awkDir/gemsplit2gff_unique2.awk
 
 # Python 
-unmapped=~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/bin/filter_unmapped.py 
+unmapped=$binDir/filter_unmapped.py 
 
 # Activating gemtools environment
 source ~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/gemtools/environment/bin/activate
@@ -209,7 +209,7 @@ printf "Directionality: $readDirectionality\n"
 printf "Number mismatches: $mism\n"
 printf "Max read length: $maxReadLength\n"
 printf "Consensus split sites: $spliceSites\n"
-printf "Max split size: $splitSize\n"
+printf "Min split size: $splitSize\n"
 printf "Outdir: $outDir\n"
 printf "Exp. id: $lid\n"
 printf "Log level: $logLevel\n"	
