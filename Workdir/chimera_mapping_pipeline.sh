@@ -185,7 +185,7 @@ bamToBed=$binDir/bamToBed
 # Awk 
 bed12ToGff=$awkDir/bed12fields2gff.awk
 gff2Gff=$awkDir/gff2gff.awk
-gemToGff=$awkDir/gemsplit2gff_unique2.awk
+gemToGff=$awkDir/gemsplit2gff_unique3.awk
 bedCorrectStrand=$awkDir/bedCorrectStrand.awk
 mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 

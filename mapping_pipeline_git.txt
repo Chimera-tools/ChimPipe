@@ -145,5 +145,19 @@ To get a summary of the commits done use the following command:
 
 	git log --pretty=oneline	
 	
-	git push origin master
+	git push origin master  	# Uploading to the remote repository
+	
+	
+11. Uploading to my local repository the version 0.2.1 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/blueprint.pipeline.sh
+	
+	git commit -m "V0.2.1 Fixed a bug in Gem2Gff.awk when compute the coordinates of the splitmappings in the gff. Changes done according to Paolo's indications."
+	
+	git tag -a 0.2.1 -m 'Chimera mapping pipeline version 0.2.1'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
 
