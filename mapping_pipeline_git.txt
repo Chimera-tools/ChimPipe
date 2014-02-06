@@ -66,7 +66,7 @@ To get a summary of the commits done use the following command:
 	git log --pretty=oneline
 	
 	
-4. Uploading to my local repository the version 0.0.2 of the "chimera mapping pipeline"
+5. Uploading to my local repository the version 0.0.2 of the "chimera mapping pipeline"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	git add Workdir/blueprint.pipeline.sh Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt	# You need to add the files to the stack before to be commited into the repository
@@ -81,7 +81,7 @@ To get a summary of the commits done use the following command:
 
 	git log --pretty=oneline
 
-4. Uploading to my local repository the version 0.1.0 of the "chimera mapping pipeline"
+6. Uploading to my local repository the version 0.1.0 of the "chimera mapping pipeline"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	
 	git add Workdir/blueprint.pipeline.sh Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt	# You need to add the files to the stack before to be commited into the repository
@@ -96,7 +96,7 @@ To get a summary of the commits done use the following command:
 
 	git log --pretty=oneline
 
-4. Uploading to my local repository the version 0.1.0 of the "chimera mapping pipeline"
+7. Uploading to my local repository the version 0.1.0 of the "chimera mapping pipeline"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	
 	git add Workdir/blueprint.pipeline.sh Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt	# You need to add the files to the stack before to be commited into the repository
@@ -111,17 +111,39 @@ To get a summary of the commits done use the following command:
 
 	git log --pretty=oneline	
 
-4. Putting under version control all programs the pipeline depend on. Uploading to my local repository the version 0.1.2 of the "chimera mapping pipeline" 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+8. Putting under version control programs the pipeline depend on. Uploading to my local repository the version 0.1.2 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	git add Workdir/bin Workdir/Awk Workdir/chimera_mapping_pipeline.sh Workdir/blueprint.pipeline.sh mapping_pipeline_git.txt
 	
-	git commit -m "V0.1.2 Putting under version control programs the pipeline depend on. Changed the paths to this programs"
+	git commit -m "V0.1.2 Putting under version control all the programs the pipeline depend on. Changed the paths for this programs"
 	
-	git tag -a 0.1.1 -m 'Chimera mapping pipeline version 0.1.2'		
+	git tag -a 0.1.2 -m 'Chimera mapping pipeline version 0.1.2'		
 
 	git log --pretty=oneline	
 	
 	git push origin master
 	
+9. Add to make_chimeric_junction_matrix.sh to the tracking system	
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/Bash
+
+	git commit -m "Added Sarahs script make_chimeric_junction_matrix.sh to the git tracking system"
+	
+	git push origin master
+	
+
+10. Putting under version control more programs the pipeline depend on. Uploading to my local repository the version 0.2.0 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/bin Workdir/Awk Workdir/Bash Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt
+	
+	git commit -m "V0.2.0 The step of chimsplice where the strand of the split-mapping is rewritten correctly was moved from chimsplice to the steps 4 and 5 of the pipeline. Put under version control more programs the pipeline depend on."
+	
+	git tag -a 0.2.0 -m 'Chimera mapping pipeline version 0.2.0'		
+
+	git log --pretty=oneline	
+	
+	git push origin master
 

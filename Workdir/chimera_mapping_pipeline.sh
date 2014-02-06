@@ -28,29 +28,27 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 
 ** Mandatory arguments:
 
-	-f	<INPUT_FILE> FASTQ file by Default. BAM file if the flag -b is specified (see options)
-	-i	<GEM>		 Index for the reference genome (".gem" format).
-	-a	<GTF>		 Reference annotation (".gtf" format).
-	-q	<NUMBER>	 Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
+	-f	<INPUT_FILE>	FASTQ file by Default. BAM file if the flag -b is specified (see options)
+	-i	<GEM>		Index for the reference genome (".gem" format).
+	-a	<GTF>		Reference annotation (".gtf" format).
+	-q	<NUMBER>	Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
 	
 ** [options] can be:
  
-   -b				 Flag to specify that the input file has BAM format (Already mapped reads) 
-   -s				 Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
-   -d	<STRING>	 Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE). Default "NONE".
-   -m	<NUMBER>	 Max number of mismatches. Default 4.
-   -M   <NUMBER>	 Max read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
-   -c	<couple_1>, ... ,<couple_s>
-     	with <couple> := <donor_consensus>+<acceptor_consensus>
-                          	  (list of couples of donor/acceptor
-                              splice site consensus sequences,
-                              default='GT+AG')
-   -S 	<NUMBER>	 Minimum split size. Default 15
-   -o	<PATH>		 Output directory (By default it uses the current working directory).
-   -e	<STRING>	 Experiment identificator (By default it takes the id from the name of the ".fastq" input file).
-   -l	<STRING>	 Log level (error, warn, info, debug). Default "info".
-   -h				 Flag to display usage information.
-   -t				 Flag to test the pipeline. Writes the commands to the standard output.
+	-b			Flag to specify that the input file has BAM format (Already mapped reads) 
+	-s			Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
+	-d	<STRING>	Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE & NONE). Default "NONE".
+	-m	<NUMBER>	Max number of mismatches. Default 4.
+	-M	<NUMBER>	Max read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
+	-c	<pair_1>, ... ,<pair_s>
+      		with <pair> := <donor_consensus>+<acceptor_consensus> (list of pairs of donor/acceptor splice site consensus sequences. Default "GT+AG")
+                          	 
+	-S	<NUMBER>	Minimum split size. Default 15
+	-o	<PATH>		Output directory (By default it uses the current working directory).
+	-e	<STRING>	Experiment identifier (By default it takes the id from the name of the ".fastq" input file).
+	-l	<STRING>	Log level (error, warn, info, debug). Default "info".
+	-h			Flag to display usage information.
+	-t			Flag to test the pipeline. Writes the commands to the standard output.
 	exit 0
 instructions
 }
@@ -166,8 +164,9 @@ if [[ $logLevel == "" ]]; then logLevel='info'; fi
 ############################
 
 # = Directories = #
-binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin/
-awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk/
+binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin
+awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk
+bashDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Bash
 if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
@@ -175,17 +174,20 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.1.2/blueprint.pipeline.sh 
-chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.2.0/find_exon_exon_connections_from_splitmappings_better2.sh
-chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.2.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
+pipeline=$bashDir/blueprint.pipeline.sh 
+chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_exon_exon_connections_from_splitmappings_better2.sh
+chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
 # Bin 
 rnaMapper=$binDir/gem-rna-mapper
+bamToBed=$binDir/bamToBed
 
 # Awk 
 bed12ToGff=$awkDir/bed12fields2gff.awk
 gff2Gff=$awkDir/gff2gff.awk
 gemToGff=$awkDir/gemsplit2gff_unique2.awk
+bedCorrectStrand=$awkDir/bedCorrectStrand.awk
+mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 
 # Python 
 unmapped=$binDir/filter_unmapped.py 
@@ -271,7 +273,7 @@ printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTi
 startTime=$(date +%s)
 printHeader "Generating a ".gff.gz" file from the ".bam" containing the reads mapping both uniquely and in 2 blocks"
 
-/software/rg/el6.3/bin/bamToBed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
+$bamToBed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
 
 endTime=$(date +%s)
 printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -282,7 +284,7 @@ printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs
 startTime=$(date +%s)
 printHeader "Generating a ".gff.gz" file from the ".bam" containing the "exotic" mappings"
 
-run "awk -f $gemToGff $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz" "$ECHO"
+run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz" "$ECHO"
 
 endTime=$(date +%s)
 printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -296,9 +298,9 @@ run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/s
 # 7) run chimsplice on 4) and 5)
 ###############################
 startTime=$(date +%s)
-printHeader "Running Chimsplice on the ".gff.gz" files from the containing the "normal" and "exotic" mappings "
+printHeader "Running Chimsplice on the ".gff.gz" files containing the "normal" and "exotic" mappings "
 
-run "$chim1 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded $readDirectionality  2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
+run "$chim1 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
 
 run "$chim2 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 

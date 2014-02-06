@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# ~/bin/make_chimeric_junction_matrix.sh
+# ~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Bash/make_chimeric_junction_matrix.sh
 ########################################
-# !!! NOTE: only works for stranded data for the moment !!!
 # this script takes as input the chimeric junctions obtained from chimsplice 
 # (ie from find_exon_exon_connections_from_splitmappings_better2.sh followed by 
 # find_chimeric_junctions_from_exon_to_exon_connections_better2.sh) and produces
@@ -13,9 +12,7 @@
 # of those genes, the biotypes of those genes and the number of staggered reads
 # supporting the junction in each exp.
 
-# !!! this is for stranded data, need to be made more general for unstranded data later !!!
-# !!! supposes that the annotation file has gene_id in $10 and also gene_name and gene_type info 
-#     and those last two until the 20th column !!!
+
 # !!! should not be run twice in the same dir at the same time(common files) !!!
 
 # More precisely, this script takes as input:
@@ -29,6 +26,7 @@
 #   60 (3 fields) 
 # 2) a minimum number of staggered reads for a junction to be reported in the matrix
 # 3) an gff annotation file with at least the exons and the gene in column 10
+# 4) 1 for stranded or 0 for unstranded data
 # and this script will produce as output a matrix like this one where the script has been run
 #############################################################################################
 # junc_id beg end samechrstr okgxorder dist gnlist1 gnlist2 gnname1 gnname2 gnbt1 gnbt2 LID8963 LID8964 LID8965 LID8966 LID8969 LID8970 LID44498 LID44499 LID16629 LID16630 LID8461 LID8462 LID16633 LID16634 LID16635 LID16636 LID8710 LID8711 LID8463 LID8464 LID45016 LID45017 LID16627 LID16628 LID8686 LID8687 LID44594 LID44497 LID16631 LID16632 LID8692 LID8701 LID46598 LID46599 LID8967 LID8968
@@ -37,30 +35,33 @@
 
 # usage
 #######
-# make_chimeric_junction_matrix.sh file_with_junc_each_exp.txt minstag annot
+# make_chimeric_junction_matrix.sh file_with_junc_each_exp.txt minstag annot stranded
 
 # example
 #########
 # cd ~/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/Human/AllCases
-# time make_chimeric_junction_matrix.sh lid_junctionfile_blockfile.txt 2 /users/rg/projects/encode/scaling_up/whole_genome/Gencode/version10/Long/Element/gen10.long.exon.gtf
+# time make_chimeric_junction_matrix.sh lid_junctionfile_blockfile.txt 2 /users/rg/projects/encode/scaling_up/whole_genome/Gencode/version10/Long/Element/gen10.long.exon.gtf 1
 
 # Notes
 #######
 # - Made for using on a 64 bit linux architecture
 # - uses awk scripts
 
+
+
+
 # Programs
 ###########
-CUTGFF=~sdjebali/Awk/cutgff.awk
-GFF2GFF=~sdjebali/Awk/gff2gff.awk
-OVERLAP=~sdjebali/bin/overlap
+CUTGFF=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk/cutgff.awk
+GFF2GFF=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk/gff2gff.awk
+OVERLAP=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin/overlap
 
 # In case the user does not provide any input file
 ###################################################
 if [ ! -n "$1" ]
 then
     echo "" >&2
-    echo Usage: make_chimeric_junction_matrix.sh file_with_junc_each_exp.txt minstag annot >&2
+    echo Usage: make_chimeric_junction_matrix.sh file_with_junc_each_exp.txt minstag annot stranded >&2
     echo "" >&2
     echo Example: make_chimeric_junction_matrix.sh lid_junctionfile_blockfile.txt 2 /users/rg/projects/encode/scaling_up/whole_genome/Gencode/version10/Long/Element/gen10.long.exon.gtf >&2
     echo "" >&2
@@ -73,11 +74,14 @@ then
     echo 3\) an gff annotation file with at least the exons and the gene in column 10 file listing >&2
     echo and produces a matrix containing the chimeric junctions obtained across all experiments >&2
     echo with a lot of additional information about their position, distance, genes and expression >&2
+    echo "4\) 1 for stranded or 0 for unstranded data" >&2
     echo "" >&2
     exit 1
 else
 input=$1
 fi
+
+
 
 # In case the user does not provide any annotation file
 ########################################################
@@ -91,9 +95,14 @@ else
     minstag=$2
     if [ ! -n "$3" ]
     then
-	annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
+		annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
     else
-	annot=$3
+		annot=$3
+		if [ ! -n "$4" ]
+		then
+			stranded=1
+		else
+			stranded=$4
     fi
 fi
 
@@ -116,7 +125,7 @@ echo they are $fldgnname and $fldgnbt respectively >&2
 echo I am selecting the junctions supported by at least $minstag staggered reads \in each experiment and finding their min beg and max end >&2
 cat $input | while read lid f1 f2
 do
-awk -v minstag=$minstag '$2>=minstag{print $0}' $f1 | awk -v fileRef=$f2 'BEGIN{while(getline < fileRef >0){split($1,a,":"); split(a[1],a1,"_"); split(a[2],a2,"_"); c=a1[1]"_"a1[3]"_"a1[4]":"a2[1]"_"a2[2]"_"a2[4]; if((beg[c]=="")||(a1[2]<beg[c])){beg[c]=a1[2]} if((end[c]=="")||(a2[3]>end[c])){end[c]=a2[3]} }} {print $0, beg[$1], end[$1]}' > ${f1%.txt}\_$minstag\staggered_withmaxbegandend.txt
+awk -v minstag=$minstag '$2>=minstag{print $0}' $f1 | awk -v fileRef=$f2 'BEGIN{while(getline < fileRef >0){split($1,a,":"); split(a[1],a1,"_"); split(a[2],a2,"_"); if (stranded==0){c=a1[1]"_"a1[3]":"a2[1]"_"a2[2]}else{c=a1[1]"_"a1[3]"_"a1[4]":"a2[1]"_"a2[2]"_"a2[4]}; if((beg[c]=="")||(a1[2]<beg[c])){beg[c]=a1[2]} if((end[c]=="")||(a2[3]>end[c])){end[c]=a2[3]} }} {print $0, beg[$1], end[$1]}' > ${f1%.txt}\_$minstag\staggered_withmaxbegandend.txt
 done
 
 # 2) Make the junctions obtained in all experiments with their min beg and max end across exp
@@ -143,11 +152,11 @@ echo I am adding the list of gene ids, gene names and gene biotypes for each par
 # a. first make the gff file of the chimeric junctions
 ######################################################
 echo I am making the gff file of the junctions >&2
-awk '{split($1,a,":"); split(a[1],a1,"_"); split(a[2],a2,"_"); print a1[1], ".", ".", $2, a1[2], ".", a1[3], ".", "junc:", $1; print a2[1], ".", ".", a2[2], $3, ".", a2[3], ".", "junc:", $1;}' allexp_distinct_junctions_reliable_ineachexp_withmaxbegandend_samechrstr_okgxorder_dist.txt | awk -f $GFF2GFF > allexp_distinct_junctions_reliable_ineachexp_withmaxbegandend_two_parts.gff
-# b. then overlap to know which genes have their exons overlapping each part of the junction (stranded)
-#######################################################################################################
+awk '{split($1,a,":"); split(a[1],a1,"_"); split(a[2],a2,"_"); if (stranded==0){print a1[1], ".", ".", $2, a1[2], ".", ".", ".", "junc:", $1; print a2[1], ".", ".", a2[2], $3, ".", ".", ".", "junc:", $1}else{print a1[1], ".", ".", $2, a1[2], ".", a1[3], ".", "junc:", $1; print a2[1], ".", ".", a2[2], $3, ".", a2[3], ".", "junc:", $1}}' allexp_distinct_junctions_reliable_ineachexp_withmaxbegandend_samechrstr_okgxorder_dist.txt | awk -f $GFF2GFF > allexp_distinct_junctions_reliable_ineachexp_withmaxbegandend_two_parts.gff
+# b. then overlap to know which genes have their exons overlapping each part of the junction 
+#############################################################################################
 echo I am overlapping the two parts of each junction with the annotated exons>&2
-$OVERLAP allexp_distinct_junctions_reliable_ineachexp_withmaxbegandend_two_parts.gff $annotbase.exons.20flds.gff -st 1 -m 10 -f ex -nr -o allexp_distinct_junctions_reliable_ineachexp_withmaxbegandend_two_parts_withgnlist.gff
+$OVERLAP allexp_distinct_junctions_reliable_ineachexp_withmaxbegandend_two_parts.gff $annotbase.exons.20flds.gff -st stranded -m 10 -f ex -nr -o allexp_distinct_junctions_reliable_ineachexp_withmaxbegandend_two_parts_withgnlist.gff
 # c. then add the gene real names and the gene biotypes 
 #######################################################
 echo I am adding the gene real names and biotypes >&2
