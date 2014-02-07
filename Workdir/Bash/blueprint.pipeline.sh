@@ -23,6 +23,7 @@ function usage {
     printf "\t-M \tMax read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default \"150\"\n"
     printf "\t-s\tflag to specify whether the sample has strandness information for the reads. Default \"false\"\n"
     printf "\t-d\tdirectionality of the reads (MATE1_SENSE, MATE2_SENSE, NONE). Default \"NONE\".\n"
+    printf "\t-e\tExperiment identifier (the output files will be named according this id). If not specified, the name is inferred from the input files.\n"
     printf "\t-l\tLog level (error, warn, info, debug). Default \"info\".\n"
     printf "\t-t\tTest the pipeline. Writes the command to the standard output.\n"
     exit 0
@@ -143,7 +144,7 @@ function copyToTmp {
 ## Parsing arguments
 #
 
-while getopts ":i:m:M:g:q:a:std:l:ph" opt; do
+while getopts ":i:m:M:g:q:a:std:e:l:ph" opt; do
   case $opt in
     i)
       input="$OPTARG"
@@ -172,6 +173,9 @@ while getopts ":i:m:M:g:q:a:std:l:ph" opt; do
     d)
       readStrand=$OPTARG
       ;;
+    e)
+      sample=$OPTARG
+      ;;  
     l)
       loglevel=$OPTARG
       ;;
@@ -228,6 +232,11 @@ if [[ $readStrand == "" ]];then
     readStrand="NONE"
 fi
 
+if [[ $sample == "" ]];then
+    basename=$(basename $input)
+	sample=${basename%_1*}
+fi
+
 if [[ $loglevel == "" ]];then
     loglevel="info"
 fi
@@ -242,8 +251,7 @@ fi
 
 
 
-basename=$(basename $input)
-sample=${basename%_1*}
+
 threads=${NSLOTS-1}
 
 annName=`basename $annotation`
@@ -301,7 +309,7 @@ if [ ! -e $sample.stats.all.json ];then
     copyToTmp "index,annotation,t-index,keys"
 
     log "Running gemtools rna pipeline on ${sample}" $step
-    run "gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam " "$ECHO" 
+    run "gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $sample --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam " "$ECHO" 
     #gemtools --loglevel $loglevel rna-pipeline -f $TMPDIR/$basename -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -t $threads -o $TMPDIR --no-bam
     #gemtools --loglevel $loglevel rna-pipeline -f $TMPDIR/$basename -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -m 150 -t $threads -o $TMPDIR --no-sam
 

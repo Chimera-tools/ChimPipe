@@ -32,10 +32,11 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 	-i	<GEM>		Index for the reference genome (".gem" format).
 	-a	<GTF>		Reference annotation (".gtf" format).
 	-q	<NUMBER>	Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
-	
+	-e	<STRING>	Experiment identifier (the output files will be named according this id).
+
 ** [options] can be:
  
-	-b			Flag to specify that the input file has BAM format (Already mapped reads) 
+	-b			Flag to specify that the input file has BAM format (Already mapped reads). Not enabled 
 	-s			Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
 	-d	<STRING>	Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE & NONE). Default "NONE".
 	-m	<NUMBER>	Max number of mismatches. Default 4.
@@ -45,7 +46,7 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
                           	 
 	-S	<NUMBER>	Minimum split size. Default 15
 	-o	<PATH>		Output directory (By default it uses the current working directory).
-	-e	<STRING>	Experiment identifier (By default it takes the id from the name of the ".fastq" input file).
+	
 	-l	<STRING>	Log level (error, warn, info, debug). Default "info".
 	-h			Flag to display usage information.
 	-t			Flag to test the pipeline. Writes the commands to the standard output.
@@ -83,7 +84,7 @@ function run {
 
 # PARSING INPUT ARGUMENTS 
 #########################
-while getopts ":f:i:a:q:bsd:m:M:c:S:o:e:l:ht" opt; do
+while getopts ":f:i:a:q:e:bsd:m:M:c:S:o:l:th" opt; do
   case $opt in
     f)
       input="$OPTARG"
@@ -97,6 +98,9 @@ while getopts ":f:i:a:q:bsd:m:M:c:S:o:e:l:ht" opt; do
     q)
       quality=$OPTARG
       ;;
+    e)
+      lid=$OPTARG
+      ;;     
     b)
       bam=1
       ;;
@@ -121,17 +125,14 @@ while getopts ":f:i:a:q:bsd:m:M:c:S:o:e:l:ht" opt; do
  	o)
       outDir=$OPTARG
       ;;
-    e)
-      lid=$OPTARG
-      ;;   
  	l)
       logLevel=$OPTARG
       ;;
-    h)
-      usage
-      ;;
     t)
       ECHO="echo "
+      ;;
+    h)
+      usage
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -149,6 +150,7 @@ if [[ ! -e $input ]]; then log "Please specify a valid input file\n" "ERROR" >&2
 if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; exit -1; fi
 if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; exit -1; fi
 if [[ $quality == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
+if [[ $lid == "" ]]; then log "Please specify the experiment identifier\n" "ERROR" >&2; exit -1; fi
 if [[ $bam == "" ]]; then bam=0; fi
 if [[ $stranded == "" ]]; then stranded=0; fi
 if [[ $readDirectionality == "" ]]; then readDirectionality='NONE'; fi
@@ -157,8 +159,9 @@ if [[ $maxReadLength == "" ]]; then maxReadLength='150'; fi
 if [[ $spliceSites ==  "" ]]; then spliceSites='GT+AG' ; fi
 if [[ $splitSize == "" ]]; then splitSize='15'; fi
 if [[ ! -d $outDir ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
-if [[ $lid == "" ]]; then lid=`basename ${input%.*.gz}`; fi
 if [[ $logLevel == "" ]]; then logLevel='info'; fi
+
+# lid=`basename ${input%.*.gz}`; fi
 
 # SETTING UP THE ENVIRONMENT
 ############################
@@ -174,7 +177,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.0/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.1/blueprint.pipeline.sh 
 chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -235,7 +238,7 @@ pipelineStart=$(date +%s)
 # - $outDir/$lid\_filtered_cuff.bam
 printHeader "Executing first mapping step with the Blueprint pipeline"
 
-run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLength -l $logLevel" "$ECHO"
+run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLength -e $lid -l $logLevel" "$ECHO"
 
 # 2) extract the reads that do not map with an edit distance strictly greater than round(read_length/20) 
 ####################################################################################################
