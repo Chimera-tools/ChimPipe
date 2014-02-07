@@ -174,7 +174,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=$bashDir/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.0/blueprint.pipeline.sh 
 chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -185,7 +185,7 @@ bamToBed=$binDir/bamToBed
 # Awk 
 bed12ToGff=$awkDir/bed12fields2gff.awk
 gff2Gff=$awkDir/gff2gff.awk
-gemToGff=$awkDir/gemsplit2gff_unique3.awk
+gemToGff=$awkDir/gemsplit2gff_unique4.awk
 bedCorrectStrand=$awkDir/bedCorrectStrand.awk
 mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 
@@ -284,7 +284,7 @@ printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs
 startTime=$(date +%s)
 printHeader "Generating a ".gff.gz" file from the ".bam" containing the "exotic" mappings"
 
-run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz" "$ECHO"
+run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev=1 -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz" "$ECHO"
 
 endTime=$(date +%s)
 printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"

@@ -161,3 +161,16 @@ To get a summary of the commits done use the following command:
 	
 	git push origin master  	# Uploading to the remote repository	
 
+12. Uploading to my local repository the version 0.3.0 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/blueprint.pipeline.sh Workdir/Awk/gemsplit2gff_unique4.awk Workdir/Awk/bed12fields2gff.awk Workdir/Awk/gemsplit2gff_unique3.awk
+	
+	git commit -m "V0.3.0  For the exotic mappings, now it reverses the blocks when the split-mapping are in the same chr, same strand and in the - strand. This is to write the split-mappings ordered according the convention of the bam (Genomic order)"
+	
+	git tag -a 0.3.0 -m 'Chimera mapping pipeline version 0.3.0'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
+

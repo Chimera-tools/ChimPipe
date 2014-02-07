@@ -1,6 +1,6 @@
 # ~/Awk/bed12fields2gff.awk
 # usually used to process alignments of rna sequencing data
-# improved on 07/02/2013 tio be able to write the blocks in reverse order 
+# improved on 07/02/2013 to be able to write the blocks in reverse order 
 # this is to deal with bed12 obtained from bam where the convention is to write the split mappings 
 # of the - strand in the order relative to the + strand (unlike in gem split mapper format)
 
