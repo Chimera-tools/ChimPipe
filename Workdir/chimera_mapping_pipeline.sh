@@ -28,11 +28,15 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 
 ** Mandatory arguments:
 
-	-f	<INPUT_FILE>	FASTQ file by Default. BAM file if the flag -b is specified (see options)
+	-f	<INPUT_FILE>	First mate FASTQ file. Pipeline designed to deal with paired end data. 
+				Please make sure the second mate is in the same directory and the files are named according to the following: 
+				"YourSampleId"_1.fastq.gz and "YourSampleId"_2.fastq.gz; where "YourSampleId" must be the same for the 
+				mate one (_1) than for the mate two (_2)  
+	
 	-i	<GEM>		Index for the reference genome (".gem" format).
 	-a	<GTF>		Reference annotation (".gtf" format).
 	-q	<NUMBER>	Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
-	-e	<STRING>	Experiment identifier (the output files will be named according this id).
+	-e	<STRING> 	Sample identifier (the output files will be named according this id).
 
 ** [options] can be:
  
@@ -147,6 +151,7 @@ done
 # SETTING VARIABLES AND INPUT FILES
 ###################################
 if [[ ! -e $input ]]; then log "Please specify a valid input file\n" "ERROR" >&2; exit -1; fi
+if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; exit -1; fi
 if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; exit -1; fi
 if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; exit -1; fi
 if [[ $quality == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
@@ -161,7 +166,6 @@ if [[ $splitSize == "" ]]; then splitSize='15'; fi
 if [[ ! -d $outDir ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
 if [[ $logLevel == "" ]]; then logLevel='info'; fi
 
-# lid=`basename ${input%.*.gz}`; fi
 
 # SETTING UP THE ENVIRONMENT
 ############################
@@ -177,7 +181,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.1/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.2/blueprint.pipeline.sh 
 chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 

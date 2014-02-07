@@ -174,10 +174,10 @@ To get a summary of the commits done use the following command:
 	
 	git push origin master  	# Uploading to the remote repository	
 	
-12. Uploading to my local repository the version 0.3.1 of the "chimera mapping pipeline" 
+13. Uploading to my local repository the version 0.3.1 of the "chimera mapping pipeline" 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/blueprint.pipeline.sh 
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/Bash/blueprint.pipeline.sh 
 	
 	git commit -m "V0.3.1 Now, the experiment identifier is a compulsory argument. Done to avoid user's mistakes."
 	
@@ -187,6 +187,18 @@ To get a summary of the commits done use the following command:
 	
 	git push origin master  	# Uploading to the remote repository		
 
+14. Uploading to my local repository the version 0.3.2 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt 
+	
+	git commit -m "V0.3.2 Now, the experiment identifier is a compulsory argument. Done to prevent user mistakes."
+	
+	git tag -a 0.3.2 -m 'Chimera mapping pipeline version 0.3.2'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
 
 
 
