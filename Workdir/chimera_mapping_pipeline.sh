@@ -181,7 +181,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.2/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.3/blueprint.pipeline.sh 
 chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -208,7 +208,7 @@ source ~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/gemtools/environment/b
 
 printf "\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.1.1\n"
+printf "Pipeline Version: V0.3.3\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -240,9 +240,16 @@ pipelineStart=$(date +%s)
 ##############
 # - $outDir/$lid.map.gz 
 # - $outDir/$lid\_filtered_cuff.bam
-printHeader "Executing first mapping step with the Blueprint pipeline"
 
-run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLength -e $lid -l $logLevel" "$ECHO"
+bamFirstMapping=$outDir/${lid}_filtered_cuff.bam
+if [ ! -e $bamFirstMapping ];then
+	printHeader "Executing first mapping step"
+
+    run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLength -e $lid -l $logLevel" "$ECHO"
+
+else
+    printHeader "First mapping BAM file is present...skipping first mapping step"
+fi
 
 # 2) extract the reads that do not map with an edit distance strictly greater than round(read_length/20) 
 ####################################################################################################
@@ -251,13 +258,19 @@ run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLen
 # output is: 
 ############
 # - $outDir/$lid.unmapped.fastq
-startTime=$(date +%s)
-printHeader "Extracting the reads that do not map with an edit distance strictly greater than round (read_length/20)"
+unmappedReads=$outDir/${lid}.unmapped.fastq
 
-run "$unmapped -i $lid.map.gz -t 8 -f fastq -m 5 > $lid.unmapped.fastq 2> $lid.unmapped.err" "$ECHO"
+if [ ! -e $unmappedReads ];then
+	startTime=$(date +%s)
+	printHeader "Extracting the reads that do not map with an edit distance strictly greater than round (read_length/20)"
 
-endTime=$(date +%s)
-printHeader "Extracting unmapped reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	run "$unmapped -i $lid.map.gz -t 8 -f fastq -m 5 > $outDir/$lid.unmapped.fastq 2> $outDir/$lid.unmapped.err" "$ECHO"
+	endTime=$(date +%s)
+
+	printHeader "Extracting unmapped reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+    printHeader "Unmapped reads file is present...skipping extracting unmapped reads step"
+fi
 
 # 3) map the unmapped reads with the rna mapper binary (!!!parameters to think!!!): get a gem map file
 ######################################################################################################
@@ -266,35 +279,55 @@ printHeader "Extracting unmapped reads completed in $(echo "($endTime-$startTime
 # output is: 
 ############
 # - $outDir/SecondMapping/$lid.unmapped_rna-mapped.map
-startTime=$(date +%s)
-printHeader "Mapping the unmapped reads with the rna mapper"
 
-run "$rnaMapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
+gemSecondMapping=$outDir/SecondMapping/${lid}.unmapped_rna-mapped.map
 
-endTime=$(date +%s)
-printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+if [ ! -e $gemSecondMapping ];then
+	startTime=$(date +%s)
+	printHeader "Mapping the unmapped reads with the rna mapper"	
+
+	run "$rnaMapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
+
+	endTime=$(date +%s)
+	printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Second mapping GEM file is present...skipping extracting second mapping step"
+fi
 
 # 4) extract the reads mapping both uniquely and in 2 blocks from the bam file of "normal" mappings and convert in gff.gz
 #########################################################################################################################
 
-startTime=$(date +%s)
-printHeader "Generating a ".gff.gz" file from the ".bam" containing the reads mapping both uniquely and in 2 blocks"
+gffFromBam=$outDir/FromFirstBam/${lid}_filtered_cuff_2blocks.gff.gz
 
-$bamToBed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
+if [ ! -e $gffFromBam ];then
+	startTime=$(date +%s)
+	printHeader "Generating a ".gff.gz" file from the ".bam" containing the reads mapping both uniquely and in 2 blocks"
 
-endTime=$(date +%s)
-printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	$bamToBed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
+
+	endTime=$(date +%s)
+	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Gff from first mapping BAM file is present... skipping conversion step"
+fi
 
 # 5) extract the reads mapping both uniquely and in 2 blocks from the map file of "exotic" mappings and convert in gff.gz
 #########################################################################################################################
 
-startTime=$(date +%s)
-printHeader "Generating a ".gff.gz" file from the ".bam" containing the "exotic" mappings"
+gffFromMap=$outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz
 
-run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev=1 -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz" "$ECHO"
+if [ ! -e $gffFromMap ];then
+	startTime=$(date +%s)
+	printHeader "Generating a ".gff.gz" file from the ".map" containing the "exotic" mappings"
 
-endTime=$(date +%s)
-printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev=1 -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz" "$ECHO"
+
+	endTime=$(date +%s)
+	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Gff from second mapping MAP file is present... skipping conversion step"
+fi
+
 
 # 6) put the path to the "normal" and "exotic" gff.gz files in a same txt file for chimsplice 
 #############################################################################################
@@ -304,16 +337,22 @@ run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/s
 
 # 7) run chimsplice on 4) and 5)
 ###############################
-startTime=$(date +%s)
-printHeader "Running Chimsplice on the ".gff.gz" files containing the "normal" and "exotic" mappings "
 
-run "$chim1 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
+chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_and_totalsplimappings_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-run "$chim2 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+if [ ! -e $chimJunctions ];then
+	startTime=$(date +%s)
+	printHeader "Running Chimsplice on the ".gff.gz" files containing the "normal" and "exotic" mappings "
 
-endTime=$(date +%s)
-printHeader "Chimsplice step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	run "$chim1 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
 
+	run "$chim2 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+
+	endTime=$(date +%s)
+	printHeader "Chimsplice step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Chimeric Junctions file present... skipping chimsplice step"
+fi
 
 # 8) END
 ########

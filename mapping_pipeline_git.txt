@@ -192,9 +192,22 @@ To get a summary of the commits done use the following command:
 
 	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt 
 	
-	git commit -m "V0.3.2 Now, the experiment identifier is a compulsory argument. Done to prevent user mistakes."
+	git commit -m "V0.3.2 The input must be the mate's one FASTQ file and his name must end with "_1.fastq.gz". Done to prevent user mistakes."
 	
 	git tag -a 0.3.2 -m 'Chimera mapping pipeline version 0.3.2'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
+
+15. Uploading to my local repository the version 0.3.3 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/Bash/blueprint.pipeline.sh 
+	
+	git commit -m "V0.3.3 	Now more modular by looking at the presence of a file to do or not the step that produces this file"
+	
+	git tag -a 0.3.3 -m 'Chimera mapping pipeline version 0.3.3'		
 
 	git log --pretty=oneline	
 	

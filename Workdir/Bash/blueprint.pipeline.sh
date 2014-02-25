@@ -200,7 +200,7 @@ done
 #
 baseDir=`dirname ${SGE_O_WORKDIR-$PWD}`
 binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin
-export PATH=/software/rg/el6.3/gemtools/bin:/software/rg/el6.3/flux-capacitor-1.2.4-SNAPSHOT/bin:$HOME/bin:$PATH
+
 
 ## Setting variables and input files
 ##
@@ -250,14 +250,13 @@ if [[ $maxReadLength == "" ]];then
 fi
 
 
-
-
 threads=${NSLOTS-1}
 
 annName=`basename $annotation`
 
 ## Binaries
 #
+gemtools=/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/gemtools-1.6.2-i3/bin/gemtools
 gem2sam="$binDir/gem-2-sam"
 samtools="$binDir/samtools"
 addXS="$binDir/sam2cufflinks.sh"
@@ -276,7 +275,7 @@ fi
 ##################################
 
 printf "\n"
-printf "*****Blueprint pipeline configuration*****\n"
+printf "*****First mapping configuration*****\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annotation\n"
@@ -296,22 +295,17 @@ pipelineStart=$(date +%s)
 
 ## Mapping
 #
-#if [ ! -e $sample.map.gz ];then
-if [ ! -e $sample.stats.all.json ];then
+
+if [ ! -e $sample.map.gz ];then
     step="MAP"
     startTime=$(date +%s)
     printHeader "Executing mapping step"
-
-    ## Activate the python virtualenv
-    #run ". $baseDir/venv/bin/activate" "$ECHO"
 
     ## Copy needed files to TMPDIR
     copyToTmp "index,annotation,t-index,keys"
 
     log "Running gemtools rna pipeline on ${sample}" $step
-    run "gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $sample --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam " "$ECHO" 
-    #gemtools --loglevel $loglevel rna-pipeline -f $TMPDIR/$basename -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -t $threads -o $TMPDIR --no-bam
-    #gemtools --loglevel $loglevel rna-pipeline -f $TMPDIR/$basename -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -m 150 -t $threads -o $TMPDIR --no-sam
+    run "$gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $sample --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam " "$ECHO" 
 
     if [ -f $TMPDIR/${sample}.map.gz ]; then
         log "Computing md5sum for map file..." $step
@@ -321,9 +315,9 @@ if [ ! -e $sample.stats.all.json ];then
         log "Copying map file..." $step
         run "cp $TMPDIR/${sample}.map.gz ." "$ECHO"
         log "done\n"
-    #else
-    #    log "Error producing map file" "ERROR" >&2
-    #    exit -1
+#    else
+#        log "Error producing map file" "ERROR" >&2
+#        exit -1
     fi
     endTime=$(date +%s)
     printHeader "Mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -331,40 +325,6 @@ else
     printHeader "Map file already present...skipping mapping step"
 fi
 
-
-## Converting to bam
-##
-
-# if [ ! -e $sample.bam ];then
-#     step="CONVERT"
-#     startTime=$(date +%s)
-#     printHeader "Executing conversion step"
-
-#     ## Copy needed files to TMPDIR
-#     copyToTmp "index"
-
-#     log "Converting ${sample} to bam\n" $step
-
-#     run "pigz -p $hthreads -dc $sample.map.gz | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-33 | $samtools view -@ $hthreads -Sb - | $samtools sort -@ $hthreads -m `echo $((4<<30))` - $sample" "$ECHO"
-#     #pigz -p $threads -dc $TMPDIR/$sample.map.gz | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-33 | $samtools view -Sb - | $samtools sort -m $((8<<30)) - $TMPDIR/$sample
-#     if [ -f $TMPDIR/${sample}.bam ]; then
-#         log "Computing md5sum for bam file..." $step
-#         run "md5sum $TMPDIR/$sample.bam > $TMPDIR/$sample.bam.md5" "$ECHO"
-#         run "cp $TMPDIR/$sample.bam.md5 ." "$ECHO"
-#         log "done\n"
-
-#         log "Copying bam file to mapping dir..." $step
-#         run "cp $TMPDIR/${sample}.bam ." "$ECHO"
-#         log "done\n"
-#     #else
-#     #    log "Error producing bam file" "ERROR" >&2
-#     #    exit -1
-#     fi
-#     endTime=$(date +%s)
-#     printHeader "Conversion step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-# else
-#     printHeader "Bam file already present...skipping conversion step"
-# fi
 
 ## Filtering the map file
 ##
@@ -382,9 +342,9 @@ if [ ! -e $filteredGem ];then
         log "Computing md5sum for filtered file..." $step
         run "md5sum $filteredGem > $filteredGem.md5" "$ECHO"
         log "done\n"
-    # else
-    #    log "Error producing filtered map file" "ERROR" >&2
-    #    exit -1
+    else
+        log "Error producing filtered map file" "ERROR" >&2
+        exit -1
     fi
     endTime=$(date +%s)
     printHeader "Filtering step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -411,9 +371,9 @@ if [ $filteredGemStats -ot $filteredGem ];then
         log "Computing md5sum for stats file..." $step
         run "md5sum $filteredGemStats > $filteredGemStats.md5" "$ECHO"
         log "done\n"
-    # else
-    #    log "Error producing GEM stats" "ERROR" >&2
-    #    exit -1
+    else
+        log "Error producing GEM stats" "ERROR" >&2
+        exit -1
     fi
     endTime=$(date +%s)
     printHeader "GEM stats step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -444,9 +404,9 @@ if [ ! -e $filteredBam ];then
         log "Copying filtered bam file to mapping dir..." $step
         run "cp $TMPDIR/$filteredBam ." "$ECHO"
         log "done\n"
-    #else
-    #    log "Error producing filtered bam file" "ERROR" >&2
-    #    exit -1
+    else
+        log "Error producing filtered bam file" "ERROR" >&2
+        exit -1
     fi
     endTime=$(date +%s)
     printHeader "Conversion step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -456,6 +416,6 @@ fi
 
 pipelineEnd=$(date +%s)
 
+printHeader "First mapping for $sample completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
 log "\n"
-printHeader "Blueprint pipeline (only bam file) for $sample completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
 exit 0
