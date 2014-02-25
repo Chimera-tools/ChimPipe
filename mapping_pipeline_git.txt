@@ -213,5 +213,18 @@ To get a summary of the commits done use the following command:
 	
 	git push origin master  	# Uploading to the remote repository	
 
+16. Uploading to my local repository the version 0.3.4 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/Bash/blueprint.pipeline.sh 
+	
+	git commit -m "V0.3.4	Latest version of the gemtools (/software/rg/el6.3/gemtools-1.7.1-i3) for the rna-pipeline step. Now, it stops and raises an error message if the output of one step is not produced. It also displays more information regarding the workflow"
+	
+	git tag -a 0.3.4 -m 'Chimera mapping pipeline version 0.3.4'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
+
 
 

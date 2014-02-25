@@ -19,9 +19,10 @@ function usage {
     printf "\t-q\tspecify the quality offset of the dataset [33 | 64 | ignore]\n"
     echo ""
     echo "Options:"
-    printf "\t-m\tMax number of mismatches. Default \"4\"\n"
-    printf "\t-M \tMax read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default \"150\"\n"
-    printf "\t-s\tflag to specify whether the sample has strandness information for the reads. Default \"false\"\n"
+    printf "\t-M\tMax number of mismatches. Default \"4\"\n"
+    printf "\t-m\tFlag to enable mapping stats. Default disabled.\n"
+    printf "\t-L \tMax read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default \"150\"\n"
+    printf "\t-s\tFlag to specify whether the sample has strandness information for the reads. Default \"false\"\n" 
     printf "\t-d\tdirectionality of the reads (MATE1_SENSE, MATE2_SENSE, NONE). Default \"NONE\".\n"
     printf "\t-e\tExperiment identifier (the output files will be named according this id). If not specified, the name is inferred from the input files.\n"
     printf "\t-l\tLog level (error, warn, info, debug). Default \"info\".\n"
@@ -31,7 +32,7 @@ function usage {
 
 function printHeader {
     string=$1
-    echo "`date` *** $string ***"
+    echo "`date` * $string *"
 }
 
 function log {
@@ -88,55 +89,6 @@ function copyToTmp {
                     log "done\n"
                 fi
                 ;;
-            "fastq")
-                if [ ! -e $TMPDIR/`basename $input` ];then
-                    log "Copying fastq files to $TMPDIR..." $step
-                    run "cp $input $TMPDIR" "$ECHO"
-                    run "cp ${input/_1.fastq/_2.fastq} $TMPDIR" "$ECHO"
-                    log "done\n"
-                fi
-                ;;
-            "map.gz")
-                if [ ! -e $TMPDIR/$sample.map.gz ]; then
-                    log "Copying map file to $TMPDIR..." $step
-                    run "cp $sample.map.gz $TMPDIR" "$ECHO"
-                    log "done\n"
-                fi
-                ;;
-            "bam")
-                if [ ! -e $TMPDIR/$sample.bam ]; then
-                    log "Copying bam file to $TMPDIR..." $step
-                    run "cp $sample.bam $TMPDIR" "$ECHO"
-                    log "done\n"
-                fi
-                ;;
-            "filtered-bam")
-                if [ ! -e $TMPDIR/$filteredBam ]; then
-                    log "Copying filtered bam file to $TMPDIR..." $step
-                    run "cp $filteredBam $TMPDIR" "$ECHO"
-                    log "done\n"
-                fi
-                ;;
-            "filtered-bai")
-                if [ ! -e $TMPDIR/$filteredBam.bai ];then
-                    log "Copying index for filtered bam file to $TMPDIR..." $step
-                    run "cp $filteredBam.bai $TMPDIR" "$ECHO"
-                    log "done\n"
-                fi
-                ;;
-            "flux-profile")
-                if [ ! -e $TMPDIR/$sample.profile ];then
-                    log "Copying profile file to $TMPDIR..." $step
-                    run "cp $quantDir/$sample/$sample.profile $TMPDIR" "$ECHO"
-                    log "done\n"
-                fi
-                ;;
-            "flux-gtf")
-               if [ ! -e $TMPDIR/$sample.gtf ];then
-                   log "Copying Flux file to $TMPDIR..." $step
-                   run "cp $quantDir/$sample/$sample.gtf $TMPDIR" "$ECHO"
-                   log "done\n"
-               fi
             esac
     done
 }
@@ -144,7 +96,7 @@ function copyToTmp {
 ## Parsing arguments
 #
 
-while getopts ":i:m:M:g:q:a:std:e:l:ph" opt; do
+while getopts ":i:M:mL:g:q:a:std:e:l:ph" opt; do
   case $opt in
     i)
       input="$OPTARG"
@@ -158,10 +110,13 @@ while getopts ":i:m:M:g:q:a:std:e:l:ph" opt; do
     q)
       quality=$OPTARG
       ;;
-    m)
+    M)
       mism=$OPTARG
       ;;
-    M)
+    m)
+      mapStats='1' 
+      ;;
+    L)
       maxReadLength=$OPTARG 
       ;; 
     s)
@@ -245,6 +200,11 @@ if [[ $mism == "" ]];then
     mism="4"
 fi
 
+if [[ $mapStats != "1" ]]; then 
+	stats="--no-stats"
+	count="--no-count"
+fi
+
 if [[ $maxReadLength == "" ]];then
    maxReadLength="150"
 fi
@@ -256,7 +216,7 @@ annName=`basename $annotation`
 
 ## Binaries
 #
-gemtools=/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/gemtools-1.6.2-i3/bin/gemtools
+gemtools=/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/gemtools-1.7.1-i3/bin/gemtools
 gem2sam="$binDir/gem-2-sam"
 samtools="$binDir/samtools"
 addXS="$binDir/sam2cufflinks.sh"
@@ -270,54 +230,30 @@ if [[ $hthreads == 0 ]];then
     hthreads=1
 fi
 
-
-## DISPLAY PIPELINE CONFIGURATION  
-##################################
-
-printf "\n"
-printf "*****First mapping configuration*****\n"
-printf "Input: $input\n"
-printf "Index: $index\n"
-printf "Annotation: $annotation\n"
-printf "Quality: $quality\n"
-printf "Strand: $stranded\n"
-printf "Directionality: $readStrand\n"
-printf "Number mismatches: $mism\n"
-printf "Max read length: $maxReadLength\n"
-printf "Outdir: $outDir\n"
-printf "Log level: $loglevel\n"
-printf "\n"
-
 ## START
 ########
-printHeader "Starting Blueprint pipeline (only bam file generation) for $sample"
 pipelineStart=$(date +%s)
 
 ## Mapping
 #
 
 if [ ! -e $sample.map.gz ];then
-    step="MAP"
+    step="FIRST-MAP"
     startTime=$(date +%s)
-    printHeader "Executing mapping step"
-
+    
     ## Copy needed files to TMPDIR
     copyToTmp "index,annotation,t-index,keys"
 
-    log "Running gemtools rna pipeline on ${sample}" $step
-    run "$gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $sample --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam " "$ECHO" 
-
-    if [ -f $TMPDIR/${sample}.map.gz ]; then
+    log "Running gemtools rna pipeline on ${sample}..." $step
+    run "$gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $sample --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
+	log "done\n"
+    if [ -f $sample.map.gz ]; then
         log "Computing md5sum for map file..." $step
-        run "md5sum $TMPDIR/$sample.map.gz > $TMPDIR/$sample.map.gz.md5" "$ECHO"
-        run "cp $TMPDIR/$sample.map.gz.md5 ." "$ECHO"
+        run "md5sum $sample.map.gz > $sample.map.gz.md5" "$ECHO"
         log "done\n"
-        log "Copying map file..." $step
-        run "cp $TMPDIR/${sample}.map.gz ." "$ECHO"
-        log "done\n"
-#    else
-#        log "Error producing map file" "ERROR" >&2
-#        exit -1
+    else
+        log "Error producing map file" "ERROR"
+        exit -1
     fi
     endTime=$(date +%s)
     printHeader "Mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -331,54 +267,50 @@ fi
 filteredGem=${sample}_unique_${mism}mism.map.gz
 
 if [ ! -e $filteredGem ];then
-    step="FILTER"
+    step="FIRST-MAP.FILTER"
     startTime=$(date +%s)
     printHeader "Executing filtering step"
 
     log "Filtering map file..." $step
     run "$gt_filter -i $sample.map.gz --max-matches 2 -t $threads --max-levenshtein-error $mism -t $threads | $pigz -p $threads -c > $filteredGem" "$ECHO"
-    log "done\n" $step
+    log "done\n" 
     if [ -f $filteredGem ]; then
         log "Computing md5sum for filtered file..." $step
         run "md5sum $filteredGem > $filteredGem.md5" "$ECHO"
         log "done\n"
     else
-        log "Error producing filtered map file" "ERROR" >&2
+        log "Error producing filtered map file" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
     printHeader "Filtering step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-    printHeader "Filtered map file is present...skipping fltering step"
+    printHeader "Filtered map file is present...skipping filtering step"
 fi
 
 ## Stats from the filtered file
 ##
 filteredGemStats=${filteredGem%.map.gz}.stats
 
-if [ $filteredGemStats -ot $filteredGem ];then
-    step="GEM-STATS"
+if ([ $filteredGemStats -ot $filteredGem ] && [ $mapStats == "1" ]) ;then
+    step="FIRST-MAP.STATS"
     startTime=$(date +%s)
     printHeader "Executing GEM stats step"
-
-    ## Copy needed files to TMPDIR
-    # copyToTmp "index"
-
     log "Producing stats for $filteredGem..." $step
     run "$gt_stats -i $filteredGem -t $threads -a -p 2> $filteredGemStats" "$ECHO"
-    log "done\n" $step
+    log "done\n"
     if [ -f $filteredGemStats ]; then
         log "Computing md5sum for stats file..." $step
         run "md5sum $filteredGemStats > $filteredGemStats.md5" "$ECHO"
         log "done\n"
     else
-        log "Error producing GEM stats" "ERROR" >&2
+        log "Error producing GEM stats" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
     printHeader "GEM stats step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-    printHeader "GEM stats file is present...skipping GEM stats step"
+    if [[ $mapStats == "1" ]]; then printHeader "GEM stats file is present...skipping GEM stats step"; fi 
 fi
 
 ## Convert to bam and adding the XS field
@@ -386,18 +318,18 @@ fi
 filteredBam=${sample}_filtered_cuff.bam
 
 if [ ! -e $filteredBam ];then
-    step="CONVERT"
+    step="FIRST-MAP.CONVERT"
     startTime=$(date +%s)
     printHeader "Executing conversion step"
 
     ## Copy needed files to TMPDIR
     copyToTmp "index"
 
-    log "Converting  $sample to bam..." $step
+    log "Converting $sample to bam..." $step
     run "$pigz -p $hthreads -dc $filteredGem | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-$quality -l | sed 's/chrMT/chrM/g' | $addXS $readStrand | $samtools view -@ $threads -Sb - | $samtools sort -@ $threads -m 4G - $TMPDIR/${filteredBam%.bam}" "$ECHO"
-    log "done\n" $step
+    log "done\n"
     if [ -f $TMPDIR/$filteredBam ]; then
-        log "Computing md5sum for filtered file..." $step
+        log "Computing md5sum for bam file..." $step
         run "md5sum $TMPDIR/$filteredBam > $TMPDIR/$filteredBam.md5" "$ECHO"
         run "cp $TMPDIR/$filteredBam.md5 ." "$ECHO"
         log "done\n"
@@ -405,7 +337,7 @@ if [ ! -e $filteredBam ];then
         run "cp $TMPDIR/$filteredBam ." "$ECHO"
         log "done\n"
     else
-        log "Error producing filtered bam file" "ERROR" >&2
+        log "Error producing the filtered bam file" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -413,9 +345,4 @@ if [ ! -e $filteredBam ];then
 else
     printHeader "Bam file is present...skipping conversion step"
 fi
-
-pipelineEnd=$(date +%s)
-
-printHeader "First mapping for $sample completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
-log "\n"
 exit 0

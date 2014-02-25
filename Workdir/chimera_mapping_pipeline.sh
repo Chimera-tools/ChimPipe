@@ -30,25 +30,27 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 
 	-f	<INPUT_FILE>	First mate FASTQ file. Pipeline designed to deal with paired end data. 
 				Please make sure the second mate is in the same directory and the files are named according to the following: 
-				"YourSampleId"_1.fastq.gz and "YourSampleId"_2.fastq.gz; where "YourSampleId" must be the same for the 
+				"YourSampleDefaultId"_1.fastq.gz and "YourSampleId"_2.fastq.gz; where "YourSampleId" must be the same for the 
 				mate one (_1) than for the mate two (_2)  
 	
 	-i	<GEM>		Index for the reference genome (".gem" format).
 	-a	<GTF>		Reference annotation (".gtf" format).
 	-q	<NUMBER>	Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
-	-e	<STRING> 	Sample identifier (the output files will be named according this id).
+	-e	<STRING> 	Experiment identifier (the output files will be named according this id).
 
 ** [options] can be:
  
-	-b			Flag to specify that the input file has BAM format (Already mapped reads). Not enabled 
+	-b			Flag to specify that the input file has BAM format (Already mapped reads). Default disabled. 
+	-S	<NUMBER>	Minimum split size. Default 15
 	-s			Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
 	-d	<STRING>	Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE & NONE). Default "NONE".
-	-m	<NUMBER>	Max number of mismatches. Default 4.
-	-M	<NUMBER>	Max read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
+	-M	<NUMBER>	Max number of mismatches. Default 4.
+	-m			Flag to enable mapping stats. Default disabled. 
+	-L	<NUMBER>	Max read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	-c	<pair_1>, ... ,<pair_s>
       		with <pair> := <donor_consensus>+<acceptor_consensus> (list of pairs of donor/acceptor splice site consensus sequences. Default "GT+AG")
                           	 
-	-S	<NUMBER>	Minimum split size. Default 15
+	
 	-o	<PATH>		Output directory (By default it uses the current working directory).
 	
 	-l	<STRING>	Log level (error, warn, info, debug). Default "info".
@@ -88,7 +90,7 @@ function run {
 
 # PARSING INPUT ARGUMENTS 
 #########################
-while getopts ":f:i:a:q:e:bsd:m:M:c:S:o:l:th" opt; do
+while getopts ":f:i:a:q:e:bsd:M:mL:c:S:o:l:th" opt; do
   case $opt in
     f)
       input="$OPTARG"
@@ -114,10 +116,13 @@ while getopts ":f:i:a:q:e:bsd:m:M:c:S:o:l:th" opt; do
     d)
       readDirectionality=$OPTARG
       ;;
-    m)
+    M)
       mism=$OPTARG
       ;;
-    M)
+    m)
+      mapStats="-m"  
+      ;;
+    L)
       maxReadLength=$OPTARG 
       ;; 
  	c)
@@ -166,7 +171,6 @@ if [[ $splitSize == "" ]]; then splitSize='15'; fi
 if [[ ! -d $outDir ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
 if [[ $logLevel == "" ]]; then logLevel='info'; fi
 
-
 # SETTING UP THE ENVIRONMENT
 ############################
 
@@ -181,7 +185,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.3/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.4/blueprint.pipeline.sh 
 chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -208,7 +212,7 @@ source ~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/gemtools/environment/b
 
 printf "\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.3.3\n"
+printf "Pipeline Version: V0.3.4\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -243,10 +247,12 @@ pipelineStart=$(date +%s)
 
 bamFirstMapping=$outDir/${lid}_filtered_cuff.bam
 if [ ! -e $bamFirstMapping ];then
-	printHeader "Executing first mapping step"
-
-    run "$pipeline -i $input -g $index -a $annot -q $quality -m $mism -M $maxReadLength -e $lid -l $logLevel" "$ECHO"
-
+	step="FIRST-MAP"
+	startTime=$(date +%s)
+	printHeader "Executing first mapping step"    
+    run "$pipeline -i $input -g $index -a $annot -q $quality -M $mism $mapStats -L $maxReadLength -e $lid -l $logLevel" "$ECHO" 
+	endTime=$(date +%s)
+	printHeader "First mapping for $lid completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
     printHeader "First mapping BAM file is present...skipping first mapping step"
 fi
@@ -261,12 +267,21 @@ fi
 unmappedReads=$outDir/${lid}.unmapped.fastq
 
 if [ ! -e $unmappedReads ];then
+	step="UNMAP"
 	startTime=$(date +%s)
-	printHeader "Extracting the reads that do not map with an edit distance strictly greater than round (read_length/20)"
-
+	printHeader "Executing unmapped reads step" 
+	log "Extracting the reads that do not map with an edit distance strictly greater than round (read_length/20)..." $step
 	run "$unmapped -i $lid.map.gz -t 8 -f fastq -m 5 > $outDir/$lid.unmapped.fastq 2> $outDir/$lid.unmapped.err" "$ECHO"
-	endTime=$(date +%s)
-
+	log "done\n" 
+    if [ -f $unmappedReads ]; then
+    	log "Computing md5sum for unmapped reads file..." $step
+    	run "md5sum $unmappedReads > $unmappedReads.md5" "$ECHO"
+        log "done\n"
+    else
+        log "Error extracting the unmapped reads" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
 	printHeader "Extracting unmapped reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
     printHeader "Unmapped reads file is present...skipping extracting unmapped reads step"
@@ -274,7 +289,7 @@ fi
 
 # 3) map the unmapped reads with the rna mapper binary (!!!parameters to think!!!): get a gem map file
 ######################################################################################################
-#   of "exotic" mappings
+#   of "atypical" mappings
 ########################
 # output is: 
 ############
@@ -283,12 +298,21 @@ fi
 gemSecondMapping=$outDir/SecondMapping/${lid}.unmapped_rna-mapped.map
 
 if [ ! -e $gemSecondMapping ];then
+	step="SECOND-MAP"
 	startTime=$(date +%s)
-	printHeader "Mapping the unmapped reads with the rna mapper"	
-
+	printHeader "Executing second mapping step"
+	log "Mapping the unmapped reads with the rna mapper..." $step	
 	run "$rnaMapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
-
-	endTime=$(date +%s)
+	log "done\n" 
+	if [ -f $gemSecondMapping ]; then
+    	log "Computing md5sum for the gem file with the second mappings..." $step
+    	run "md5sum $gemSecondMapping > $gemSecondMapping.md5" "$ECHO"
+        log "done\n"
+    else
+        log "Error in the second mapping" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
 	printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
 	printHeader "Second mapping GEM file is present...skipping extracting second mapping step"
@@ -300,36 +324,56 @@ fi
 gffFromBam=$outDir/FromFirstBam/${lid}_filtered_cuff_2blocks.gff.gz
 
 if [ ! -e $gffFromBam ];then
+	step="FIRST-CONVERT"
 	startTime=$(date +%s)
-	printHeader "Generating a ".gff.gz" file from the ".bam" containing the reads mapping both uniquely and in 2 blocks"
+	printHeader "Executing conversion of the bam into gff step"
+	log "Generating a ".gff.gz" file from the normal mappings containing the reads mapping both uniquely and in 2 blocks..." $step
 
 	$bamToBed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
-
+	log "done\n"
+	if [ -f $gffFromBam ]; then
+    	log "Computing md5sum for the gff file from the ".bam" containing the reads mapping both uniquely and in 2 blocks..." $step
+    	run "md5sum $gffFromBam > $gffFromBam.md5" "$ECHO"
+        log "done\n"
+    else
+        log "Error Generating the gff file" "ERROR" 
+        exit -1
+    fi
 	endTime=$(date +%s)
 	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
 	printHeader "Gff from first mapping BAM file is present... skipping conversion step"
 fi
 
-# 5) extract the reads mapping both uniquely and in 2 blocks from the map file of "exotic" mappings and convert in gff.gz
+# 5) extract the reads mapping both uniquely and in 2 blocks from the map file of "atypical" mappings and convert in gff.gz
 #########################################################################################################################
 
 gffFromMap=$outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz
 
 if [ ! -e $gffFromMap ];then
+	step="SECOND-CONVERT"
 	startTime=$(date +%s)
-	printHeader "Generating a ".gff.gz" file from the ".map" containing the "exotic" mappings"
+	printHeader "Executing conversion of the gem into gff step"
+	log "Generating a ".gff.gz" file from the atypical mappings containing the reads mapping both uniquely and in 2 blocks..." $step
 
 	run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev=1 -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz" "$ECHO"
-
-	endTime=$(date +%s)
+	log "done\n" 
+	if [ -f $gffFromMap ]; then
+    	log "Computing md5sum for the gff file from the atypical mappings containing the reads mapping both uniquely and in 2 blocks..." $step
+    	run "md5sum $gffFromMap > $gffFromMap.md5" "$ECHO"
+        log "done\n"
+    else
+        log "Error Generating the gff file" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
 	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
 	printHeader "Gff from second mapping MAP file is present... skipping conversion step"
 fi
 
 
-# 6) put the path to the "normal" and "exotic" gff.gz files in a same txt file for chimsplice 
+# 6) put the path to the "normal" and "atypical" gff.gz files in a same txt file for chimsplice 
 #############################################################################################
 
 run "echo $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz > $outDir/split_mapping_file_exp_$lid.txt" "$ECHO"
@@ -341,14 +385,22 @@ run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/s
 chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_and_totalsplimappings_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
 if [ ! -e $chimJunctions ];then
+	step="CHIMSPLICE"
 	startTime=$(date +%s)
-	printHeader "Running Chimsplice on the ".gff.gz" files containing the "normal" and "exotic" mappings "
-
+	printHeader "Executing Chimsplice step"
+	log "Running Chimsplice on the ".gff.gz" files containing the "normal" and "atypical" mappings..." $step
 	run "$chim1 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
-
 	run "$chim2 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
-
-	endTime=$(date +%s)
+	log "done\n" 
+	if [ -f $chimJunctions ]; then
+    	log "Computing md5sum for the file containing the chimeric junctions..." $step
+    	run "md5sum $chimJunctions > $chimJunctions.md5" "$ECHO"
+        log "done\n"
+    else
+        log "Error running chimsplice" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
 	printHeader "Chimsplice step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
 	printHeader "Chimeric Junctions file present... skipping chimsplice step"
@@ -358,7 +410,6 @@ fi
 ########
 
 pipelineEnd=$(date +%s)
-
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
 exit 0
 
