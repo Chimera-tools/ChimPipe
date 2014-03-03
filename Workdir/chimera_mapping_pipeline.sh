@@ -30,17 +30,17 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 
 	-f	<INPUT_FILE>	First mate FASTQ file. Pipeline designed to deal with paired end data. 
 				Please make sure the second mate is in the same directory and the files are named according to the following: 
-				"YourSampleDefaultId"_1.fastq.gz and "YourSampleId"_2.fastq.gz; where "YourSampleId" must be the same for the 
-				mate one (_1) than for the mate two (_2)  
+				"YourSampleId"_1.fastq.gz and "YourSampleId"_2.fastq.gz; where "YourSampleId" must be the same for mate one (_1) 
+				and for mate two (_2). "YourSampleId" has to be provided with the -e argument.   
 	
 	-i	<GEM>		Index for the reference genome (".gem" format).
 	-a	<GTF>		Reference annotation (".gtf" format).
 	-q	<NUMBER>	Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
-	-e	<STRING> 	Experiment identifier (the output files will be named according this id).
+	-e	<STRING> 	Sample identifier (the output files will be named according to this id).
 
 ** [options] can be:
  
-	-b			Flag to specify that the input file has BAM format (Already mapped reads). Default disabled. 
+	-b			Flag to specify that the input file is in bam format (Already mapped reads). Default disabled. 
 	-S	<NUMBER>	Minimum split size. Default 15
 	-s			Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
 	-d	<STRING>	Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE & NONE). Default "NONE".
@@ -48,14 +48,14 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 	-m			Flag to enable mapping stats. Default disabled. 
 	-L	<NUMBER>	Max read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	-c	<pair_1>, ... ,<pair_s>
-      		with <pair> := <donor_consensus>+<acceptor_consensus> (list of pairs of donor/acceptor splice site consensus sequences. Default "GT+AG")
+      		with <pair> := <donor_consensus>+<acceptor_consensus> (list of pairs of donor/acceptor splice site consensus sequences for the second mapping. Default "GT+AG")
                           	 
 	
 	-o	<PATH>		Output directory (By default it uses the current working directory).
 	
 	-l	<STRING>	Log level (error, warn, info, debug). Default "info".
 	-h			Flag to display usage information.
-	-t			Flag to test the pipeline. Writes the commands to the standard output.
+	-t			Flag to test the pipeline. Writes the commands to the standard output but does not run the program. 
 	exit 0
 instructions
 }
@@ -159,7 +159,7 @@ if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that th
 if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; exit -1; fi
 if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; exit -1; fi
 if [[ $quality == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
-if [[ $lid == "" ]]; then log "Please specify the experiment identifier\n" "ERROR" >&2; exit -1; fi
+if [[ $lid == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; exit -1; fi
 if [[ $bam == "" ]]; then bam=0; fi
 if [[ $stranded == "" ]]; then stranded=0; fi
 if [[ $readDirectionality == "" ]]; then readDirectionality='NONE'; fi
@@ -209,7 +209,7 @@ unmapped=$binDir/filter_unmapped.py
 
 printf "\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.4.0\n"
+printf "Pipeline Version: V0.4.1\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -221,7 +221,7 @@ printf "Max read length: $maxReadLength\n"
 printf "Consensus split sites: $spliceSites\n"
 printf "Min split size: $splitSize\n"
 printf "Outdir: $outDir\n"
-printf "Exp. id: $lid\n"
+printf "Sample id: $lid\n"
 printf "Log level: $logLevel\n"	
 printf "\n"
 
@@ -317,6 +317,9 @@ fi
 
 # 4) extract the reads mapping both uniquely and in 2 blocks from the bam file of "normal" mappings and convert in gff.gz
 #########################################################################################################################
+# output is: 
+############
+# - $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
 
 gffFromBam=$outDir/FromFirstBam/${lid}_filtered_cuff_2blocks.gff.gz
 
@@ -344,6 +347,9 @@ fi
 
 # 5) extract the reads mapping both uniquely and in 2 blocks from the map file of "atypical" mappings and convert in gff.gz
 #########################################################################################################################
+# output is: 
+############
+# - $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz
 
 gffFromMap=$outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz
 
@@ -373,11 +379,14 @@ fi
 # 6) put the path to the "normal" and "atypical" gff.gz files in a same txt file for chimsplice 
 #############################################################################################
 
-run "echo $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz > $outDir/split_mapping_file_exp_$lid.txt" "$ECHO"
-run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/split_mapping_file_exp_$lid.txt" "$ECHO"
+run "echo $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz > $outDir/split_mapping_file_sample_$lid.txt" "$ECHO"
+run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/split_mapping_file_sample_$lid.txt" "$ECHO"
 
 # 7) run chimsplice on 4) and 5)
 ###############################
+# - $outDir/Chimsplice/chimeric_junctions_report_$lid.txt
+# - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+# - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 
 chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_and_totalsplimappings_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
@@ -386,14 +395,10 @@ if [ ! -e $chimJunctions ];then
 	startTime=$(date +%s)
 	printHeader "Executing Chimsplice step"
 	log "Running Chimsplice on the ".gff.gz" files containing the "normal" and "atypical" mappings..." $step
-	run "$chim1 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
-	run "$chim2 $outDir/split_mapping_file_exp_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+	run "$chim1 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
+	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
-	if [ -f $chimJunctions ]; then
-    	log "Computing md5sum for the file containing the chimeric junctions..." $step
-    	run "md5sum $chimJunctions > $chimJunctions.md5" "$ECHO"
-        log "done\n"
-    else
+	if [ ! -f $chimJunctions ]; then
         log "Error running chimsplice" "ERROR" 
         exit -1
     fi

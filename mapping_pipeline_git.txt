@@ -226,12 +226,12 @@ To get a summary of the commits done use the following command:
 	
 	git push origin master  	# Uploading to the remote repository	
 
-17. Uploading to my local repository the version 0.3.4 of the "chimera mapping pipeline" 
+17. Uploading to my local repository the version 0.4.0 of the "chimera mapping pipeline" 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/Bash/blueprint.pipeline.sh 
 	
-	git commit -m "V0.4.0  Changed the way it computes the junctions and the total number of reads supporting each junction. It also provides the maximum beginning and end for each junction in the output matrices."
+	git commit -m "V0.4.0 Changed the way it computes the junctions and the total number of reads supporting each junction. It also provides the maximum beginning and end for each junction in the output matrices."
 	
 	git tag -a 0.4.0 -m 'Chimera mapping pipeline version 0.4.0'		
 
@@ -239,4 +239,16 @@ To get a summary of the commits done use the following command:
 	
 	git push origin master  	# Uploading to the remote repository	
 
+18. Uploading to my local repository the version 0.4.1 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/Bash/blueprint.pipeline.sh 
+	
+	git commit -m "V0.4.1 Little modifications in the help and experiment replaced by sample in file names."
+	
+	git tag -a 0.4.1 -m 'Chimera mapping pipeline version 0.4.1'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
 
