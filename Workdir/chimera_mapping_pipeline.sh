@@ -60,7 +60,6 @@ Execute Chimera mapping pipeline (from fastq file to chimeric junctions detectio
 instructions
 }
 
-
 function printHeader {
     string=$1
     echo "`date` ***** $string *****"
@@ -178,6 +177,7 @@ if [[ $logLevel == "" ]]; then logLevel='info'; fi
 binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin
 awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk
 bashDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Bash
+chimspliceDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.4.0
 if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
@@ -185,9 +185,9 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.3.4/blueprint.pipeline.sh 
-chim1=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_exon_exon_connections_from_splitmappings_better2.sh
-chim2=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.3.0/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.4.0/blueprint.pipeline.sh 
+chim1=$chimspliceDir/find_exon_exon_connections_from_splitmappings_better2.sh
+chim2=$chimspliceDir/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
 # Bin 
 rnaMapper=$binDir/gem-rna-mapper
@@ -203,16 +203,13 @@ mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 # Python 
 unmapped=$binDir/filter_unmapped.py 
 
-# Activating gemtools environment
-source ~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/gemtools/environment/bin/activate
-
 
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 
 printf "\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.3.4\n"
+printf "Pipeline Version: V0.4.0\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
