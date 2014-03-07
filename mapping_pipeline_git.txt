@@ -252,3 +252,19 @@ To get a summary of the commits done use the following command:
 	
 	git push origin master  	# Uploading to the remote repository	
 
+19. Uploading to my local repository the version 0.4.5 of the "chimera mapping pipeline" 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt Workdir/Bash/blueprint.pipeline.sh 
+	
+	git commit -m "V0.4.5 Additional information for each chimeric junction in the output matrix: id, name, biotype of genes overlapping each part junction; information regarding if both part of the junction are in the same chromosome, if they are in genomic order and the distance between them and the ids and names where each part overlap."
+	
+	git tag -a 0.4.5 -m 'Chimera mapping pipeline version 0.4.5'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
+	
+	
+	
+	

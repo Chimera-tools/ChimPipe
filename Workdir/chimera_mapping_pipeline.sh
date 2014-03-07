@@ -177,7 +177,7 @@ if [[ $logLevel == "" ]]; then logLevel='info'; fi
 binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin
 awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk
 bashDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Bash
-chimspliceDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.4.0
+chimspliceDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.4.5
 if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
@@ -185,7 +185,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.4.0/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.4.5/blueprint.pipeline.sh 
 chim1=$chimspliceDir/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=$chimspliceDir/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -209,7 +209,7 @@ unmapped=$binDir/filter_unmapped.py
 
 printf "\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.4.1\n"
+printf "Pipeline Version: V0.4.5\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -388,7 +388,8 @@ run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/s
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 
-chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_and_totalsplimappings_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+
 
 if [ ! -e $chimJunctions ];then
 	step="CHIMSPLICE"
