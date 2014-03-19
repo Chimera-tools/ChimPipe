@@ -264,7 +264,20 @@ To get a summary of the commits done use the following command:
 	git log --pretty=oneline	
 	
 	git push origin master  	# Uploading to the remote repository	
+
+20. Uploading to my local repository the version 0.4.6 of the ChimPipe 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt 
 	
+	git commit -m "V0.4.6 Added a comment in the help to tell the user that the pipeline run by default in unstranded mode. It checks if the file exon to exon connection file exists and skip the step in case yes."
+	
+	git tag -a 0.4.6 -m 'ChimPipe version 0.4.6'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
+		
 	
 	
 	

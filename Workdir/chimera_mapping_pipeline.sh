@@ -26,6 +26,8 @@ USAGE: chimera_mapping_pipeline.sh -f <fastq_file> -i <genome_index> -a <annotat
        
 Execute Chimera mapping pipeline (from fastq file to chimeric junctions detection) on one sample
 
+IMPORTANT: By default it runs in unstranded mode, if you have stranded data please see the flag "-s" in [options]
+
 ** Mandatory arguments:
 
 	-f	<INPUT_FILE>	First mate FASTQ file. Pipeline designed to deal with paired end data. 
@@ -185,7 +187,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.4.5/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.4.6/blueprint.pipeline.sh 
 chim1=$chimspliceDir/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=$chimspliceDir/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -203,13 +205,16 @@ mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 # Python 
 unmapped=$binDir/filter_unmapped.py 
 
+# Activating gemtools environment
+source ~sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/gemtools/environment/bin/activate
+
 
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 
 printf "\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.4.5\n"
+printf "Pipeline Version: V0.4.6\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -385,18 +390,34 @@ run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/s
 # 7) run chimsplice on 4) and 5)
 ###############################
 # - $outDir/Chimsplice/chimeric_junctions_report_$lid.txt
-# - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-# - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
+# - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+# - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
+exonConnections1=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid\_filtered_cuff_2blocks.gff.txt.gz 
+exonConnections2=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid.unmapped_rna-mapped.gff.txt.gz
+
+printHeader "Executing Chimsplice step"
+if [ ! -e $exonConnections1 ] || [ ! -e $exonConnections2 ];then
+	step="CHIMSPLICE"
+	startTime=$(date +%s)
+	log "Finding exon to exon connections from the ".gff.gz" files containing the "normal" and "atypical" mappings..." $step
+	run "$chim1 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
+	log "done\n" 
+	if [ ! -e $exonConnections1 ] || [ ! -e $exonConnections2 ]; then
+        log "Error running chimsplice" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
+	printHeader "Find exon to exon connections step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Exon to exon connections file present... skipping step"
+fi
 
 chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-
 
 if [ ! -e $chimJunctions ];then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
-	printHeader "Executing Chimsplice step"
-	log "Running Chimsplice on the ".gff.gz" files containing the "normal" and "atypical" mappings..." $step
-	run "$chim1 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
+	log "Finding chimeric junctions from exon to exon connections..." $step
 	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -f $chimJunctions ]; then
@@ -404,9 +425,9 @@ if [ ! -e $chimJunctions ];then
         exit -1
     fi
     endTime=$(date +%s)
-	printHeader "Chimsplice step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	printHeader "Find chimeric junctions step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Chimeric Junctions file present... skipping chimsplice step"
+	printHeader "Chimeric Junctions file present... skipping step"
 fi
 
 # 8) END
