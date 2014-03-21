@@ -278,6 +278,18 @@ To get a summary of the commits done use the following command:
 	
 	git push origin master  	# Uploading to the remote repository	
 		
+21. Uploading to my local repository the version 0.5.0 of the ChimPipe 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt 
 	
+	git commit -m "V0.5.0 Additional step to compute the junction's canonical splice sites GT-AG or GC-AG, add this information to the matrix and for unstranded data write the junctions in biological order and add the strand to each part of the junction whenever it is possible."
+	
+	git tag -a V0.5.0 -m 'ChimPipe version V0.5.0'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository	
+			
 	
 	
