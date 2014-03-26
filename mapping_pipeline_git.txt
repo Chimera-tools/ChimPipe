@@ -290,6 +290,21 @@ To get a summary of the commits done use the following command:
 	git log --pretty=oneline	
 	
 	git push origin master  	# Uploading to the remote repository	
-			
+
+21. Uploading to my local repository the version 0.5.1 of the ChimPipe 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	git add Workdir/chimera_mapping_pipeline.sh mapping_pipeline_git.txt 
+	
+	git commit -m "V0.5.1 Improved the script to complete the chimeric junction matrix with information regarding the genomic position of the parts of the junctions. Now chimsplice can take gff annotation files with at least exon rows associated to their gene id in column 10 file and produce a correct matrix (It is not mandatory it has the gene name and the biotype as before)."
+	
+	git tag -a V0.5.1 -m 'ChimPipe version V0.5.1'		
+
+	git log --pretty=oneline	
+	
+	git push origin master  	# Uploading to the remote repository
+	
+	
+				
 	
 	

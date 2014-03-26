@@ -179,7 +179,7 @@ if [[ $logLevel == "" ]]; then logLevel='info'; fi
 binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin
 awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk
 bashDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Bash
-chimspliceDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.5.0
+chimspliceDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.5.1
 if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
@@ -187,7 +187,7 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.5.0/blueprint.pipeline.sh 
+pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.5.1/blueprint.pipeline.sh 
 chim1=$chimspliceDir/find_exon_exon_connections_from_splitmappings_better2.sh
 chim2=$chimspliceDir/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
 
@@ -208,12 +208,13 @@ unmapped=$binDir/filter_unmapped.py
 # Activate gemtools environment
 source /nfs/software/rg/el6.3/virtualenvs/gemtools1.7.1/bin/activate
 
+
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 
-printf "\n"
+printf "\n\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.5.0\n"
+printf "Pipeline Version: V0.5.1\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -274,7 +275,7 @@ if [ ! -e $unmappedReads ];then
 	log "Extracting the reads that do not map with an edit distance strictly greater than round (read_length/20)..." $step
 	run "$unmapped -i $lid.map.gz -t 8 -f fastq -m 5 > $outDir/$lid.unmapped.fastq 2> $outDir/$lid.unmapped.err" "$ECHO"
 	log "done\n" 
-    if [ -f $unmappedReads ]; then
+    if [ -e $unmappedReads ]; then
     	log "Computing md5sum for unmapped reads file..." $step
     	run "md5sum $unmappedReads > $unmappedReads.md5" "$ECHO"
         log "done\n"
@@ -305,7 +306,7 @@ if [ ! -e $gemSecondMapping ];then
 	log "Mapping the unmapped reads with the rna mapper..." $step	
 	run "$rnaMapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
 	log "done\n" 
-	if [ -f $gemSecondMapping ]; then
+	if [ -e $gemSecondMapping ]; then
     	log "Computing md5sum for the gem file with the second mappings..." $step
     	run "md5sum $gemSecondMapping > $gemSecondMapping.md5" "$ECHO"
         log "done\n"
@@ -331,11 +332,11 @@ if [ ! -e $gffFromBam ];then
 	step="FIRST-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the bam into gff step"
-	log "Generating a ".gff.gz" file from the normal mappings containing the reads mapping both uniquely and in 2 blocks..." $step
+	log "Generating a ".gff.gz" file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
 
 	$bamToBed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
 	log "done\n"
-	if [ -f $gffFromBam ]; then
+	if [ -e $gffFromBam ]; then
     	log "Computing md5sum for the gff file from the ".bam" containing the reads mapping both uniquely and in 2 blocks..." $step
     	run "md5sum $gffFromBam > $gffFromBam.md5" "$ECHO"
         log "done\n"
@@ -361,11 +362,11 @@ if [ ! -e $gffFromMap ];then
 	step="SECOND-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the gem into gff step"
-	log "Generating a ".gff.gz" file from the atypical mappings containing the reads mapping both uniquely and in 2 blocks..." $step
+	log "Generating a ".gff.gz" file from the atypical mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
 
 	run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev=1 -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz" "$ECHO"
 	log "done\n" 
-	if [ -f $gffFromMap ]; then
+	if [ -e $gffFromMap ]; then
     	log "Computing md5sum for the gff file from the atypical mappings containing the reads mapping both uniquely and in 2 blocks..." $step
     	run "md5sum $gffFromMap > $gffFromMap.md5" "$ECHO"
         log "done\n"
@@ -418,7 +419,7 @@ if [ ! -e $chimJunctions ];then
 	log "Finding chimeric junctions from exon to exon connections..." $step
 	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
-	if [ ! -f $chimJunctions ]; then
+	if [ ! -e $chimJunctions ]; then
         log "Error running chimsplice" "ERROR" 
         exit -1
     fi
