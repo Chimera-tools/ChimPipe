@@ -79,10 +79,11 @@ fi
 fi
 fi
 
-# Exons that are in one gene only
-#################################
-echo I am making the file of exons that are \in one gene only from the annotation >&2
-awk '$3=="exon"{seen[$1"_"$4"_"$5"_"$7,$10]++; if(seen[$1"_"$4"_"$5"_"$7,$10]==1){split($10,a,"\""); nb[$1"_"$4"_"$5"_"$7]++; genelist[$1"_"$4"_"$5"_"$7]=(genelist[$1"_"$4"_"$5"_"$7])(a[2])(",");}} END{for(e in nb){if(nb[e]==1){split(genelist[e],a,","); print e, a[1]}}}' $annot > exoncoord_inonegene_gene.txt
+# Exons and a list of overlapping genes
+#############################################
+echo I am making a file of exons with the list of their overlapping genes from the annotation >&2
+
+awk '$3=="exon"{seen[$1"_"$4"_"$5"_"$7,$10]++; if(seen[$1"_"$4"_"$5"_"$7,$10]==1){split($10,a,"\""); gnlist[$1"_"$4"_"$5"_"$7]=(gnlist[$1"_"$4"_"$5"_"$7])(a[2])(",")}}END{for(exon in gnlist){print exon, gnlist[exon]}}' $annot > $outdir/exoncoord_gnlist.txt
 
 # Number of exon to exon connections detected by all kinds of mappings of the experiment
 #########################################################################################
@@ -95,7 +96,7 @@ zcat $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1lis
 done | sort -T $tmpdir | uniq | wc -l | awk '{print "total exonA to exonB connections:", $1}' 
 
 
-# List the staggered splitmappings and the total splitmappings detecting each A-> B connection -> 8 sec
+# List the staggered splitmappings and the total split-mappings detecting each A-> B connection -> 8 sec
 ###########################################################################
 echo I am listing the split\-mappings detecting each A\-\> B connection >&2
 cat $1 | while read f
@@ -108,11 +109,11 @@ done | awk '{staggered[$1":"$2]=(staggered[$1":"$2])($6)(","); total[$1":"$2]=(t
 
 # From the list of exon A -> exon B connections select the ones where both A and B are 
 #######################################################################################
-# in only 1 gene and where those two genes are different
-########################################################
-echo I am selecting the exon A to exon B connections where A and B are \in one gene respectively and those genes are different >&2
-awk -v fileRef=exoncoord_inonegene_gene.txt 'BEGIN{while (getline < fileRef >0){gene[$1]=$2}} ((gene[$1]!="")&&(gene[$2]!="")&&(gene[$1]!=gene[$2])){print}' $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total.txt > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total_only_A_B_indiffgn_and_inonegn.txt
-wc -l $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total_only_A_B_indiffgn_and_inonegn.txt | awk '{print "number of exon A to exon B connections where A and B are in one gene respectively and those genes are different:", $1}'
+# in different genes
+####################
+echo I am selecting the exon A to exon B connections where A and B are \in different genes >&2
+awk -v fileRef=$outdir/exoncoord_gnlist.txt 'BEGIN{while (getline < fileRef >0){gnlist[$1]=$2}} {intersection=0;split(gnlist[$1],gnlistA,",");split(gnlist[$2],gnlistB,","); for (gnA in gnlistA){for (gnB in gnlistB){if((gnlistA[gnA]!="")&&(gnlistB[gnB]!="")&&(gnlistA[gnA]==gnlistB[gnB])){intersection=1}}}; if (intersection!=1){print}}' $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total.txt > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total_only_A_B_indiffgn.txt
+wc -l $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total_only_A_B_indiffgn.txt | awk '{print "number of exon A to exon B connections where A and B are in different genes:", $1}'
 
 # Compute the distinct chimeric junctions found by the staggered split-mappings, the number of split-mapping reads and the number of total reads supporting the junction,  
 #########################################################################################################################################################################
@@ -123,14 +124,14 @@ echo I am computing the distinct chimeric junctions found by the staggered split
 # first the distinct staggered directed splitmappings 
 #####################################################
 echo first the distinct staggered directed splitmappings >&2
-awk '{split($3,a,","); k=1; while(a[k]!=""){print a[k]; k++;}}' $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total_only_A_B_indiffgn_and_inonegn.txt | sort -T $tmpdir | uniq -c | awk '{print $2,$1}' > $outdir/distinct_staggered_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+awk '{split($3,a,","); k=1; while(a[k]!=""){print a[k]; k++;}}' $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total_only_A_B_indiffgn.txt | sort -T $tmpdir | uniq -c | awk '{print $2,$1}' > $outdir/distinct_staggered_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
 
 # then the distinct junctions (keep redundancy value and direction) as well as their beg and end
 ################################################################################################
 echo then the distinct junctions \(keeping redundancy value and direction\) as their beg and end>&2
-awk -v stranded=$stranded -f $STAG $outdir/distinct_staggered_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+awk -v stranded=$stranded -f $STAG $outdir/distinct_staggered_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
 
-wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt | awk '{print "total number of distinct chimeric junctions:", $1}' 
+wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt | awk '{print "total number of distinct chimeric junctions:", $1}' 
 
 # Complete the chimeric junctions matrix with additional information: whether the two parts are on the same chrand strand, whether they are on the expected genomic order, 
 ##########################################################################################################################################################################
@@ -140,7 +141,7 @@ wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbeganden
 #########################
 # Output: $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 echo I am completing the chimeric junctions matrix with additional information: whether the two parts are on the same chrand strand, whether they are on the expected genomic order, their distance, the list of genes which exons overlap each part of the junction, the real names of those genes, the biotypes of those genes and the number of staggered reads supporting the junction.>&2
-bash $MATRIX $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt  $annot $stranded $outdir
+bash $MATRIX $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt  $annot $stranded $outdir
 
 # Find canonical splice sites GT-AG or GC-AG and their complementary reverse AC-CT or GC-CT. Add this information to the matrix and for unstranded data writes the junctions
 ############################################################################################################################################################################
@@ -157,4 +158,4 @@ echo I am outputting the distinct chimeric junctions found by more than 10 stagg
 awk '$2>=10' $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt | awk '{print "number of distinct chimeric junctions seen by at least 10 staggered split-mappings:", $1}' 
 
-#rm exoncoord_inonegene_gene.txt 
+rm exoncoord_gnlist.txt
