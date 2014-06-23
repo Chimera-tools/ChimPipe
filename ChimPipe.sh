@@ -7,43 +7,38 @@ set -e -o pipefail
 function usage
 {
 cat <<instructions
-USAGE: chimera_mapping_pipeline.sh -f <fastq_file> -i <genome_index> -a <annotation> -q <quality> [options]
+USAGE: Chimera_mapping_pipeline.sh -f <fastq_file> -i <genome_index> -a <annotation> -q <quality> [options]
        
-Execute Chimera mapping pipeline (from fastq file to chimeric junctions detection) on one sample
+Execute ChimPipe (from RNAseq reads to chimeric junctions) on one RNAseq dataset (sample).
 
-IMPORTANT: By default it runs in unstranded mode, if you have stranded data please see the flag "-s" in [options]
+IMPORTANT: By default runs in unstranded mode. If you have stranded data use the "-s" flag (see [options]).
 
 ** Mandatory arguments:
 
 	-f	<INPUT_FILE>	First mate FASTQ file. Pipeline designed to deal with paired end data. 
-				Please make sure the second mate is in the same directory and the files are named according to the following: 
-				"YourSampleId"_1.fastq.gz and "YourSampleId"_2.fastq.gz; where "YourSampleId" must be the same for mate one (_1) 
-				and for mate two (_2). "YourSampleId" has to be provided with the -e argument.   
+				Make sure the second mate file is in the same directory as the first mate file, and the files are named
+                    		YourSampleId_1.fastq.gz and YourSampleId_2.fastq.gz respectively. YourSampleId has to be provided with the -e option.   
 	
 	-i	<GEM>		Index for the reference genome (".gem" format).
 	-a	<GTF>		Reference annotation (".gtf" format).
 	-q	<NUMBER>	Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
-	-e	<STRING> 	Sample identifier (the output files will be named according to this id).
+	-e	<STRING>	Sample identifier (the output files will be named according to this id).
 
 ** [options] can be:
  
-	-b			Flag to specify that the input file is in bam format (Already mapped reads). Default disabled. 
 	-S	<NUMBER>	Minimum split size. Default 15
-	-s			Flag to specify whether the sample has strandness information for the reads. Default false (So data unstranded).
+	-s			Flag to specify whether data is stranded/directional. Default false (data unstranded).
 	-d	<STRING>	Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE & NONE). Default "NONE".
-	-M	<NUMBER>	Max number of mismatches. Default 4.
-	-m			Flag to enable mapping stats. Default disabled. 
-	-L	<NUMBER>	Max read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
+	-M	<NUMBER>	Maximum number of mismatches used for first standard mapping. Default 4.
+	-m			Flag to enable mapping statistics. Default disabled. 
+	-L	<NUMBER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	-c	<pair_1>, ... ,<pair_s>
       		with <pair> := <donor_consensus>+<acceptor_consensus> (list of pairs of donor/acceptor splice site consensus sequences for the second mapping. Default "GT+AG")
-                          	 
-	
-	-o	<PATH>		Output directory (By default it uses the current working directory).
-	
+	-o	<PATH>		Output directory (By default writes in the current working directory).
+	-T	<PATH>		Temporary directory (If not defined it uses TMPDIR variable default value).
 	-l	<STRING>	Log level (error, warn, info, debug). Default "info".
 	-h			Flag to display usage information.
-	-t			Flag to test the pipeline. Writes the commands to the standard output but does not run the program. 
-	exit 0
+	-t			Flag to test the pipeline. Writes the commands to the standard output but does not run the program.
 instructions
 }
 
