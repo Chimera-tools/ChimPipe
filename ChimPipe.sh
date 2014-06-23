@@ -174,12 +174,14 @@ if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
 if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
+if [[ ! -d $outDir/PE ]]; then mkdir $outDir/PE; fi
 
 # = Programs/Scripts = #
 # Bash 
 pipeline=$bashDir/first_mapping_pipeline.sh
 chim1=$bashDir/find_exon_exon_connections_from_splitmappings.sh
 chim2=$bashDir/find_chimeric_junctions_from_exon_to_exon_connections.sh
+findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
 
 # Bin 
 gemrnatools=$binDir/gemtools-1.7.1-i3/bin/gem-rna-tools
@@ -192,6 +194,7 @@ gff2Gff=$awkDir/gff2gff.awk
 gemToGff=$awkDir/gemsplit2gff_unique4.awk
 bedCorrectStrand=$awkDir/bedCorrectStrand.awk
 mapCorrectStrand=$awkDir/gemCorrectStrand.awk
+addPEinfo=$awkDir/add_PE_info.awk
 
 # Python 
 unmapped=$binDir/miscellaneous/filter_unmapped.py
@@ -205,7 +208,7 @@ source /nfs/software/rg/el6.3/virtualenvs/gemtools1.7.1/bin/activate
 
 printf "\n\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.5.1*\n"
+printf "Pipeline Version: V0.5.5b\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -420,9 +423,58 @@ else
 	printHeader "Chimeric Junctions file present... skipping step"
 fi
 
-# 8) END
-########
+# 8.1) Find gene to gene connections supported by paired-end mappings from the bam file of "normal" mappings with the number of mappings supporting the connection.  
+#################################################################################################################################################################
+# For a connection g1 to g2 to exist there must be at least one mapping where the first mate is strandedly (if data is stranded) overlapping with an exon 
+#########################################################################################################################################################
+# of g1 and the second mate is (strandedly if data is stranded) overlapping with an exon of g2
+##############################################################################################
+# - $outDir/PE/readid_gnlist_whoseexoverread_noredund.txt.gz
+# - $outDir/PE/readid_twomateswithgnlist_alldiffgnpairs_where_1stassociatedto1stmate_and2ndto2ndmate.txt.gz
+# - $outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
+PEinfo=$outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
 
+printHeader "Executing find gene to gene connections from PE mappings step"
+if [ ! -e $PEinfo ];then
+	step="PAIRED-END"
+	startTime=$(date +%s)
+	log "Finding gene to gene connections supported by paired-end mappings from the ".bam" containing reads mapping in a unique and continuous way" $step
+	run "$findGeneConnections $outDir/$lid\_filtered_cuff.bam $annot $outDir/PE $stranded 2> $outDir/PE/find_gene_to_gene_connections_from_pe_rnaseq_fast_$lid.err" "$ECHO"
+	log "done\n" 
+	if [ ! -e $PEinfo ]; then
+        log "Error finding gene to gene connections" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
+	printHeader "Find gene to gene connections from PE mappings step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Gene to gene connections file present... skipping step"
+fi
+
+# 8.2) Add gene to gene connections information to chimeric junctions matrix
+##########################################################################
+# - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+chimJunctionsPE=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+
+if [ ! -e $chimJunctionsPE ];then
+	step="PAIRED-END"
+	startTime=$(date +%s)
+	log "Adding PE information to the chimeric junction matrix" $step
+	run "awk -v fileRef=$PEinfo -f $addPEinfo $chimJunctions 1> $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+" "$ECHO"
+	log "done\n" 
+	if [ ! -e $chimJunctionsPE ]; then
+        log "Error adding PE information" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
+	printHeader "Add PE information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Chimeric junction matrix with PE information present... skipping step"
+fi
+
+# 9) END
+########
 pipelineEnd=$(date +%s)
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
 exit 0
