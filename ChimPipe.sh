@@ -1,20 +1,5 @@
 #!/bin/bash
-#
-#Forcing bash shell
-#
-#$ -S /bin/bash
-#
-#$ -V
-#
-#$ -cwd
-# -M rodriguezmartinbernardo@gmail.com
-# -m b
-#
-#$ -pe smp 8
-#$ -q long,rg-el6
-#$ -l virtual_free=64G
-#$ -o $JOB_NAME.out
-#$ -e $JOB_NAME.err
+
 
 # will exit if there is an error or in a pipe
 set -e -o pipefail
@@ -175,11 +160,16 @@ if [[ $logLevel == "" ]]; then logLevel='info'; fi
 # SETTING UP THE ENVIRONMENT
 ############################
 
+# = Export ChimPipe root directory as environmental variable = #
+# This variable will be used by every ChimPipe's scripts to set the path to the bin, awk and bash directories. 
+rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
+
+export rootDir=$rootDir
+
 # = Directories = #
-binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin
-awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk
-bashDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Bash
-chimspliceDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Versions/V0.5.1
+binDir=$rootDir/bin
+awkDir=$rootDir/src/awk
+bashDir=$rootDir/src/bash
 if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
@@ -187,13 +177,14 @@ if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 
 # = Programs/Scripts = #
 # Bash 
-pipeline=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Versions/V0.5.1/blueprint.pipeline.sh 
-chim1=$chimspliceDir/find_exon_exon_connections_from_splitmappings_better2.sh
-chim2=$chimspliceDir/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh
+pipeline=$bashDir/first_mapping_pipeline.sh
+chim1=$bashDir/find_exon_exon_connections_from_splitmappings.sh
+chim2=$bashDir/find_chimeric_junctions_from_exon_to_exon_connections.sh
 
 # Bin 
-rnaMapper=$binDir/gem-rna-mapper
-bamToBed=$binDir/bamToBed
+gemrnatools=$binDir/gemtools-1.7.1-i3/bin/gem-rna-tools
+bedtools=$binDir/bedtools2-2.20.1/bin/bedtools
+
 
 # Awk 
 bed12ToGff=$awkDir/bed12fields2gff.awk
@@ -203,7 +194,7 @@ bedCorrectStrand=$awkDir/bedCorrectStrand.awk
 mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 
 # Python 
-unmapped=$binDir/filter_unmapped.py 
+unmapped=$binDir/miscellaneous/filter_unmapped.py
 
 # Activate gemtools environment
 source /nfs/software/rg/el6.3/virtualenvs/gemtools1.7.1/bin/activate
@@ -214,7 +205,7 @@ source /nfs/software/rg/el6.3/virtualenvs/gemtools1.7.1/bin/activate
 
 printf "\n\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.5.1\n"
+printf "Pipeline Version: V0.5.1*\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -304,7 +295,7 @@ if [ ! -e $gemSecondMapping ];then
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
 	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$rnaMapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
+	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
 	log "done\n" 
 	if [ -e $gemSecondMapping ]; then
     	log "Computing md5sum for the gem file with the second mappings..." $step
@@ -334,7 +325,7 @@ if [ ! -e $gffFromBam ];then
 	printHeader "Executing conversion of the bam into gff step"
 	log "Generating a ".gff.gz" file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
 
-	$bamToBed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
+	$bedtools bamtobed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
 	log "done\n"
 	if [ -e $gffFromBam ]; then
     	log "Computing md5sum for the gff file from the ".bam" containing the reads mapping both uniquely and in 2 blocks..." $step

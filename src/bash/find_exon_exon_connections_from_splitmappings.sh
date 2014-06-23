@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# ~/bin/find_exon_exon_connections_from_splitmappings_better2.sh
 # !!! assumes /1 and /2 for pe stranded data 
-# Respect to the previous version "0.1.1" it was added an additional input parameter to set the reads directionality and it was changed the way
-# variables and input files are set
 # note that this script heavily depends on the format of the split mapping gff files
 # and expects a format like this
 # chr4	C434.1.unmapped.gem.split-map.gz	splitread	103592073	103592124	.	-	.	ID "HWI-ST858_57:2:1101:10001:72658#15@0/1"; Identity "1:0:0"; Split "[52]"
@@ -57,13 +54,18 @@ if [[ ! -e $annot ]]; then printf "\n\tERROR:Please specify a valid annotation f
 if [[ ! -d $outdir ]]; then outdir=.; fi
 if [[ $stranded == "" ]]; then stranded=0; fi
 
+# DIRECTORIES 
+#############
+# IMPORTANT! rootDir is an environmental variable defined and exported in the main script "ChimPipe.sh" which contains the path to the root folder of ChimPipe pipeline. 
+binDir=$rootDir/bin
+awkDir=$rootDir/src/awk
+bashDir=$rootDir/src/bash
 
 # PROGRAMS
-###########
-awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Workdir/Awk
+##########
 CUTGFF=$awkDir/cutgff.awk
 GFF2GFF=$awkDir/gff2gff.awk
-OVERLAP=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Workdir/bin/overlap
+OVERLAP=$binDir/overlap-3.1/overlap
 
 # START
 ########
@@ -158,13 +160,13 @@ done > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1l
 ######################################
 echo I am cleaning intermediate files and zipping the ones that are not of immediate use >&2
 
-#rm $outdir/$b $outdir/$btmp\_part1.gff $outdir/$btmp\_part2.gff $outdir/$btmp\_part1_coord_exlist_gnlist.txt $outdir/$btmp\_part2_coord_exlist_gnlist.txt $outdir/$btmp\_part1_withexlist_gnlist.gff $outdir/$btmp\_part2_withexlist_gnlist.gff $outdir/$btmp\_with_two_parts_overex_coord1_coord2_read_listex1_listex2.txt $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_$btmp.txt 
+rm $outdir/$b $outdir/$btmp\_part1.gff $outdir/$btmp\_part2.gff $outdir/$btmp\_part1_coord_exlist_gnlist.txt $outdir/$btmp\_part2_coord_exlist_gnlist.txt $outdir/$btmp\_part1_withexlist_gnlist.gff $outdir/$btmp\_part2_withexlist_gnlist.gff $outdir/$btmp\_with_two_parts_overex_coord1_coord2_read_listex1_listex2.txt $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_$btmp.txt 
 gzip -f $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt 
 
 done
 
 # more cleaning
-#rm $annotbase.exons.12flds.gff 
+rm $annotbase.exons.12flds.gff 
 
 echo I am finished >&2
 

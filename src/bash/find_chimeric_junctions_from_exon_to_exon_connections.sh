@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# ~/bin/find_chimeric_junctions_from_exon_to_exon_connections_better2.sh 
-# Added a new feature to the previous version of ~/bin/find_chimeric_junctions_from exon_to_exon_connections_better2.sh:
-# Now it also computes the total number of reads supporting each chimeric junction
 # usage
+#######
 # find_chimeric_junctions_from_exon_to_exon_connections_better2.sh split_mapping_files_paths.txt annot.gtf outputdir strandedness
 
 # to be used following the use of find_exon_exon_connections_from_splitmappings_better2.sh with same arguments 
@@ -22,14 +20,17 @@
 # total number of distinct chimeric junctions: 70778
 # number of distinct chimeric junctions seen by at least 10 staggered split-mappings: 243
 
+# Directories
+#############
+# IMPORTANT! rootDir is an environmental variable defined and exported in the main script "ChimPipe.sh" which contains the path to the root folder of ChimPipe pipeline. 
+awkDir=$rootDir/src/awk
+bashDir=$rootDir/src/bash
+
 # Programs
 ###########
-awkDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Workdir/Awk
-bashDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimsplice/Workdir/Bash
-
 GFF2GFF=$awkDir/gff2gff.awk
 STAG=$awkDir/staggered_to_junction.awk
-MATRIX=$bashDir/make_chimeric_junction_matrix2.sh
+MATRIX=$bashDir/make_chimeric_junction_matrix.sh
 SPLICE_SITES=$bashDir/find_consensus_splice_sites.sh
 
 # Temporary directory for the sorting

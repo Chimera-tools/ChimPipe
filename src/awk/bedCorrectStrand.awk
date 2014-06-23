@@ -15,29 +15,29 @@ BEGIN{OFS="\t"}
 {
     if (readDirectionality=="MATE1_SENSE")
     { 
-	split($4,id,"/"); 
-	if(id[2]==2)
-	{
-	    $6=($6=="+" ? "-" : "+");
-	} 
+		split($4,id,"/"); 
+		if(id[2]==2)
+		{
+	   		$6=($6=="+" ? "-" : "+");
+		} 
     }   	 
     else 	
     {	
-	if (readDirectionality=="MATE2_SENSE")
-	{
-	    split($4,id,"/"); 
-	    if(id[2]==1)
-	    {
-		    $6=($6=="+" ? "-" : "+");
-	    } 
-	}
-	else 
-	{
-	    if (readDirectionality=="ANTISENSE")
-	    {
-		$6=($6=="+" ? "-" : "+"); 
-	    }
-	}
+		if (readDirectionality=="MATE2_SENSE")
+		{
+	   		split($4,id,"/"); 
+	    	if(id[2]==1)
+	    	{
+		    	$6=($6=="+" ? "-" : "+");
+	    	} 
+		}
+		else 
+		{
+	    	if (readDirectionality=="ANTISENSE")
+	    	{
+				$6=($6=="+" ? "-" : "+"); 
+	    	}
+		}
     }
     print $0;	
 }

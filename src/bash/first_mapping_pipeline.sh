@@ -1,14 +1,9 @@
 #!/bin/bash
-#
-#Forcing bash shell
-#$ -S /bin/bash
-#$ -cwd
-#$ -o $JOB_NAME.out
-#$ -e $JOB_NAME.err
+
 # will exit if there is an error or in a pipe
-
-
 set -e -o pipefail
+
+
 function usage {
     echo "Usage: $0 -i <fastq_file> -s <sex> [OPTION]..."
     echo "Execute the Blueprint pipeline (only bam generation) on one sample."
@@ -62,28 +57,28 @@ function copyToTmp {
     for i in ${files[@]};do
         case $i in
             "annotation")
-                if [ ! -e $TMPDIR/$annName ];then
+                if [[ ! -e $TMPDIR/$annName ]];then
                     log "Copying annotation file to $TMPDIR..." $step
                     run "cp $annotation $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "index")
-                if [ ! -e $TMPDIR/`basename $index` ];then
+                if [[ ! -e $TMPDIR/`basename $index` ]];then
                     log "Copying genome index file to $TMPDIR..." $step
                     run "cp $index $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "t-index")
-                if [ ! -e $TMPDIR/$annName.gem ];then
+                if [[ ! -e $TMPDIR/$annName.gem ]];then
                     log "Copying annotated transcriptome index file to $TMPDIR..." $step
                     run "cp $annotation.gem $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "keys")
-                if [ ! -e $TMPDIR/$annName.junctions.keys ];then
+                if [[ ! -e $TMPDIR/$annName.junctions.keys ]];then
                     log "Copying annotated transcriptome keys file to $TMPDIR..." $step
                     run "cp $annotation.junctions.keys $TMPDIR" "$ECHO"
                     log "done\n"
@@ -151,80 +146,40 @@ while getopts ":i:M:mL:g:q:a:std:e:l:ph" opt; do
 done
 
 
-## Setting up the environment
-#
-baseDir=`dirname ${SGE_O_WORKDIR-$PWD}`
-binDir=~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/bin
+# SETTING UP THE ENVIRONMENT
+############################
 
+# = Directories = #
 
-## Setting variables and input files
-##
-if [[ $input == "" ]];then
-    log "Please specify the input file\n" "ERROR" >&2
-    exit -1
-fi
+# IMPORTANT! rootDir is an environmental variable defined and exported in the main script which contains the path to the root folder of ChimPipe pipeline. 
+binDir=$rootDir/bin
+bashDir=$rootDir/src/bash
 
-if [[ $index == "" ]];then
-    log "Please specify the genome index file\n" "ERROR" >&2
-    exit -1
-fi
+# = Binaries = #
+addXS=$bashDir/sam2cufflinks.sh
+gemtools=$binDir/gemtools-1.7.1-i3/bin/gemtools
+gem2sam=$binDir/gemtools-1.7.1-i3/bin/gem-2-sam
+samtools=$binDir/samtools-0.1.19/samtools
+gt_filter=$binDir/miscellaneous/gt.filter.remove
+pigz=$binDir/miscellaneous/pigz
 
-if [[ $annotation == "" ]];then
-    log "Please specify the annotation file\n" "ERROR" >&2
-    exit -1
-fi
-
-if [[ $quality == "" ]];then
-    log "Please specify the quality\n" "ERROR" >&2
-    exit -1
-fi
-
-if [[ $stranded == "" ]];then
-   stranded="0"
-fi
-
-if [[ $readStrand == "" ]];then
-    readStrand="NONE"
-fi
-
-if [[ $sample == "" ]];then
-    basename=$(basename $input)
-	sample=${basename%_1*}
-fi
-
-if [[ $loglevel == "" ]];then
-    loglevel="info"
-fi
-
-if [[ $mism == "" ]];then
-    mism="4"
-fi
-
-if [[ $mapStats != "1" ]]; then 
-	stats="--no-stats"
-	count="--no-count"
-fi
-
-if [[ $maxReadLength == "" ]];then
-   maxReadLength="150"
-fi
-
-
-threads=${NSLOTS-1}
+# = Variables and input files = #
+if [[ $input == "" ]]; then log "Please specify the input file\n" "ERROR" >&2; exit -1; fi
+if [[ $index == "" ]]; then log "Please specify the genome index file\n" "ERROR" >&2; exit -1; fi
+if [[ $annotation == "" ]]; then log "Please specify the annotation file\n" "ERROR" >&2; exit -1; fi
+if [[ $quality == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
+if [[ $stranded == "" ]]; then stranded="0"; fi
+if [[ $readStrand == "" ]]; then readStrand="NONE"; fi
+if [[ $sample == "" ]]; then basename=$(basename $input); sample=${basename%_1*}; fi
+if [[ $loglevel == "" ]]; then loglevel="info"; fi
+if [[ $mism == "" ]]; then mism="4"; fi
+if [[ $mapStats != "1" ]]; then stats="--no-stats"; count="--no-count"; fi
+if [[ $maxReadLength == "" ]]; then maxReadLength="150"; fi
 
 annName=`basename $annotation`
 
-## Binaries
-#
-gemtools=/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/gemtools-1.7.1-i3/bin/gemtools
-gem2sam="$binDir/gem-2-sam"
-samtools="$binDir/samtools"
-addXS="$binDir/sam2cufflinks.sh"
-gt_filter="$binDir/gt.filter.remove"
-gt_stats="$binDir/gt.stats"
-pigz="$binDir/pigz"
-
-
+# = Threads = #
+threads=${NSLOTS-1}
 hthreads=$((threads/2))
 if [[ $hthreads == 0 ]];then
     hthreads=1
@@ -247,7 +202,7 @@ if [ ! -e $sample.map.gz ];then
     log "Running gemtools rna pipeline on ${sample}..." $step
     run "$gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $sample --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
 	log "done\n"
-    if [ -f $sample.map.gz ]; then
+    if [ -e $sample.map.gz ]; then
         log "Computing md5sum for map file..." $step
         run "md5sum $sample.map.gz > $sample.map.gz.md5" "$ECHO"
         log "done\n"
@@ -274,7 +229,7 @@ if [ ! -e $filteredGem ];then
     log "Filtering map file..." $step
     run "$gt_filter -i $sample.map.gz --max-matches 2 -t $threads --max-levenshtein-error $mism -t $threads | $pigz -p $threads -c > $filteredGem" "$ECHO"
     log "done\n" 
-    if [ -f $filteredGem ]; then
+    if [ -e $filteredGem ]; then
         log "Computing md5sum for filtered file..." $step
         run "md5sum $filteredGem > $filteredGem.md5" "$ECHO"
         log "done\n"
@@ -292,14 +247,14 @@ fi
 ##
 filteredGemStats=${filteredGem%.map.gz}.stats
 
-if ([ $filteredGemStats -ot $filteredGem ] && [ $mapStats == "1" ]) ;then
+if [ $filteredGemStats -ot $filteredGem ] && [ $mapStats == "1" ] ;then
     step="FIRST-MAP.STATS"
     startTime=$(date +%s)
     printHeader "Executing GEM stats step"
     log "Producing stats for $filteredGem..." $step
-    run "$gt_stats -i $filteredGem -t $threads -a -p 2> $filteredGemStats" "$ECHO"
+    run "$gemtools stats -i $filteredGem -t $threads -a -p 2> $filteredGemStats" "$ECHO"
     log "done\n"
-    if [ -f $filteredGemStats ]; then
+    if [ -e $filteredGemStats ]; then
         log "Computing md5sum for stats file..." $step
         run "md5sum $filteredGemStats > $filteredGemStats.md5" "$ECHO"
         log "done\n"
@@ -310,7 +265,7 @@ if ([ $filteredGemStats -ot $filteredGem ] && [ $mapStats == "1" ]) ;then
     endTime=$(date +%s)
     printHeader "GEM stats step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-    if [[ $mapStats == "1" ]]; then printHeader "GEM stats file is present...skipping GEM stats step"; fi 
+    if [ $mapStats == "1" ]; then printHeader "GEM stats file is present...skipping GEM stats step"; fi 
 fi
 
 ## Convert to bam and adding the XS field
@@ -328,7 +283,7 @@ if [ ! -e $filteredBam ];then
     log "Converting $sample to bam..." $step
     run "$pigz -p $hthreads -dc $filteredGem | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-$quality -l | sed 's/chrMT/chrM/g' | $addXS $readStrand | $samtools view -@ $threads -Sb - | $samtools sort -@ $threads -m 4G - $TMPDIR/${filteredBam%.bam}" "$ECHO"
     log "done\n"
-    if [ -f $TMPDIR/$filteredBam ]; then
+    if [ -e $TMPDIR/$filteredBam ]; then
         log "Computing md5sum for bam file..." $step
         run "md5sum $TMPDIR/$filteredBam > $TMPDIR/$filteredBam.md5" "$ECHO"
         run "cp $TMPDIR/$filteredBam.md5 ." "$ECHO"

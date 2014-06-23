@@ -43,14 +43,14 @@ bash: ChimPipe.sh
 	@echo "rootDir=\$$(cd \$$(dirname \$$0); pwd -P )" >> temp.sh
 	@echo "sed -i \"165irootDir=\$$rootDir\" ChimPipe.sh" >> temp.sh
 	@echo "execute it to add the code to ChimPipe"
-	@$(shell ./temp.sh $<)
+	@$(shell bash ./temp.sh $<)
 		
 # Clean up
 clean: temp.sh
 	@echo
 	@echo "3) Remove temporal bash script"
 	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	@rm -f temp.sh 
+#	@rm -f temp.sh 
 	@echo "finish"
 
 
