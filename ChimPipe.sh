@@ -206,7 +206,7 @@ source /nfs/software/rg/el6.3/virtualenvs/gemtools1.7.1/bin/activate
 
 printf "\n\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.6.4b\n"
+printf "Pipeline Version: V0.6.5b\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
