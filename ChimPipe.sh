@@ -71,7 +71,7 @@ function run {
 
 # PARSING INPUT ARGUMENTS 
 #########################
-while getopts ":f:i:a:q:e:bsd:M:mL:c:S:o:l:th" opt; do
+while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:l:th" opt; do
   case $opt in
     f)
       input="$OPTARG"
@@ -88,6 +88,9 @@ while getopts ":f:i:a:q:e:bsd:M:mL:c:S:o:l:th" opt; do
     e)
       lid=$OPTARG
       ;;     
+    H)
+      simGnPairs=$OPTARG
+      ;;  
     b)
       bam=1
       ;;
@@ -189,6 +192,7 @@ gemToGff=$awkDir/gemsplit2gff_unique4.awk
 bedCorrectStrand=$awkDir/bedCorrectStrand.awk
 mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 addPEinfo=$awkDir/add_PE_info.awk
+AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
 
 # Python 
 unmapped=$binDir/miscellaneous/filter_unmapped.py
@@ -202,7 +206,7 @@ source /nfs/software/rg/el6.3/virtualenvs/gemtools1.7.1/bin/activate
 
 printf "\n\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.6.2b\n"
+printf "Pipeline Version: V0.6.4b\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -467,7 +471,30 @@ else
 	printHeader "Chimeric junction matrix with PE information present... skipping step"
 fi
 
-# 9) END
+# 9) Add information regarding the sequence similarity between connected genes
+##############################################################################
+# - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+
+chimJunctionSim=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+
+if [ $simGnPairs != "" ];then
+	step="SIM"
+	startTime=$(date +%s)
+	log "Adding sequence similarity between connected genes information to the chimeric junction matrix" $step
+	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJunctionsPE 1> $chimJunctionSim" "$ECHO"
+	log "done\n" 
+	if [ ! -e $chimJunctionSim ]; then
+		log "Error adding similarity information" "ERROR" 
+    	exit -1
+	fi
+	endTime=$(date +%s)
+	printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else 
+	printHeader "Similarity information between the gene pairs in the annotation does not provided... skipping step"
+fi
+
+
+# 10) END
 ########
 pipelineEnd=$(date +%s)
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
