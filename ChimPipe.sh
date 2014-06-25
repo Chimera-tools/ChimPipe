@@ -182,7 +182,6 @@ findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
 gemrnatools=$binDir/gemtools-1.7.1-i3/bin/gem-rna-tools
 bedtools=$binDir/bedtools2-2.20.1/bin/bedtools
 
-
 # Awk 
 bed12ToGff=$awkDir/bed12fields2gff.awk
 gff2Gff=$awkDir/gff2gff.awk
@@ -203,7 +202,7 @@ source /nfs/software/rg/el6.3/virtualenvs/gemtools1.7.1/bin/activate
 
 printf "\n\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.5.5b\n"
+printf "Pipeline Version: V0.6.2b\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -434,7 +433,7 @@ if [ ! -e $PEinfo ];then
 	step="PAIRED-END"
 	startTime=$(date +%s)
 	log "Finding gene to gene connections supported by paired-end mappings from the ".bam" containing reads mapping in a unique and continuous way" $step
-	run "$findGeneConnections $outDir/$lid\_filtered_cuff.bam $annot $outDir/PE $stranded 2> $outDir/PE/find_gene_to_gene_connections_from_pe_rnaseq_fast_$lid.err" "$ECHO"
+	run "$findGeneConnections $outDir/$lid\_filtered_cuff.bam $annot $outDir/PE $readDirectionality 2> $outDir/PE/find_gene_to_gene_connections_from_pe_rnaseq_fast_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -e $PEinfo ]; then
         log "Error finding gene to gene connections" "ERROR" 

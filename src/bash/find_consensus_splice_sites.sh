@@ -25,7 +25,7 @@ awkDir=$rootDir/src/awk
 # Programs
 ###########
 SUBSEQ=$binDir/miscellaneous/chr_subseq 
-JUNCBIOL=$awkDir/junctions_bio_order2.awk
+JUNCBIOL=$awkDir/junctions_bio_order.awk
 GFF2GFF=$awkDir/gff2gff.awk
 
 # Setting input variables
