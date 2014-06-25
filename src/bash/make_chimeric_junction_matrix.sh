@@ -23,7 +23,6 @@
 # chr14_91739676_.:chr2_97494184_- 1 3 91739692 97494217 0 NA NA ENSG00000015133.14, ENSG00000168763.11, CCDC88C, CNNM3, protein_coding, protein_coding,
 # chr16_69752040_+:chr14_101014151_+ 1 1 69752026 101014116 0 NA NA ENSG00000181019.8, ENSG00000183092.11, NQO1, BEGAIN, protein_coding, protein_coding,
 
-
 # Notes
 #######
 # - Made for using on a 64 bit linux architecture
@@ -126,12 +125,9 @@ echo they are $fldgnname and $fldgnbt respectively >&2
 ###################################################################################################
 # as well as the distance when it makes sense
 #############################################
-# !!! note that whatever the strand, the two parts of the junctions should always be in 5' to 3' order wrt + strand !!!
-# !!! this is due to the bam convention !!!
-# !!! note that this should be changed at some point !!!
 echo I am adding the information of intrachrstr, okgxorder and distance when it makes sense >&2
 
-awk '{split($1,a,":"); split(a[1],a1,"_"); split(a[2],a2,"_"); samechrstr=(a1[1]==a2[1]&&(a1[3]==a2[3]) ? 1 : 0); okgxorder=((samechrstr==1) ? (((a2[2]-a1[2])>=0) ? 1 : 0) : "NA"); print $0, samechrstr, okgxorder, ((okgxorder==1) ? (a2[2]-a1[2]) : "NA");}' $input > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+awk '{split($1,a,":"); split(a[1],a1,"_"); split(a[2],a2,"_"); samechrstr=(((a1[1]==a2[1])&&(a1[3]==a2[3])) ? 1 : 0); okgxorder=((samechrstr==1) ? ((((a1[3]=="+")&&((a2[2]-a1[2])>=0))||((a1[3]=="-")&&((a1[2]-a2[2])>=0))) ? 1 : 0) : "NA"); print  $1, $2, $3, $4, $5, samechrstr, okgxorder, ((okgxorder==1) ? ((a1[3]=="+") ? (a2[2]-a1[2]) : (a1[2]-a2[2])) : "NA"), $6, $7;}' $input > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
 # 2) add the list of gene ids, real gene names, gene biotypes for each part of each junction
 ############################################################################################
@@ -139,7 +135,7 @@ echo I am adding the list of gene ids, gene names and gene biotypes for each par
 # a. first make the gff file of the chimeric junctions
 ######################################################
 echo I am making the gff file of the junctions >&2
-awk -v stranded=$stranded -f $JUNC2GFF $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt | awk -f $GFF2GFF > $outdir/distinct_junctions_withmaxbegandend_two_parts.gff
+awk -v stranded=$stranded -f $JUNC2GFF $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt | awk -f $GFF2GFF > $outdir/distinct_junctions_withmaxbegandend_two_parts.gff
 
 # b. then overlap to know which genes have their exons overlapping each part of the junction 
 #############################################################################################
@@ -156,12 +152,11 @@ awk -v gnname=$fldgnname -v gnbt=$fldgnbt -v fileRef=$outdir/$annotbase.exons.20
 #########################################################
 echo I am putting this information back to the matrix >&2
 
-awk -v fileRef=$outdir/distinct_junctions_withmaxbegandend_two_parts_withgnlist_gnnamelist_btlist.gff 'BEGIN{while (getline < fileRef >0){split($10,a,":");split(a[1],a1,"_");split(a[2],a2,"_");s="";split($14,b,",");k=1;while(b[k]!=""){split(b[k],c,"\"");s=(s)(c[2])(",");k++;}if ((a1[2]==$4) || (a1[2]==$5)){gnlist[$10,1]=s;gnnamelist[$10,1]=$16;btlist[$10,1]=$18;}if ((a2[2]==$4) || (a2[2]==$5))	{gnlist[$10,2]=s;gnnamelist[$10,2]=$16;btlist[$10,2]=$18}}}{print $0, gnlist[$1,1], gnlist[$1,2], gnnamelist[$1,1], gnnamelist[$1,2], btlist[$1,1], btlist[$1,2]}' $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-
+awk -v fileRef=$outdir/distinct_junctions_withmaxbegandend_two_parts_withgnlist_gnnamelist_btlist.gff 'BEGIN{while (getline < fileRef >0){split($10,a,":");split(a[1],a1,"_");split(a[2],a2,"_");s="";split($14,b,",");k=1;while(b[k]!=""){split(b[k],c,"\"");s=(s)(c[2])(",");k++;}if ((a1[2]==$4) || (a1[2]==$5)){gnlist[$10,1]=s;gnnamelist[$10,1]=$16;btlist[$10,1]=$18;}if ((a2[2]==$4) || (a2[2]==$5))	{gnlist[$10,2]=s;gnnamelist[$10,2]=$16;btlist[$10,2]=$18}}}{print $0, gnlist[$1,1], gnlist[$1,2], gnnamelist[$1,1], gnnamelist[$1,2], btlist[$1,1], btlist[$1,2]}' $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt 
 
 # 3) Clean
 ##########
 echo I am cleaning >&2
-rm $outdir/$annotbase.exons.20flds.gff $outdir/distinct_junctions_withmaxbegandend_two_parts.gff $outdir/distinct_junctions_withmaxbegandend_two_parts_withgnlist_gnnamelist_btlist.gff $outdir/distinct_junctions_withmaxbegandend_two_parts_withgnlist.gff
+rm $outdir/$annotbase.exons.20flds.gff $outdir/distinct_junctions_withmaxbegandend_two_parts.gff $outdir/distinct_junctions_withmaxbegandend_two_parts_withgnlist_gnnamelist_btlist.gff $outdir/distinct_junctions_withmaxbegandend_two_parts_withgnlist.gff $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
 echo I am done >&2

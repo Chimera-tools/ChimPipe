@@ -1,20 +1,65 @@
 #!/bin/bash
-# It takes as input a chimeric junctions file and it finds the splice sites GT-AG or GC-AG and their complementary reverse AC-CT or GC-CT. It adds this information to the matrix and for unstranded data writes the junctions in biological order (first part donor and second part of the junction acceptor) and add strand information to the junction whenever it is possible. 
+# 20/03/2014
 
-# Input (14 fields chimeric junctions file)
+# It takes as input a chimeric junctions file and it finds the splice sites GT-AG or GC-AG and their complementary reverse AC-CT or GC-CT, adds this information to the chimeric junctions matrix and, for unstranded data, writes the junctions in biological order (first part donor and second part of the junction acceptor) and add strand information to the junction whenever it is possible. 
+
+## Input (14 fields chimeric junctions file)
 # chrX_39164738:chr10_101180417 1 2 39164722 101180450 0 NA NA ENSG00000235304.1, ENSG00000120053.8, RP11-265P11.2, GOT1, lincRNA, protein_coding,
 # chr14_91739676:chr2_97494184 1 3 91739692 97494217 0 NA NA ENSG00000015133.13, ENSG00000168763.10, CCDC88C, CNNM3, protein_coding, protein_coding,
 
+## Output (16 fields chimeric junctions file)
+# chrX_39164738:chr10_101180417 1 2 39164722 101180450 0 NA NA AC CT ENSG00000235304.1, ENSG00000120053.8, RP11-265P11.2, GOT1, lincRNA, protein_coding,
+# chr14_91739676:chr2_97494184 1 3 91739692 97494217 0 NA NA NA CT ENSG00000015133.13, ENSG00000168763.10, CCDC88C, CNNM3, protein_coding, protein_coding,
+
 # usage
 #######
-# find_consensus_splice_sites.sh junctions.txt stranded outdir
+# find_consensus_splice_sites2.sh junctions.txt strandedness outputDir
 
-# where "stranded" is 0 to run in unstranded mode and !=0 to run it in stranded mode
+# where "stranded" is 0 to run in unstranded mode and !=0 to run it in stranded mode. If no strandedness or output directory is specified it will run in unstranded mode and the current working directory will be the output directory
 
 # Notes
 #######
 # - Made for using on a 64 bit linux architecture
 # - uses awk scripts
+
+
+# In case the user does not provide any input file, an error message is raised
+##############################################################################
+if [ ! -n "$1" ]
+then
+    echo "" >&2
+    echo Usage:    find_consensus_splice_sites2.sh junctions.txt strandedness outputDir >&2
+    echo "" >&2
+    echo Example:  find_consensus_splice_sites2.sh junctions.txt 0 /users/rg/brodriguez/Projects/Chimeras/Results  >&2
+    echo "" >&2
+    echo Takes as input a chimeric junctions file and it finds the splice sites GT-AG or GC-AG and their complementary>&2
+    echo "reverse AC-CT or GC-CT, adds this information to the chimeric junctions matrix and, for unstranded data," >&2
+    echo "writes the junctions in biological order (first part donor and second part of the junction acceptor)" >&2
+    echo "and add strand information to the junction whenever it is possible. If no strandedness or output directory" >&2 
+    echo "is specified it will run in unstranded mode and the current working directory will be the output directory" >&2 
+    echo "" >&2
+    exit 0
+fi
+
+input=$1
+
+# In case the user does not provide any strandedness 
+####################################################
+# or output directory, default values are provided
+##################################################
+if [ ! -n "$2" ]
+then
+outdir=.
+stranded=0
+else
+stranded=$2
+if [ ! -n "$3" ]
+then
+outdir=.
+else
+outdir=$3
+fi
+fi
 
 # Directories
 #############
@@ -33,7 +78,7 @@ GFF2GFF=$awkDir/gff2gff.awk
 input=$1
 stranded=$2
 outdir=$3
- 
+
 # Subtract the two pairs of nucleotides that should correspond to the donor and acceptor respectively. 
 ######################################################################################################
 # If they are not the cannonical writes NA
@@ -53,7 +98,7 @@ done > $outdir/junct_dnt1_dnt2.txt
 ##################################################################################################################
 # and add strand information to the junction whenever it is possible. 
 #####################################################################
-awk -v fileRef=$outdir/junct_dnt1_dnt2.txt -v stranded=$stranded -f $JUNCBIOL $input > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt 
+awk -v fileRef=$outdir/junct_dnt1_dnt2.txt -v stranded=$stranded -f $JUNCBIOL $input 
 
 # Cleaning. 
 ###########
