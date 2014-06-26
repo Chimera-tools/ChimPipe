@@ -409,7 +409,7 @@ if [ ! -e $chimJunctions ];then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
-	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $index $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -e $chimJunctions ]; then
         log "Error running chimsplice" "ERROR" 
@@ -475,27 +475,44 @@ fi
 ##############################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-chimJunctionSim=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+chimJunctionsSim=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
 if [ $simGnPairs != "" ];then
 	step="SIM"
 	startTime=$(date +%s)
 	log "Adding sequence similarity between connected genes information to the chimeric junction matrix" $step
-	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJunctionsPE 1> $chimJunctionSim" "$ECHO"
+	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJunctionsPE 1> $chimJunctionsSim" "$ECHO"
 	log "done\n" 
-	if [ ! -e $chimJunctionSim ]; then
+	if [ ! -e $chimJunctionsSim ]; then
 		log "Error adding similarity information" "ERROR" 
     	exit -1
 	fi
+	rm $chimJunctionsPE
 	endTime=$(date +%s)
 	printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else 
 	printHeader "Similarity information between the gene pairs in the annotation does not provided... skipping step"
 fi
 
+# 10) Produce a final output matrix with a header in the first row
+##################################################################
+# - $outDir/chimeric_junctions.txt
 
-# 10) END
-########
+if [ -e $chimJunctionsSim ]; then	
+	awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport", "maxSim", "maxLgal";}{print $0;}' $chimJunctionsSim 1> $outDir/chimeric_junctions.txt
+	rm $chimJunctionsSim
+else
+	if [ -e $chimJunctionsPE ]; then
+		awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport";}{print $0;}' $chimJunctionsPE 1> $outDir/chimeric_junctions.txt
+		rm $chimJunctionsPE
+	else
+		log "Error, intermediate file: $chimJunctionsSim or $chimJunctionsPE is missing" "ERROR" 
+    	exit -1			
+	fi
+fi 
+
+# 11) END
+#########
 pipelineEnd=$(date +%s)
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
 exit 0

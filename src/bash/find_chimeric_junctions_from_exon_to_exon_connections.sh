@@ -20,6 +20,60 @@
 # total number of distinct chimeric junctions: 70778
 # number of distinct chimeric junctions seen by at least 10 staggered split-mappings: 243
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
+
+# In case the user does not provide any input file
+###################################################
+if [ ! -e "$1" ] 
+then
+    echo "" >&2
+    echo Usage:    find_chimeric_junctions_from_exon_to_exon_connections.sh split_mapping_files_paths.txt genome_index.gem annot.gtf outputdir [strandedness] >&2
+    echo "" >&2
+    echo Example:  find_chimeric_junctions_from_exon_to_exon_connections.sh 001N/split_mapping_files_exp_001N.txt /users/rg/sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/Human/Homo_sapiens.GRCh37.chromosomes.chr.gem /users/rg/projects/encode/scaling_up/whole_genome/Gencode/version7/gencode.v7.annotation_exons.gtf 001N 1 >&2
+    echo "" >&2
+    echo Takes a file listing the absolute paths to split-mapping files \(normally .gtf.gz\) of an experiment, the indexed genome and >&2
+    echo the reference annotation, an output directory and the strandedness of the data, and produces a summary statistics file as output >&2
+    echo with the number of chimeric junctions seen >&2
+    echo "" >&2
+    exit 0
+fi
+
+# In case the user does not provide any indexed genome, annotation 
+##################################################################
+# file or output dir or strandedness we provide default values
+##############################################################
+if [ ! -n "$2" ]
+then
+genome=/users/rg/sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/Human/Homo_sapiens.GRCh37.chromosomes.chr.gem
+annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
+outdir=.
+stranded=0
+else
+genome=$2
+if [ ! -n "$3" ]
+then
+annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
+outdir=.
+stranded=0
+else
+annot=$3
+if [ ! -n "$4" ]
+then
+outdir=.
+stranded=0
+else
+outdir=$4
+if [ ! -n "$5" ]
+then
+stranded=0
+else
+stranded=$5
+fi
+fi
+fi
+fi
+
 # Directories
 #############
 # IMPORTANT! rootDir is an environmental variable defined and exported in the main script "ChimPipe.sh" which contains the path to the root folder of ChimPipe pipeline. 
@@ -37,48 +91,6 @@ SPLICE_SITES=$bashDir/find_consensus_splice_sites.sh
 ######################################
 tmpdir=~brodriguez/Tmp
 
-# In case the user does not provide any input file
-###################################################
-if [ ! -n "$1" ]
-then
-    echo "" >&2
-    echo Usage:    find_chimeric_junctions_from_exon_to_exon_connections.sh split_mapping_files_paths.txt annot.gtf outputdir [strandedness] >&2
-    echo "" >&2
-    echo Example:  find_chimeric_junctions_from_exon_to_exon_connections.sh 001N/split_mapping_files_exp_001N.txt  /users/rg/projects/encode/scaling_up/whole_genome/Gencode/version7/gencode.v7.annotation_exons.gtf 001N 1 >&2
-    echo "" >&2
-    echo Takes a file listing the absolute paths to split-mapping files \(normally .gtf.gz\) of an experiment, an output >&2
-    echo directory and the strandedness of the data, and produces a summary statistics file as output with the number >&2
-    echo of chimeric junctions seen >&2
-    echo "" >&2
-    exit 0
-fi
-
-# In case the user does not provide any annotation file
-########################################################
-# or output dir or strandedness we provide default values
-#########################################################
-if [ ! -n "$2" ]
-then
-annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
-outdir=.
-stranded=0
-else
-annot=$2
-if [ ! -n "$3" ]
-then
-outdir=.
-stranded=0
-else
-outdir=$3
-if [ ! -n "$4" ]
-then
-stranded=0
-else
-stranded=$4
-fi
-fi
-fi
-
 # Exons and a list of overlapping genes
 #############################################
 echo I am making a file of exons with the list of their overlapping genes from the annotation >&2
@@ -95,7 +107,6 @@ btmp=${b%.gtf}
 zcat $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt.gz | awk '{print $1, $2}' | sort -T $tmpdir
 done | sort -T $tmpdir | uniq | wc -l | awk '{print "total exonA to exonB connections:", $1}' 
 
-
 # List the staggered splitmappings and the total split-mappings detecting each A-> B connection -> 8 sec
 ###########################################################################
 echo I am listing the split\-mappings detecting each A\-\> B connection >&2
@@ -105,7 +116,6 @@ b=`basename ${f%.gz}`
 btmp=${b%.gtf}
 zcat $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt.gz
 done | awk '{staggered[$1":"$2]=(staggered[$1":"$2])($6)(","); total[$1":"$2]=(total[$1":"$2])($7)(",")};  END{for(i in staggered){split(i,a,":"); gsub(/,,/,",",staggered[i]); gsub(/,,/,",",total[i]); print a[1], a[2], staggered[i], total[i]}}' > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total.txt
-
 
 # From the list of exon A -> exon B connections select the ones where both A and B are 
 #######################################################################################
@@ -139,7 +149,7 @@ wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbeganden
 #################################################################################################################################################
 # Output: $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt 
 echo I am finding the canonical splice sites GT-AG or GC-AG, adding this information to the matrix and also for unstranded data writing the junctions in biological order and adding the strand to each part of the junction whenever it is possible >&2
-bash $SPLICE_SITES $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt $stranded $outdir > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt 
+bash $SPLICE_SITES $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt $genome $stranded $outdir 1> $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt 
 
 # Complete the chimeric junctions matrix with additional information: whether the two parts are on the same chr and strand, whether they are on the expected genomic order, 
 ##########################################################################################################################################################################
@@ -159,4 +169,4 @@ echo I am outputting the distinct chimeric junctions found by more than 10 stagg
 awk '$2>=10' $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt | awk '{print "number of distinct chimeric junctions seen by at least 10 staggered split-mappings:", $1}' 
 
-#rm $outdir/exoncoord_gnlist.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
+rm $outdir/exoncoord_gnlist.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
