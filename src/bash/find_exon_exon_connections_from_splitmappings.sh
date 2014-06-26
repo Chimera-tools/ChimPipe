@@ -24,6 +24,9 @@
 # - Made for using on a 64 bit linux architecture
 # - uses awk scripts
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
+
 function usage
 {
 cat <<instructions
