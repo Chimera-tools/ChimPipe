@@ -184,8 +184,10 @@ findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
 # Bin 
 gemrnatools=$binDir/gemtools-1.7.1-i3/bin/gem-rna-tools
 bedtools=$binDir/bedtools2-2.20.1/bin/bedtools
+gtfilter=$binDir/gemtools-1.7.1-i3/bin/gt.filter
 
 # Awk 
+unmapped=$awkDir/extract_unmapped.awk
 bed12ToGff=$awkDir/bed12fields2gff.awk
 gff2Gff=$awkDir/gff2gff.awk
 gemToGff=$awkDir/gemsplit2gff_unique4.awk
@@ -194,19 +196,12 @@ mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 addPEinfo=$awkDir/add_PE_info.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
 
-# Python 
-unmapped=$binDir/miscellaneous/filter_unmapped.py
-
-# Activate gemtools environment
-source /nfs/software/rg/el6.3/virtualenvs/gemtools1.7.1/bin/activate
-
-
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 
 printf "\n\n"
 printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.6.5b\n"
+printf "Pipeline Version: V0.6.9\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
@@ -251,21 +246,22 @@ else
     printHeader "First mapping BAM file is present...skipping first mapping step"
 fi
 
-# 2) extract the reads that do not map with an edit distance strictly greater than round(read_length/20) 
-####################################################################################################
-#    from the gem file: get a fastq file
+# 2) extract the reads that do not map with a number of mismatches lower than 6
+###############################################################################
+#    from the gem file: get a fastq file 
 ########################################
 # output is: 
 ############
 # - $outDir/$lid.unmapped.fastq
+
 unmappedReads=$outDir/${lid}.unmapped.fastq
 
 if [ ! -e $unmappedReads ];then
 	step="UNMAP"
 	startTime=$(date +%s)
 	printHeader "Executing unmapped reads step" 
-	log "Extracting the reads that do not map with an edit distance strictly greater than round (read_length/20)..." $step
-	run "$unmapped -i $lid.map.gz -t 8 -f fastq -m 5 > $outDir/$lid.unmapped.fastq 2> $outDir/$lid.unmapped.err" "$ECHO"
+	log "Extracting the reads that do not map with a number of mismatches lower than 6..." $step
+	run "zcat $lid.map.gz | awk -f $unmapped | $gtfilter -t 8 --output-format 'FASTA' > $outDir/$lid.unmapped.fastq 2> $outDir/$lid.unmapped.err" "$ECHO" 	
 	log "done\n" 
     if [ -e $unmappedReads ]; then
     	log "Computing md5sum for unmapped reads file..." $step
@@ -325,7 +321,6 @@ if [ ! -e $gffFromBam ];then
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the bam into gff step"
 	log "Generating a ".gff.gz" file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
-
 	$bedtools bamtobed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
 	log "done\n"
 	if [ -e $gffFromBam ]; then
@@ -355,7 +350,6 @@ if [ ! -e $gffFromMap ];then
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the gem into gff step"
 	log "Generating a ".gff.gz" file from the atypical mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
-
 	run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev=1 -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz" "$ECHO"
 	log "done\n" 
 	if [ -e $gffFromMap ]; then
@@ -436,7 +430,7 @@ printHeader "Executing find gene to gene connections from PE mappings step"
 if [ ! -e $PEinfo ];then
 	step="PAIRED-END"
 	startTime=$(date +%s)
-	log "Finding gene to gene connections supported by paired-end mappings from the ".bam" containing reads mapping in a unique and continuous way" $step
+	log "Finding gene to gene connections supported by paired-end mappings from the ".bam" containing reads mapping in a unique and continuous way..." $step
 	run "$findGeneConnections $outDir/$lid\_filtered_cuff.bam $annot $outDir/PE $readDirectionality 2> $outDir/PE/find_gene_to_gene_connections_from_pe_rnaseq_fast_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -e $PEinfo ]; then
@@ -457,7 +451,7 @@ chimJunctionsPE=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withm
 if [ ! -e $chimJunctionsPE ];then
 	step="PAIRED-END"
 	startTime=$(date +%s)
-	log "Adding PE information to the chimeric junction matrix" $step
+	log "Adding PE information to the chimeric junction matrix..." $step
 	run "awk -v fileRef=$PEinfo -f $addPEinfo $chimJunctions 1> $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 " "$ECHO"
 	log "done\n" 
@@ -480,7 +474,7 @@ chimJunctionsSim=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_with
 if [ $simGnPairs != "" ];then
 	step="SIM"
 	startTime=$(date +%s)
-	log "Adding sequence similarity between connected genes information to the chimeric junction matrix" $step
+	log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
 	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJunctionsPE 1> $chimJunctionsSim" "$ECHO"
 	log "done\n" 
 	if [ ! -e $chimJunctionsSim ]; then
