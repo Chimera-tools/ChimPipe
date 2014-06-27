@@ -160,9 +160,9 @@ if [[ $logLevel == "" ]]; then logLevel='info'; fi
 
 # = Export ChimPipe root directory as environmental variable = #
 # This variable will be used by every ChimPipe's scripts to set the path to the bin, awk and bash directories. 
-rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
+root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
 
-export rootDir=$rootDir
+export rootDir=$root
 
 # = Directories = #
 binDir=$rootDir/bin
