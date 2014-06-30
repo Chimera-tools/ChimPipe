@@ -151,8 +151,11 @@ done
 ############################
 
 # = Directories = #
+# Environmental variables 
+# rootDir - path to the root folder of ChimPipe pipeline. 
+# TMPDIR  - temporary directory
+# They are environmental variable defined and exported in the main script
 
-# IMPORTANT! rootDir is an environmental variable defined and exported in the main script which contains the path to the root folder of ChimPipe pipeline. 
 binDir=$rootDir/bin
 bashDir=$rootDir/src/bash
 
@@ -181,10 +184,7 @@ if [[ $threads == "" ]]; then threads='1'; fi
 if [[ $threads == 1 ]]; then hthreads='1'; else hthreads=$((threads/2)); fi	
 #threads=${NSLOTS-1}
 
-echo 'threads: '$threads
-echo 'hthreads: '$hthreads
 
-exit -1
 ## START
 ########
 pipelineStart=$(date +%s)

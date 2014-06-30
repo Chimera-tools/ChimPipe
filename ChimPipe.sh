@@ -35,6 +35,7 @@ IMPORTANT: By default runs in unstranded mode. If you have stranded data use the
 	-c	<pair_1>, ... ,<pair_s>
       		with <pair> := <donor_consensus>+<acceptor_consensus> (list of pairs of donor/acceptor splice site consensus sequences for the second mapping. Default "GT+AG")
 	-o	<PATH>		Output directory (By default writes in the current working directory).
+	-D	<PATH>		Temporary directory. Default /tmp.
 	-l	<STRING>	Log level (error, warn, info, debug). Default "info".
 	-h			Flag to display usage information.
 	-T			Flag to test the pipeline. Writes the commands to the standard output but does not run the program.
@@ -71,7 +72,7 @@ function run {
 
 # PARSING INPUT ARGUMENTS 
 #########################
-while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:l:t:Th" opt; do
+while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:D:l:t:Th" opt; do
   case $opt in
     f)
       input="$OPTARG"
@@ -118,9 +119,12 @@ while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:l:t:Th" opt; do
  	o)
       outDir=$OPTARG
       ;;
+    D)
+      TMPDIR=$OPTARG
+      ;;  
  	l)
       logLevel=$OPTARG
-      ;;
+      ;; 
     t)
       threads=$OPTARG
       ;;
@@ -158,16 +162,19 @@ if [[ $splitSize == "" ]]; then splitSize='15'; fi
 if [[ ! -d $outDir ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
 if [[ $logLevel == "" ]]; then logLevel='info'; fi
 if [[ $threads == "" ]]; then threads='1'; fi
+if [[ $TMPDIR == "" ]]; then TMPDIR='/tmp'; fi
 
 
 # SETTING UP THE ENVIRONMENT
 ############################
 
-# = Export ChimPipe root directory as environmental variable = #
+# = Export environmental variables = #
+
+# ChimPipe root directory 
 # This variable will be used by every ChimPipe's scripts to set the path to the bin, awk and bash directories. 
 root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
 
-export rootDir=$root
+export rootDir=$root TMPDIR=$TMPDIR
 
 # = Directories = #
 binDir=$rootDir/bin

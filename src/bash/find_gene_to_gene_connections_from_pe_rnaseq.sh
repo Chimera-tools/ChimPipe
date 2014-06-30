@@ -109,9 +109,13 @@ fi
 ###########################################
 set -e -o pipefail
 
-# Directories
+# Directories 
 #############
-# IMPORTANT! rootDir is an environmental variable defined and exported in the main script "ChimPipe.sh" which contains the path to the root folder of ChimPipe pipeline. 
+# Environmental variables 
+# rootDir - path to the root folder of ChimPipe pipeline. 
+# TMPDIR  - temporary directory
+# They are environmental variable defined and exported in the main script
+ 
 awkDir=$rootDir/src/awk
 binDir=$rootDir/bin
 
@@ -155,7 +159,7 @@ echo done >&2
 echo I am gathering this information \in order to report all the pairs of diffent genes >&2
 echo \in alphabetical order\, that are supported by pe reads together with the number of reads >&2
 echo supporting them >&2
-zcat $outdir/readid_twomateswithgnlist_alldiffgnpairs_where_1stassociatedto1stmate_and2ndto2ndmate.txt.gz | awk '{split($2,a,","); k=1; while(a[k]!=""){split(a[k],b,"-"); if(b[1]<b[2]){print b[1], b[2]}else{print b[2], b[1]} k++}}' | sort | uniq -c | awk '{print $2, $3, $1}' > $outdir/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
+zcat $outdir/readid_twomateswithgnlist_alldiffgnpairs_where_1stassociatedto1stmate_and2ndto2ndmate.txt.gz | awk '{split($2,a,","); k=1; while(a[k]!=""){split(a[k],b,"-"); if(b[1]<b[2]){print b[1], b[2]}else{print b[2], b[1]} k++}}' | sort -T $TMPDIR | uniq -c | awk '{print $2, $3, $1}' > $outdir/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
 echo done >&2
 
 

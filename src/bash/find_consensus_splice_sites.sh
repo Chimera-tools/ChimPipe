@@ -63,9 +63,11 @@ outdir=$4
 fi
 fi
 
-# Directories
+# Directories 
 #############
-# IMPORTANT! rootDir is an environmental variable defined and exported in the main script "ChimPipe.sh" which contains the path to the root folder of ChimPipe pipeline. 
+# Environmental variables 
+# rootDir - path to the root folder of ChimPipe pipeline. 
+# It is an environmental variable defined and exported in the main script 
 binDir=$rootDir/bin
 awkDir=$rootDir/src/awk
 

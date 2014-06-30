@@ -57,9 +57,13 @@ if [[ ! -e $annot ]]; then printf "\n\tERROR:Please specify a valid annotation f
 if [[ ! -d $outdir ]]; then outdir=.; fi
 if [[ $stranded == "" ]]; then stranded=0; fi
 
-# DIRECTORIES 
+# Directories 
 #############
-# IMPORTANT! rootDir is an environmental variable defined and exported in the main script "ChimPipe.sh" which contains the path to the root folder of ChimPipe pipeline. 
+# Environmental variables 
+# rootDir - path to the root folder of ChimPipe pipeline. 
+# TMPDIR  - temporary directory
+# They are environmental variable defined and exported in the main script
+ 
 binDir=$rootDir/bin
 awkDir=$rootDir/src/awk
 bashDir=$rootDir/src/bash
@@ -129,7 +133,7 @@ awk -v fileRef=$outdir/$btmp\_part2_coord_exlist_gnlist.txt 'BEGIN{while (getlin
 # chr1	hts	alblock	14755	14829	.	-	.	name: "HWI-ST935:126:C16R7ACXX:3:1311:3519:22382/2"; exlist chr1_14363_14829_-, gnlist ENSG00000227232.3,ENSG00000227232.3,ENSG00000227232.3,	chr1	hts	alblock	14970	14970	.	-	.	name: "HWI-ST935:126:C16R7ACXX:3:1311:3519:22382/2"; exlist chr1_14970_15038_-, gnlist ENSG00000227232.3,ENSG00000227232.3,ENSG00000227232.3,
 echo Whenever part1 and part2 overlap an exon I am reporting their coord together with the read id and the list of such exons for each part >&2
 echo Note that I am only reporting split mappings where part1 and part2 overlap exons belonging to different genes >&2
-paste $outdir/$btmp\_part1_withexlist_gnlist.gff $outdir/$btmp\_part2_withexlist_gnlist.gff | awk -v nbfld=$nbfld '($(nbfld+2)!=".")&&($((nbfld+2)*2+2)!="."){ok=1; split($(nbfld+4),a,","); split($((nbfld+4)*2),b,","); k=1; while((ok==1)&&(a[k]!="")){l=1; while((ok==1)&&(b[l]!="")){if(a[k]==b[l]){ok=0} l++} k++} if(ok==1){split($10,a,"\""); print $1"_"$4"_"$5"_"$7, $(nbfld+5)"_"$(nbfld+8)"_"$(nbfld+9)"_"$(nbfld+11), a[2], $(nbfld+2), $((nbfld+2)*2+2);}}' | sort | uniq > $outdir/$btmp\_with_two_parts_overex_coord1_coord2_read_listex1_listex2.txt
+paste $outdir/$btmp\_part1_withexlist_gnlist.gff $outdir/$btmp\_part2_withexlist_gnlist.gff | awk -v nbfld=$nbfld '($(nbfld+2)!=".")&&($((nbfld+2)*2+2)!="."){ok=1; split($(nbfld+4),a,","); split($((nbfld+4)*2),b,","); k=1; while((ok==1)&&(a[k]!="")){l=1; while((ok==1)&&(b[l]!="")){if(a[k]==b[l]){ok=0} l++} k++} if(ok==1){split($10,a,"\""); print $1"_"$4"_"$5"_"$7, $(nbfld+5)"_"$(nbfld+8)"_"$(nbfld+9)"_"$(nbfld+11), a[2], $(nbfld+2), $((nbfld+2)*2+2);}}' | sort -T $TMPDIR | uniq > $outdir/$btmp\_with_two_parts_overex_coord1_coord2_read_listex1_listex2.txt
 
 
 # 5) from 4) make all the A -> B connections between exons where there is a split mapping which first part
@@ -154,7 +158,7 @@ awk '{split($4,a,","); split($5,b,","); k=1; while(a[k]!=""){l=1; while(b[l]!=""
 echo I am reporting the same info but adding the list of staggered split-mappings defined by their coordinates >&2
 cat $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_$btmp.txt | while read ea eb rl sm1 sm2
 do
-staggered=`echo $sm1 $sm2 | awk '{split($1,a,","); split($2,b,","); k=1; while(a[k]!=""){split(a[k],a1,","); split(b[k],b1,","); l=1; while(a1[l]!=""){print a1[l]":"b1[l]; l++;} k++;}}' | sort | uniq | awk '{s=(s)($1)(",")}END{print s}'`
+staggered=`echo $sm1 $sm2 | awk '{split($1,a,","); split($2,b,","); k=1; while(a[k]!=""){split(a[k],a1,","); split(b[k],b1,","); l=1; while(a1[l]!=""){print a1[l]":"b1[l]; l++;} k++;}}' | sort -T $TMPDIR | uniq | awk '{s=(s)($1)(",")}END{print s}'`
 total=`echo $sm1 $sm2 | awk '{split($1,a,","); split($2,b,","); k=1; while(a[k]!=""){split(a[k],a1,","); split(b[k],b1,","); l=1; while(a1[l]!=""){print a1[l]":"b1[l]; l++;} k++;}}' | awk '{s=(s)($1)(",")}END{print s}'` 
 echo $ea $eb $rl $sm1 $sm2 $staggered $total
 done > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt
