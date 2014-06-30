@@ -6,7 +6,7 @@ set -e -o pipefail
 
 function usage
 {
-cat <<instructions
+cat <<help
 USAGE: Chimera_mapping_pipeline.sh -f <fastq_file> -i <genome_index> -a <annotation> -q <quality> [options]
        
 Execute ChimPipe (from RNAseq reads to chimeric junctions) on one RNAseq dataset (sample).
@@ -35,11 +35,11 @@ IMPORTANT: By default runs in unstranded mode. If you have stranded data use the
 	-c	<pair_1>, ... ,<pair_s>
       		with <pair> := <donor_consensus>+<acceptor_consensus> (list of pairs of donor/acceptor splice site consensus sequences for the second mapping. Default "GT+AG")
 	-o	<PATH>		Output directory (By default writes in the current working directory).
-	-T	<PATH>		Temporary directory (If not defined it uses TMPDIR variable default value).
 	-l	<STRING>	Log level (error, warn, info, debug). Default "info".
 	-h			Flag to display usage information.
-	-t			Flag to test the pipeline. Writes the commands to the standard output but does not run the program.
-instructions
+	-T			Flag to test the pipeline. Writes the commands to the standard output but does not run the program.
+	-t			Number of threads to use. Default 1.
+help
 }
 
 function printHeader {
@@ -71,7 +71,7 @@ function run {
 
 # PARSING INPUT ARGUMENTS 
 #########################
-while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:l:th" opt; do
+while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:l:t:Th" opt; do
   case $opt in
     f)
       input="$OPTARG"
@@ -122,6 +122,9 @@ while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:l:th" opt; do
       logLevel=$OPTARG
       ;;
     t)
+      threads=$OPTARG
+      ;;
+    T)
       ECHO="echo "
       ;;
     h)
@@ -154,6 +157,8 @@ if [[ $spliceSites ==  "" ]]; then spliceSites='GT+AG' ; fi
 if [[ $splitSize == "" ]]; then splitSize='15'; fi
 if [[ ! -d $outDir ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
 if [[ $logLevel == "" ]]; then logLevel='info'; fi
+if [[ $threads == "" ]]; then threads='1'; fi
+
 
 # SETTING UP THE ENVIRONMENT
 ############################
@@ -215,6 +220,7 @@ printf "Min split size: $splitSize\n"
 printf "Outdir: $outDir\n"
 printf "Sample id: $lid\n"
 printf "Log level: $logLevel\n"	
+printf "Threads: $threads\n"	
 printf "\n"
 
 ## START CHIMERA MAPPING PIPELINE 
@@ -239,7 +245,7 @@ if [ ! -e $bamFirstMapping ];then
 	step="FIRST-MAP"
 	startTime=$(date +%s)
 	printHeader "Executing first mapping step"    
-    run "$pipeline -i $input -g $index -a $annot -q $quality -M $mism $mapStats -L $maxReadLength -e $lid -l $logLevel" "$ECHO" 
+    run "$pipeline -i $input -g $index -a $annot -q $quality -M $mism $mapStats -L $maxReadLength -e $lid -l $logLevel -t $threads" "$ECHO" 
 	endTime=$(date +%s)
 	printHeader "First mapping for $lid completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
@@ -261,7 +267,7 @@ if [ ! -e $unmappedReads ];then
 	startTime=$(date +%s)
 	printHeader "Executing unmapped reads step" 
 	log "Extracting the reads that do not map with a number of mismatches lower than 6..." $step
-	run "zcat $lid.map.gz | awk -f $unmapped | $gtfilter -t 8 --output-format 'FASTA' > $outDir/$lid.unmapped.fastq 2> $outDir/$lid.unmapped.err" "$ECHO" 	
+	run "zcat $lid.map.gz | awk -f $unmapped | $gtfilter -t $threads --output-format 'FASTA' > $outDir/$lid.unmapped.fastq 2> $outDir/$lid.unmapped.err" "$ECHO" 	
 	log "done\n" 
     if [ -e $unmappedReads ]; then
     	log "Computing md5sum for unmapped reads file..." $step
@@ -292,7 +298,7 @@ if [ ! -e $gemSecondMapping ];then
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
 	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T 8 -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
+	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
 	log "done\n" 
 	if [ -e $gemSecondMapping ]; then
     	log "Computing md5sum for the gem file with the second mappings..." $step

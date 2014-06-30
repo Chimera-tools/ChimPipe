@@ -21,7 +21,8 @@ function usage {
     printf "\t-d\tdirectionality of the reads (MATE1_SENSE, MATE2_SENSE, NONE). Default \"NONE\".\n"
     printf "\t-e\tExperiment identifier (the output files will be named according this id). If not specified, the name is inferred from the input files.\n"
     printf "\t-l\tLog level (error, warn, info, debug). Default \"info\".\n"
-    printf "\t-t\tTest the pipeline. Writes the command to the standard output.\n"
+    printf "\t-T\tTest the pipeline. Writes the command to the standard output.\n"
+    printf "\t-t\tNumber of threads to use. Default 1.\n"
     exit 0
 }
 
@@ -91,7 +92,7 @@ function copyToTmp {
 ## Parsing arguments
 #
 
-while getopts ":i:M:mL:g:q:a:std:e:l:ph" opt; do
+while getopts ":i:g:a:q:M:mL:sd:e:l:t:Th" opt; do
   case $opt in
     i)
       input="$OPTARG"
@@ -117,9 +118,6 @@ while getopts ":i:M:mL:g:q:a:std:e:l:ph" opt; do
     s)
       stranded=1
       ;;
-    t)
-      ECHO="echo "
-      ;;
     d)
       readStrand=$OPTARG
       ;;
@@ -129,8 +127,11 @@ while getopts ":i:M:mL:g:q:a:std:e:l:ph" opt; do
     l)
       loglevel=$OPTARG
       ;;
-    p)
-      profile=1
+    t)
+      threads=$OPTARG
+      ;;
+    T)
+      ECHO="echo "
       ;;
     h)
       usage
@@ -175,16 +176,15 @@ if [[ $loglevel == "" ]]; then loglevel="info"; fi
 if [[ $mism == "" ]]; then mism="4"; fi
 if [[ $mapStats != "1" ]]; then stats="--no-stats"; count="--no-count"; fi
 if [[ $maxReadLength == "" ]]; then maxReadLength="150"; fi
-
 annName=`basename $annotation`
+if [[ $threads == "" ]]; then threads='1'; fi
+if [[ $threads == 1 ]]; then hthreads='1'; else hthreads=$((threads/2)); fi	
+#threads=${NSLOTS-1}
 
-# = Threads = #
-threads=${NSLOTS-1}
-hthreads=$((threads/2))
-if [[ $hthreads == 0 ]];then
-    hthreads=1
-fi
+echo 'threads: '$threads
+echo 'hthreads: '$hthreads
 
+exit -1
 ## START
 ########
 pipelineStart=$(date +%s)
@@ -227,7 +227,7 @@ if [ ! -e $filteredGem ];then
     printHeader "Executing filtering step"
 
     log "Filtering map file..." $step
-    run "$gt_filter -i $sample.map.gz --max-matches 2 -t $threads --max-levenshtein-error $mism -t $threads | $pigz -p $threads -c > $filteredGem" "$ECHO"
+    run "$gt_filter -i $sample.map.gz --max-matches 2 --max-levenshtein-error $mism -t $threads | $pigz -p $threads -c > $filteredGem" "$ECHO"
     log "done\n" 
     if [ -e $filteredGem ]; then
         log "Computing md5sum for filtered file..." $step
