@@ -1,9 +1,5 @@
 #!/bin/bash
 
-
-# will exit if there is an error or in a pipe
-set -e -o pipefail
-
 function usage
 {
 cat <<help
@@ -52,7 +48,7 @@ function log {
     string=$1
     label=$2
     if [[ ! $ECHO ]];then
-        if [[ $label != "" ]];then
+        if [[ "$label" != "" ]];then
             printf "[$label] $string"
         else
             printf "$string"
@@ -150,19 +146,19 @@ if [[ ! -e $input ]]; then log "Please specify a valid input file\n" "ERROR" >&2
 if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; exit -1; fi
 if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; exit -1; fi
 if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; exit -1; fi
-if [[ $quality == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
-if [[ $lid == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; exit -1; fi
-if [[ $bam == "" ]]; then bam=0; fi
-if [[ $stranded == "" ]]; then stranded=0; fi
-if [[ $readDirectionality == "" ]]; then readDirectionality='NONE'; fi
-if [[ $mism == "" ]]; then mism='4'; fi
-if [[ $maxReadLength == "" ]]; then maxReadLength='150'; fi
-if [[ $spliceSites ==  "" ]]; then spliceSites='GT+AG' ; fi
-if [[ $splitSize == "" ]]; then splitSize='15'; fi
-if [[ ! -d $outDir ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
-if [[ $logLevel == "" ]]; then logLevel='info'; fi
-if [[ $threads == "" ]]; then threads='1'; fi
-if [[ $TMPDIR == "" ]]; then TMPDIR='/tmp'; fi
+if [[ "$quality" == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
+if [[ "$lid" == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; exit -1; fi
+if [[ "$bam" == "" ]]; then bam=0; fi
+if [[ "$stranded" == "" ]]; then stranded=0; fi
+if [[ "$readDirectionality" == "" ]]; then readDirectionality='NONE'; fi
+if [[ "$mism" == "" ]]; then mism='4'; fi
+if [[ "$maxReadLength" == "" ]]; then maxReadLength='150'; fi
+if [[ "$spliceSites" == "" ]]; then spliceSites='GT+AG' ; fi
+if [[ "$splitSize" == "" ]]; then splitSize='15'; fi
+if [[ ! -d "$outDir" ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
+if [[ "$logLevel" == "" ]]; then logLevel='info'; fi
+if [[ "$threads" == "" ]]; then threads='1'; fi
+if [[ "$TMPDIR" == "" ]]; then TMPDIR='/tmp'; fi
 
 
 # SETTING UP THE ENVIRONMENT
@@ -248,7 +244,7 @@ pipelineStart=$(date +%s)
 # - $outDir/$lid\_filtered_cuff.bam
 
 bamFirstMapping=$outDir/${lid}_filtered_cuff.bam
-if [ ! -e $bamFirstMapping ];then
+if [ ! -e $bamFirstMapping ]; then
 	step="FIRST-MAP"
 	startTime=$(date +%s)
 	printHeader "Executing first mapping step"    
@@ -269,7 +265,7 @@ fi
 
 unmappedReads=$outDir/${lid}.unmapped.fastq
 
-if [ ! -e $unmappedReads ];then
+if [ ! -e $unmappedReads ]; then
 	step="UNMAP"
 	startTime=$(date +%s)
 	printHeader "Executing unmapped reads step" 
@@ -300,7 +296,7 @@ fi
 
 gemSecondMapping=$outDir/SecondMapping/${lid}.unmapped_rna-mapped.map
 
-if [ ! -e $gemSecondMapping ];then
+if [ ! -e $gemSecondMapping ]; then
 	step="SECOND-MAP"
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
@@ -329,7 +325,7 @@ fi
 
 gffFromBam=$outDir/FromFirstBam/${lid}_filtered_cuff_2blocks.gff.gz
 
-if [ ! -e $gffFromBam ];then
+if [ ! -e $gffFromBam ]; then
 	step="FIRST-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the bam into gff step"
@@ -358,7 +354,7 @@ fi
 
 gffFromMap=$outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz
 
-if [ ! -e $gffFromMap ];then
+if [ ! -e $gffFromMap ]; then
 	step="SECOND-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the gem into gff step"
@@ -395,7 +391,7 @@ exonConnections1=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_par
 exonConnections2=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid.unmapped_rna-mapped.gff.txt.gz
 
 printHeader "Executing Chimsplice step"
-if [ ! -e $exonConnections1 ] || [ ! -e $exonConnections2 ];then
+if [ ! -e $exonConnections1 ] || [ ! -e $exonConnections2 ]; then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding exon to exon connections from the ".gff.gz" files containing the "normal" and "atypical" mappings..." $step
@@ -412,7 +408,7 @@ else
 fi
 
 chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-if [ ! -e $chimJunctions ];then
+if [ ! -e $chimJunctions ]; then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
@@ -484,7 +480,7 @@ fi
 
 chimJunctionsSim=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-if [ $simGnPairs != "" ];then
+if [ "$simGnPairs" != "" ];then
 	step="SIM"
 	startTime=$(date +%s)
 	log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step

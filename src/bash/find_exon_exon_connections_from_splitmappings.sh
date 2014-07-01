@@ -24,12 +24,9 @@
 # - Made for using on a 64 bit linux architecture
 # - uses awk scripts
 
-# will exit if there is an error or in a pipe
-set -e -o pipefail
-
 function usage
 {
-cat <<instructions
+cat <<help
 	Usage:    find_exon_exon_connections_from_splitmappings.sh split_mapping_files_paths.txt annot.gtf outputdir strandedness 
     
     Example:  find_exon_exon_connections_from_splitmappings.sh 001N/split_mapping_files_exp_001N.txt /users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf 001N 1 
@@ -38,7 +35,7 @@ cat <<instructions
     an output directory and the strandedness of the dataset (0 if unstranded, any positive value otherwise\) and produces
     intermediate and final files there including an exon to exon connection file for each input file 
 	exit 0
-instructions
+help
 }
 
 
@@ -55,7 +52,7 @@ stranded=$4
 if [[ ! -e $input ]]; then printf "\n\tERROR: Please specify a valid input file\n\n" >&2; usage; fi
 if [[ ! -e $annot ]]; then printf "\n\tERROR:Please specify a valid annotation file\n\n" >&2; usage; fi
 if [[ ! -d $outdir ]]; then outdir=.; fi
-if [[ $stranded == "" ]]; then stranded=0; fi
+if [[ "$stranded" == "" ]]; then stranded=0; fi
 
 # Directories 
 #############

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# will exit if there is an error or in a pipe
-set -e -o pipefail
-
 
 function usage {
     echo "Usage: $0 -i <fastq_file> -s <sex> [OPTION]..."
@@ -35,7 +32,7 @@ function log {
     string=$1
     label=$2
     if [[ ! $ECHO ]];then
-        if [[ $label != "" ]];then
+        if [[ "$label" != "" ]];then
             printf "[$label] $string"
         else
             printf "$string"
@@ -168,20 +165,20 @@ gt_filter=$binDir/miscellaneous/gt.filter.remove
 pigz=$binDir/miscellaneous/pigz
 
 # = Variables and input files = #
-if [[ $input == "" ]]; then log "Please specify the input file\n" "ERROR" >&2; exit -1; fi
-if [[ $index == "" ]]; then log "Please specify the genome index file\n" "ERROR" >&2; exit -1; fi
-if [[ $annotation == "" ]]; then log "Please specify the annotation file\n" "ERROR" >&2; exit -1; fi
-if [[ $quality == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
-if [[ $stranded == "" ]]; then stranded="0"; fi
-if [[ $readStrand == "" ]]; then readStrand="NONE"; fi
-if [[ $sample == "" ]]; then basename=$(basename $input); sample=${basename%_1*}; fi
-if [[ $loglevel == "" ]]; then loglevel="info"; fi
-if [[ $mism == "" ]]; then mism="4"; fi
-if [[ $mapStats != "1" ]]; then stats="--no-stats"; count="--no-count"; fi
-if [[ $maxReadLength == "" ]]; then maxReadLength="150"; fi
+if [[ "$input" == "" ]]; then log "Please specify the input file\n" "ERROR" >&2; exit -1; fi
+if [[ "$index" == "" ]]; then log "Please specify the genome index file\n" "ERROR" >&2; exit -1; fi
+if [[ "$annotation" == "" ]]; then log "Please specify the annotation file\n" "ERROR" >&2; exit -1; fi
+if [[ "$quality" == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
+if [[ "$stranded" == "" ]]; then stranded="0"; fi
+if [[ "$readStrand" == "" ]]; then readStrand="NONE"; fi
+if [[ "$sample" == "" ]]; then basename=$(basename $input); sample=${basename%_1*}; fi
+if [[ "$loglevel" == "" ]]; then loglevel="info"; fi
+if [[ "$mism" == "" ]]; then mism="4"; fi
+if [[ "$mapStats" != "1" ]]; then stats="--no-stats"; count="--no-count"; fi
+if [[ "$maxReadLength" == "" ]]; then maxReadLength="150"; fi
 annName=`basename $annotation`
-if [[ $threads == "" ]]; then threads='1'; fi
-if [[ $threads == 1 ]]; then hthreads='1'; else hthreads=$((threads/2)); fi	
+if [[ "$threads" == "" ]]; then threads='1'; fi
+if [[ "$threads" == "1" ]]; then hthreads='1'; else hthreads=$((threads/2)); fi	
 #threads=${NSLOTS-1}
 
 
@@ -247,7 +244,7 @@ fi
 ##
 filteredGemStats=${filteredGem%.map.gz}.stats
 
-if [ $filteredGemStats -ot $filteredGem ] && [ $mapStats == "1" ] ;then
+if [ $filteredGemStats -ot $filteredGem ] && [ "$mapStats" == "1" ] ;then
     step="FIRST-MAP.STATS"
     startTime=$(date +%s)
     printHeader "Executing GEM stats step"
@@ -265,7 +262,7 @@ if [ $filteredGemStats -ot $filteredGem ] && [ $mapStats == "1" ] ;then
     endTime=$(date +%s)
     printHeader "GEM stats step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-    if [ $mapStats == "1" ]; then printHeader "GEM stats file is present...skipping GEM stats step"; fi 
+    if [ "$mapStats" == "1" ]; then printHeader "GEM stats file is present...skipping GEM stats step"; fi 
 fi
 
 ## Convert to bam and adding the XS field
