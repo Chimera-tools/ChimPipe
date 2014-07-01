@@ -22,6 +22,7 @@ IMPORTANT: By default runs in unstranded mode. If you have stranded data use the
 
 ** [options] can be:
  
+	-H  	<TXT>		Text file containing similarity information between the gene pairs in the annotation.  
 	-S	<NUMBER>	Minimum split size. Default 15
 	-s			Flag to specify whether data is stranded/directional. Default false (data unstranded).
 	-d	<STRING>	Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE & NONE). Default "NONE".
