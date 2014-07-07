@@ -49,7 +49,7 @@ NR>1{
 	for (nbPE in PE)
 	{
 		split(PE[nbPE],nb,":");
-		if (nb[2]>maxPE)
+		if (nb[2]>maxPE)															# Maximum number of encompassing read pairs connecting exons from two different genes
 		{
 			maxPE=nb[2];
 		}
@@ -58,9 +58,9 @@ NR>1{
 	minPE1=conf1[2]; 
 	maxSim1=conf1[3];
 	minLgAl1=conf1[4];  
-	if (($2>=minStag1)&&(maxPE>=minPE1)&&(($18<maxSim1)||($19<minLgAl1)))
+	if (($2>=minStag1)&&(maxPE>=minPE1)&&(($18<maxSim1)||($19<minLgAl1)))			# First condition
 	{
-		filtered="0";
+		filtered="0";																# If first condition is fulfilled don't filter out the junction						
 	}
 	else
 	{
@@ -72,10 +72,9 @@ NR>1{
 			minPE2=conf2[2]; 
 			maxSim2=conf2[3]; 
 			minLgAl2=conf2[4];
-	
-			if (($2>=minStag2)&&(maxPE>=minPE2)&&(($18<maxSim2)||($19<minLgAl2)))
+			if (($2>=minStag2)&&(maxPE>=minPE2)&&(($18<maxSim2)||($19<minLgAl2))) 	# Second condition
 			{
-				filtered="0";
+				filtered="0";														# If second condition is fulfilled don't filter out the junction
 			}		
 		} 	
 	}
