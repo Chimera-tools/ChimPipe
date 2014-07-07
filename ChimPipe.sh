@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
+
 function usage
 {
 cat <<help
@@ -22,6 +25,17 @@ IMPORTANT: By default runs in unstranded mode. If you have stranded data use the
 
 ** [options] can be:
  
+	-F 	<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended 
+					in semicolom where:
+				
+				 	1st: minimum number of staggered reads spanning the chimeric junction.
+					2nd: maximum number of paired-end reads encompassing the chimeric junction.
+					3rd: maximum similarity between the connected genes.
+					4rd: minimum length of the high similar region between the connected genes. 	
+					
+				All these conditions have to be fulfilled for a chimeric junction to pass the filter. Example: "1,2,75,50;".
+				It is also possible to make complex condifions by setting two different conditions where at least one of 
+				them has to be fulfilled. Example: "10,0,00,00;1,1,00,00;". Default: "5,0,80,30;1,1,80,30;"
 	-H  	<TXT>		Text file containing similarity information between the gene pairs in the annotation.  
 	-S	<NUMBER>	Minimum split size. Default 15
 	-s			Flag to specify whether data is stranded/directional. Default false (data unstranded).
@@ -69,7 +83,7 @@ function run {
 
 # PARSING INPUT ARGUMENTS 
 #########################
-while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:D:l:t:Th" opt; do
+while getopts ":f:i:a:q:e:F:H:bsd:M:mL:c:S:o:D:l:t:Th" opt; do
   case $opt in
     f)
       input="$OPTARG"
@@ -83,6 +97,9 @@ while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:D:l:t:Th" opt; do
     q)
       quality=$OPTARG
       ;;
+    F)
+      filterConf=$OPTARG
+      ;;	
     e)
       lid=$OPTARG
       ;;     
@@ -130,13 +147,15 @@ while getopts ":f:i:a:q:e:H:bsd:M:mL:c:S:o:D:l:t:Th" opt; do
       ;;
     h)
       usage
+      exit 1
       ;;
     \?)
-      echo "Invalid option: -$OPTARG" >&2
+      log "Invalid option: -$OPTARG\n" "ERROR" >&2; 
+      exit -1;
       ;;
     :)
-      echo "Option -$OPTARG requires an argument." >&2
-      exit 1
+      log "Option -$OPTARG requires an argument\n" "ERROR" >&2; 
+      exit -1;
       ;;
   esac
 done
@@ -161,6 +180,15 @@ if [[ "$logLevel" == "" ]]; then logLevel='info'; fi
 if [[ "$threads" == "" ]]; then threads='1'; fi
 if [[ "$TMPDIR" == "" ]]; then TMPDIR='/tmp'; fi
 
+if [[ "$filterConf" == "" ]]; then 			# Checking filtering module configuration
+	filterConf="5,0,80,30;1,1,80,30;";		# Default
+else
+	if [[ ! "$filterConf" =~ ^([0-9]+,[0-9]+,[0-9]{,3},[0-9]+;){1,2}$ ]]; then
+		log "Please check your filtering module configuration. Option -F\n\n" "ERROR" >&2; 
+		usage; 
+		exit -1;
+	fi
+fi
 
 # SETTING UP THE ENVIRONMENT
 ############################
@@ -204,17 +232,19 @@ bedCorrectStrand=$awkDir/bedCorrectStrand.awk
 mapCorrectStrand=$awkDir/gemCorrectStrand.awk
 addPEinfo=$awkDir/add_PE_info.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
+juncFilter=$awkDir/chimjunc_filter.awk
 
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 
 printf "\n\n"
-printf "*****Chimera Mapping pipeline configuration*****\n"
-printf "Pipeline Version: V0.6.9\n"
+printf "*****ChimPipe configuration*****\n"
+printf "Version: V0.7.0\n"
 printf "Input: $input\n"
 printf "Index: $index\n"
 printf "Annotation: $annot\n"
 printf "Quality: $quality\n"
+printf "Filtering module configuration: $filterConf\n"
 printf "Strand: $stranded\n"
 printf "Directionality: $readDirectionality\n"
 printf "Number mismatches: $mism\n"
@@ -226,6 +256,7 @@ printf "Sample id: $lid\n"
 printf "Log level: $logLevel\n"	
 printf "Threads: $threads\n"	
 printf "\n"
+
 
 ## START CHIMERA MAPPING PIPELINE 
 #################################
@@ -278,7 +309,7 @@ if [ ! -e $unmappedReads ]; then
     	run "md5sum $unmappedReads > $unmappedReads.md5" "$ECHO"
         log "done\n"
     else
-        log "Error extracting the unmapped reads" "ERROR" 
+        log "Error extracting the unmapped reads\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -309,7 +340,7 @@ if [ ! -e $gemSecondMapping ]; then
     	run "md5sum $gemSecondMapping > $gemSecondMapping.md5" "$ECHO"
         log "done\n"
     else
-        log "Error in the second mapping" "ERROR" 
+        log "Error in the second mapping\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -338,7 +369,7 @@ if [ ! -e $gffFromBam ]; then
     	run "md5sum $gffFromBam > $gffFromBam.md5" "$ECHO"
         log "done\n"
     else
-        log "Error Generating the gff file" "ERROR" 
+        log "Error Generating the gff file\n" "ERROR" 
         exit -1
     fi
 	endTime=$(date +%s)
@@ -367,7 +398,7 @@ if [ ! -e $gffFromMap ]; then
     	run "md5sum $gffFromMap > $gffFromMap.md5" "$ECHO"
         log "done\n"
     else
-        log "Error Generating the gff file" "ERROR" 
+        log "Error Generating the gff file\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -388,6 +419,7 @@ run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/s
 # - $outDir/Chimsplice/chimeric_junctions_report_$lid.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
+
 exonConnections1=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid\_filtered_cuff_2blocks.gff.txt.gz 
 exonConnections2=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid.unmapped_rna-mapped.gff.txt.gz
 
@@ -399,7 +431,7 @@ if [ ! -e $exonConnections1 ] || [ ! -e $exonConnections2 ]; then
 	run "$chim1 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -e $exonConnections1 ] || [ ! -e $exonConnections2 ]; then
-        log "Error running chimsplice" "ERROR" 
+        log "Error running chimsplice\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -416,7 +448,7 @@ if [ ! -e $chimJunctions ]; then
 	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $index $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -e $chimJunctions ]; then
-        log "Error running chimsplice" "ERROR" 
+        log "Error running chimsplice\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -434,6 +466,7 @@ fi
 # - $outDir/PE/readid_gnlist_whoseexoverread_noredund.txt.gz
 # - $outDir/PE/readid_twomateswithgnlist_alldiffgnpairs_where_1stassociatedto1stmate_and2ndto2ndmate.txt.gz
 # - $outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
+
 PEinfo=$outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
 
 printHeader "Executing find gene to gene connections from PE mappings step"
@@ -444,7 +477,7 @@ if [ ! -e $PEinfo ];then
 	run "$findGeneConnections $outDir/$lid\_filtered_cuff.bam $annot $outDir/PE $readDirectionality 2> $outDir/PE/find_gene_to_gene_connections_from_pe_rnaseq_fast_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -e $PEinfo ]; then
-        log "Error finding gene to gene connections" "ERROR" 
+        log "Error finding gene to gene connections\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -456,17 +489,18 @@ fi
 # 8.2) Add gene to gene connections information to chimeric junctions matrix
 ##########################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+
 chimJunctionsPE=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
 if [ ! -e $chimJunctionsPE ];then
 	step="PAIRED-END"
 	startTime=$(date +%s)
-	log "Adding PE information to the chimeric junction matrix..." $step
+	log "Adding PE information to the matrix containing chimeric junction candidates..." $step
 	run "awk -v fileRef=$PEinfo -f $addPEinfo $chimJunctions 1> $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 " "$ECHO"
 	log "done\n" 
 	if [ ! -e $chimJunctionsPE ]; then
-        log "Error adding PE information" "ERROR" 
+        log "Error adding PE information\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -481,39 +515,76 @@ fi
 
 chimJunctionsSim=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-if [ "$simGnPairs" != "" ];then
-	step="SIM"
-	startTime=$(date +%s)
-	log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
-	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJunctionsPE 1> $chimJunctionsSim" "$ECHO"
-	log "done\n" 
-	if [ ! -e $chimJunctionsSim ]; then
-		log "Error adding similarity information" "ERROR" 
-    	exit -1
+if [  ! -e "$chimJunctionsSim" ]; then		
+	if [ "$simGnPairs" != "" ];then
+		step="SIM"
+		startTime=$(date +%s)
+		log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
+		run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJunctionsPE 1> $chimJunctionsSim" "$ECHO"
+		log "done\n" 
+		if [ ! -e $chimJunctionsSim ]; then
+			log "Error adding similarity information\n" "ERROR" 
+	    	exit -1
+		fi
+		rm $chimJunctionsPE
+		endTime=$(date +%s)
+		printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	else 
+		printHeader "Similarity information between the gene pairs in the annotation does not provided... skipping step"
 	fi
-	rm $chimJunctionsPE
-	endTime=$(date +%s)
-	printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else 
-	printHeader "Similarity information between the gene pairs in the annotation does not provided... skipping step"
+else
+	printHeader "Chimeric junction matrix with similarity information present... skipping step"
 fi
 
-# 10) Produce a final output matrix with a header in the first row
-##################################################################
+# 10) Produce a matrix containing chimeric junction candidates with a header in the first row
+#############################################################################################
+# - $outDir/chimeric_junctions_candidates.txt
+
+chimJunctionsCandidates=$outDir/chimeric_junctions_candidates.txt
+
+if [ ! -e "$chimJunctionsCandidates" ]; then		
+	step="HEADER"
+	log "Adding a header to the matrix containing the chimeric junction candidates..." $step
+	if [ -e "$chimJunctionsSim" ]; then		
+		run "awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport", "maxSim", "maxLgal";}{print \$0;}' $chimJunctionsSim 1> $chimJunctionsCandidates" "$ECHO"
+		rm $chimJunctionsSim
+		log "done\n"
+	else
+		if [ -e "$chimJunctionsPE" ]; then
+			run "awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport";}{print \$0;}' $chimJunctionsPE 1> $chimJunctionsCandidates" "$ECHO"
+			log "done\n" 
+			rm $chimJunctionsPE
+		else
+			log "Error, intermediate file: $chimJunctionsSim or $chimJunctionsPE is missing\n" "ERROR" 
+	    	exit -1			
+		fi
+	fi 
+else
+	printHeader "Header already added... skipping step"
+fi
+
+# 11) Filter out chimera candidates to produce a final set of chimeric junctions
+################################################################################
 # - $outDir/chimeric_junctions.txt
 
-if [ -e $chimJunctionsSim ]; then	
-	awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport", "maxSim", "maxLgal";}{print $0;}' $chimJunctionsSim 1> $outDir/chimeric_junctions.txt
-	rm $chimJunctionsSim
-else
-	if [ -e $chimJunctionsPE ]; then
-		awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport";}{print $0;}' $chimJunctionsPE 1> $outDir/chimeric_junctions.txt
-		rm $chimJunctionsPE
-	else
-		log "Error, intermediate file: $chimJunctionsSim or $chimJunctionsPE is missing" "ERROR" 
-    	exit -1			
+chimJunctions=$outDir/chimeric_junctions.txt
+
+if [ ! -e "$chimJunctions" ]; then
+	step="FILTERING MODULE"
+	startTime=$(date +%s)
+	log "Filtering out chimera candidates to produce a final set of chimeric junctions..." $step
+	awk -v filterConf=$filterConf -f $juncFilter $chimJunctionsCandidates 1> $chimJunctions
+	log "done\n" 
+	if [ ! -e $chimJunctionsSim ]; then
+		log "Error filtering chimeric junction candidates\n" "ERROR" 
+    	exit -1
 	fi
-fi 
+	rm $chimJunctionsCandidates
+	endTime=$(date +%s)
+	printHeader "Filtering module step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else 
+	printHeader "Chimeric junction candidates already filtered... skipping step"
+fi
 
 # 11) END
 #########

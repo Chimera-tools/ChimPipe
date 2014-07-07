@@ -204,7 +204,7 @@ if [ ! -e $sample.map.gz ];then
         run "md5sum $sample.map.gz > $sample.map.gz.md5" "$ECHO"
         log "done\n"
     else
-        log "Error producing map file" "ERROR"
+        log "Error producing map file\n" "ERROR"
         exit -1
     fi
     endTime=$(date +%s)
@@ -231,7 +231,7 @@ if [ ! -e $filteredGem ];then
         run "md5sum $filteredGem > $filteredGem.md5" "$ECHO"
         log "done\n"
     else
-        log "Error producing filtered map file" "ERROR" 
+        log "Error producing filtered map file\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -256,7 +256,7 @@ if [ $filteredGemStats -ot $filteredGem ] && [ "$mapStats" == "1" ] ;then
         run "md5sum $filteredGemStats > $filteredGemStats.md5" "$ECHO"
         log "done\n"
     else
-        log "Error producing GEM stats" "ERROR" 
+        log "Error producing GEM stats\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
@@ -289,7 +289,7 @@ if [ ! -e $filteredBam ];then
         run "cp $TMPDIR/$filteredBam ." "$ECHO"
         log "done\n"
     else
-        log "Error producing the filtered bam file" "ERROR" 
+        log "Error producing the filtered bam file\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
