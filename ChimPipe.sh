@@ -3,54 +3,95 @@
 # will exit if there is an error or in a pipe
 set -e -o pipefail
 
+function usage {
+    echo ""
+    echo "### Blueprint RNAseq pipeline ###"
+    echo "Run the RNAseq pipeline on one sample."
+    echo ""
+    echo "Usage: $0 -i FASTQ_FILE -g GENOME_FILE -a ANNOTATION_FILE [OPTION]... [-- STEPS]"
+    echo ""
+    printf "  If specified, STEPS must be a space separate list of items from [mapping, bigwig, contig, flux]. Default: all\n"
+    echo ""
+    printf "  -i|--input\t\tinput file.\n"
+    printf "  -g|--genome\t\treference genome file.\n"
+    printf "  -a|--annotation\treference gene annotation file.\n"
+    echo ""
+    echo "Options:"
+    printf "  -m|--mismatches\tMax number of mismatches. Default \"4\".\n"
+    printf "  -n|--hits\t\tMax number of hits. Default \"10\".\n"
+    printf "  -q|--quality-offset\tThe quality offset of the fastq files. Default: \"33\".\n"    
+    printf "  -r|--max-read-length\tThe maximum read length (used to compute the transcriptomes). Default: \"150\".\n"    
+    printf "  -s|--read-strand\tdirectionality of the reads (MATE1_SENSE, MATE2_SENSE, NONE). Default \"NONE\".\n"
+    printf "  -l|--loglevel\t\tLog level (error, warn, info, debug). Default \"info\".\n"
+    printf "  -t|--threads\t\tNumber of threads. Default \"1\".\n"
+    printf "  -p|--paired-end\tSpecify whether the data is paired-end. Defalut: \"false\".\n"
+    printf "  -c|--count-elements\tA comma separated list of elements to be counted by the Flux Capacitor.\n\t\t\tPossible values: INTRONS,SPLICE_JUNCTIONS. Defalut: \"none\".\n"
+    printf "  -h|--help\t\tShow this message and exit.\n"
+    printf "  --read-group\tA comma separated list of tags for the @RG field of the BAM file.\n\t\t\tCheck the SAM specification for details. Default: \"none\".\n"
+    printf "  --bam-stats\t\tRun the RSeQC stats on the bam file. Default \"false\".\n"
+    printf "  --flux-mem\t\tSpecify the amount of ram the Flux Capacitor can use. Default: \"3G\".\n"
+    printf "  --tmp-dir\t\tSpecify local temporary folder to copy files when running on shared file systems.\n\t\t\tDefault: \"\$TMPDIR\" if the environment variable is defined, \"-\" otherwise.\n"
+    printf "  --dry-run\t\tTest the pipeline. Writes the command to the standard output.\n"
+    exit 0
+}
+
 function usage
 {
 cat <<help
-USAGE: Chimera_mapping_pipeline.sh -f <fastq_file> -i <genome_index> -a <annotation> -q <quality> [options]
-       
-Execute ChimPipe (from RNAseq reads to chimeric junctions) on one RNAseq dataset (sample).
+	
+*** ChimPipe version $version ***
 
-IMPORTANT: By default runs in unstranded mode. If you have stranded data use the "-s" flag (see [options]).
+Execute ChimPipe (from paired-end RNA-Seq reads to chimeric junctions) on one RNA-Seq dataset (sample).
+	
+USAGE: ChimPipe.sh -i <fastq_file> -g <genome_index> -a <annotation> -q <quality> -e <sample_id> [OPTIONS]
+ 
+IMPORTANT: By default runs in unstranded mode. If you have stranded data use the \"-s\" flag (see [OPTIONS]).
 
 ** Mandatory arguments:
-
-	-f	<INPUT_FILE>	First mate FASTQ file. Pipeline designed to deal with paired end data. 
-				Make sure the second mate file is in the same directory as the first mate file, and the files are named
-                    		YourSampleId_1.fastq.gz and YourSampleId_2.fastq.gz respectively. YourSampleId has to be provided with the -e option.   
+	-i|--input			<INPUT_FILE>	First mate sequencing reads in FASTQ format. Pipeline designed to deal with paired-end
+	 						data. Please make sure the second mate file is in the same directory as the first mate 
+	 						file, and the files are named "YourSampleId_1.fastq.gz" and "YourSampleId_2.fastq.gz" 
+	 						respectively. YourSampleId has to be provided with the -e argument.
+	-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
+	-a|--annotation			<GTF>		Reference gene annotation file in GTF format.
+	-q|--quality			<NUMBER>	Quality offset of the FASTQ files [33 | 64 | ignore].
+	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).    
 	
-	-i	<GEM>		Index for the reference genome (".gem" format).
-	-a	<GTF>		Reference annotation (".gtf" format).
-	-q	<NUMBER>	Quality offset of the reads in the ".fastq" [33 | 64 | ignore].
-	-e	<STRING>	Sample identifier (the output files will be named according to this id).
+** [OPTIONS] can be:
+Reads information:
+	-s|--stranded			<FLAG>		Flag to specify whether data is stranded. Default false (unstranded).
+	--read-directionality		<STRING>	Directionality of the reads [MATE1_SENSE | MATE2_SENSE | MATE_STRAND_CSHL | SENSE | ANTISENSE | NONE]. Default NONE.
+	--max-read-length		<NUMBER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
+	
+Mapping parameters:
+	-M|--mism-contiguous-map	<NUMBER>	Maximum number of mismatches for the contiguous mapping steps with the GEM mapper. Default 4?.
+	-m|mism-split-map		<NUMBER>	Maximum number of mismatches for the segmental mapping steps with the GEM rna-mapper. Default 4?.	
+	--min-split-size		<NUMBER>	Minimum split size for the segmental mapping steps. Default 15.
+	--stats				<FLAG>		Enable mapping statistics. Default disabled.
+	
+Chimeric junctions filter:
+	--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
+							i.e. "1,2,75,50;", where:
+											
+								1st: minimum number of staggered reads spanning the chimeric junction.
+								2nd: maximum number of paired-end reads encompassing the chimeric junction.		
+								3rd: maximum similarity between the connected genes.
+								4rd: minimum length of the high similar region between the connected genes.
+	
+							All these conditions have to be fulfilled for a chimeric junction to pass the filter. It is also possible to make 
+							complex condifions by setting two different conditions where at least one of them has to be fulfilled. 
+							I.e "10,0,00,00;1,1,00,00;". Default "5,0,80,30;1,1,80,30;".	
+	--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
+							to discard junctions connecting highly similar genes. If not provided the junctions will not be filtered according this criteria. 
 
-** [options] can be:
- 
-	-F 	<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended 
-					in semicolom where:
-				
-				 	1st: minimum number of staggered reads spanning the chimeric junction.
-					2nd: maximum number of paired-end reads encompassing the chimeric junction.
-					3rd: maximum similarity between the connected genes.
-					4rd: minimum length of the high similar region between the connected genes. 	
-					
-				All these conditions have to be fulfilled for a chimeric junction to pass the filter. Example: "1,2,75,50;".
-				It is also possible to make complex condifions by setting two different conditions where at least one of 
-				them has to be fulfilled. Example: "10,0,00,00;1,1,00,00;". Default: "5,0,80,30;1,1,80,30;"
-	-H  	<TXT>		Text file containing similarity information between the gene pairs in the annotation.  
-	-S	<NUMBER>	Minimum split size. Default 15
-	-s			Flag to specify whether data is stranded/directional. Default false (data unstranded).
-	-d	<STRING>	Directionality of the reads (MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, SENSE, ANTISENSE & NONE). Default "NONE".
-	-M	<NUMBER>	Maximum number of mismatches used for first standard mapping. Default 4.
-	-m			Flag to enable mapping statistics. Default disabled. 
-	-L	<NUMBER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
-	-c	<pair_1>, ... ,<pair_s>
-      		with <pair> := <donor_consensus>+<acceptor_consensus> (list of pairs of donor/acceptor splice site consensus sequences for the second mapping. Default "GT+AG")
-	-o	<PATH>		Output directory (By default writes in the current working directory).
-	-D	<PATH>		Temporary directory. Default /tmp.
-	-l	<STRING>	Log level (error, warn, info, debug). Default "info".
-	-h			Flag to display usage information.
-	-T			Flag to test the pipeline. Writes the commands to the standard output but does not run the program.
-	-t			Number of threads to use. Default 1.
+General:
+	-o|--output-dir			<PATH>		Output directory. Default current working directory.
+	--tmp-dir			<PATH>		Temporary directory. Default /tmp.
+	-t|--threads			<PATH>		Number of threads to use. Default 1.
+	-l|--log			<PATH>		Log level [error |warn | info | debug). Default info.
+	--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
+	--help				<FLAG>		Display usage information.
+
 help
 }
 
@@ -243,6 +284,9 @@ done
 # SETTING UP THE ENVIRONMENT
 ############################
 
+# ChimPipe version 
+version=V0.7.0
+
 # 1. ChimPipe's root directory
 ##############################
 # It will be exported as an environmental variable since it will be used by every ChimPipe's scripts 
@@ -328,7 +372,7 @@ juncFilter=$awkDir/chimjunc_filter.awk
 
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
-version=V0.7.0
+
 
 printf "\n"
 header="Pipeline configuration for $lid"
@@ -374,7 +418,7 @@ printf "\n\n"
 pipelineStart=$(date +%s)
 
 exit 1
-# 1) map all the reads to the genome, to the transcriptome and de-novo, using the standard rnaseq 
+# 1) map all the reads to the genome, to the transcriptome and de-novo, using the standard RNA-Seq 
 #################################################################################################
 #   mapping pipeline but with max intron size larger than the biggest chromosome, and with an edit
 ##################################################################################################  
