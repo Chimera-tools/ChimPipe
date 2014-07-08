@@ -259,12 +259,12 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 
 # 3. Check input variables 
 ##########################
-if [[ ! -e $input ]]; then log "Please specify a valid input file\n" "ERROR" >&2; exit -1; fi
-if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; exit -1; fi
-if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; exit -1; fi
-if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; exit -1; fi
-if [[ "$quality" == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
-if [[ "$lid" == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; exit -1; fi
+if [[ ! -e $input ]]; then log "Please specify a valid input file\n" "ERROR" >&2; usage; exit -1; fi
+if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; usage; exit -1; fi
+if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; usage; exit -1; fi
+if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; usage; exit -1; fi
+if [[ "$quality" == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; usage; exit -1; fi
+if [[ "$lid" == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; usage; exit -1; fi
 if [[ "$bam" == "" ]]; then bam=0; fi
 if [[ "$stranded" == "" ]]; then stranded=0; fi
 if [[ "$readDirectionality" == "" ]]; then readDirectionality='NONE'; fi
