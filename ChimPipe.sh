@@ -3,38 +3,6 @@
 # will exit if there is an error or in a pipe
 set -e -o pipefail
 
-function usage {
-    echo ""
-    echo "### Blueprint RNAseq pipeline ###"
-    echo "Run the RNAseq pipeline on one sample."
-    echo ""
-    echo "Usage: $0 -i FASTQ_FILE -g GENOME_FILE -a ANNOTATION_FILE [OPTION]... [-- STEPS]"
-    echo ""
-    printf "  If specified, STEPS must be a space separate list of items from [mapping, bigwig, contig, flux]. Default: all\n"
-    echo ""
-    printf "  -i|--input\t\tinput file.\n"
-    printf "  -g|--genome\t\treference genome file.\n"
-    printf "  -a|--annotation\treference gene annotation file.\n"
-    echo ""
-    echo "Options:"
-    printf "  -m|--mismatches\tMax number of mismatches. Default \"4\".\n"
-    printf "  -n|--hits\t\tMax number of hits. Default \"10\".\n"
-    printf "  -q|--quality-offset\tThe quality offset of the fastq files. Default: \"33\".\n"    
-    printf "  -r|--max-read-length\tThe maximum read length (used to compute the transcriptomes). Default: \"150\".\n"    
-    printf "  -s|--read-strand\tdirectionality of the reads (MATE1_SENSE, MATE2_SENSE, NONE). Default \"NONE\".\n"
-    printf "  -l|--loglevel\t\tLog level (error, warn, info, debug). Default \"info\".\n"
-    printf "  -t|--threads\t\tNumber of threads. Default \"1\".\n"
-    printf "  -p|--paired-end\tSpecify whether the data is paired-end. Defalut: \"false\".\n"
-    printf "  -c|--count-elements\tA comma separated list of elements to be counted by the Flux Capacitor.\n\t\t\tPossible values: INTRONS,SPLICE_JUNCTIONS. Defalut: \"none\".\n"
-    printf "  -h|--help\t\tShow this message and exit.\n"
-    printf "  --read-group\tA comma separated list of tags for the @RG field of the BAM file.\n\t\t\tCheck the SAM specification for details. Default: \"none\".\n"
-    printf "  --bam-stats\t\tRun the RSeQC stats on the bam file. Default \"false\".\n"
-    printf "  --flux-mem\t\tSpecify the amount of ram the Flux Capacitor can use. Default: \"3G\".\n"
-    printf "  --tmp-dir\t\tSpecify local temporary folder to copy files when running on shared file systems.\n\t\t\tDefault: \"\$TMPDIR\" if the environment variable is defined, \"-\" otherwise.\n"
-    printf "  --dry-run\t\tTest the pipeline. Writes the command to the standard output.\n"
-    exit 0
-}
-
 function usage
 {
 cat <<help
