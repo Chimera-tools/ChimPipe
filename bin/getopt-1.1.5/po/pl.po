@@ -1,0 +1,126 @@
+# Polish translation of util-linux.
+# Copyright (C) 2005 Free Software Foundation, Inc.
+# This file is distributed under the same license as the util-linux package.
+# Andrzej Krzysztofowicz <ankry@mif.pg.gda.pl>, 2006.
+# Jakub Bogusz <qboosh@pld-linux.org>, 2009-2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux 2.21-rc2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2012-02-12 17:17+0100\n"
+"Last-Translator: Jakub Bogusz <qboosh@pld-linux.org>\n"
+"Language-Team: Polish <translation-team-pl@lists.sourceforge.net>\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-2\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2;\n"
+
+#: getopt.c:226
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "`%s --help' wy¶wietli wiêcej informacji.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "pusta opcja d³uga po opcji -l lub --long"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "nieznana pow³oka po opcji -s lub --shell"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr ""
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr ""
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr ""
+" %1$s optstring parametry\n"
+" %1$s [opcje] [--] optstring parametry\n"
+" %1$s [opcje] -o|--options optstring [opcje] [--] parametry\n"
+
+#: getopt.c:324
+#, fuzzy
+msgid "              parameters\n"
+msgstr "              Pierwszy    Ostatni\n"
+
+#: getopt.c:325
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"Opcje:\n"
+
+#: getopt.c:326
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr ""
+" -a, --alternative            Zezwolenie na d³ugie opcje z jednym - na "
+"pocz±tku\n"
+
+#: getopt.c:327
+msgid " -h, --help                   This small usage guide\n"
+msgstr " -h, --help                   Ten krótki opis u¿ycia\n"
+
+#: getopt.c:328
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr ""
+" -l, --longoptions <opcje>    D³ugie opcje, jakie maj± byæ rozpoznawane\n"
+
+#: getopt.c:329
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr "  -n, --name <program>        Nazwa z jak± maj± byæ zg³aszane b³êdy\n"
+
+#: getopt.c:330
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr ""
+"  -o, --options <optstring>   Krótkie opcje, jakie maj± byæ rozpoznawane\n"
+
+#: getopt.c:331
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr ""
+" -q, --quiet                  Wy³±czenie komunikatów b³êdów z getopt(3)\n"
+
+#: getopt.c:332
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr " -Q, --quiet-output           Bez normalnego wyj¶cia\n"
+
+#: getopt.c:333
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr " -s, --shell <pow³oka>        Ustawienie konwencji cytowania pow³oki\n"
+
+#: getopt.c:334
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr " -T, --test                   Sprawdzenie wersji getopt(1)\n"
+
+#: getopt.c:335
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr " -u, --unquote                Bez cytowania wyj¶cia\n"
+
+#: getopt.c:336
+msgid " -V, --version                Output version information\n"
+msgstr " -V, --version                Wypisanie informacji o wersji\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "brak parametru optstring"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "%s na %s\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "b³±d wewnêtrzny, proszê skontaktowaæ siê autorem."

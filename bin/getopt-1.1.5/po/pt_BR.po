@@ -1,0 +1,140 @@
+# Portuguese translation of the util-linux messages.
+# Copyright (C) 2000 Free Software Foundation, Inc.
+# Arnaldo Carvalho de Melo <acme@conectiva.com.br>, 1999-2000
+# Ricardo Stefani <ricardos@francanet.com.br>, 1999
+# Marcus Moreira <marcusms@frb.br>
+# Paulo Henrique R Pinheiro <nulo@sul.com.br>
+# <support@turbolinux.com>, 2000.
+# Alvaro Antunes <alvaro@netpar.com.br>, 2000
+# Rodrigo Stulzer Lopes <rodrigo@conectiva.com.br>, 2001
+#
+# Free redistribution is permitted.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux 2.11b\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2001-05-24 16:03-03:00\n"
+"Last-Translator: Rodrigo Stulzer Lopes <rodrigo@conectiva.com.br>\n"
+"Language-Team: Brazilian Portuguese <ldp-br@bazar.conectiva.com.br>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 0.8\n"
+
+#: getopt.c:226
+#, fuzzy, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "Tente `getopt --help' para maiores informações.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "opção longa vazia depois de argumento -l ou --long"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "interpretador de comandos desconhecido após argumento -s ou --shell"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Uso: getopt texto_opções parâmetros\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "       getopt [opções] [--] texto_opções parâmetros\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "       getopt [opções] [--] texto_opções parâmetros\n"
+
+#: getopt.c:324
+msgid "              parameters\n"
+msgstr "              parâmetros\n"
+
+#: getopt.c:325
+#, fuzzy
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"%d partições:\n"
+
+#: getopt.c:326
+#, fuzzy
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr ""
+"  -a, --alternative            Permite opções longas iniciando com um único "
+"-\n"
+
+#: getopt.c:327
+#, fuzzy
+msgid " -h, --help                   This small usage guide\n"
+msgstr "  -h, --help                   Mostra este pequeno guia de uso\n"
+
+#: getopt.c:328
+#, fuzzy
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr "  -l, --longoptions=ops_longas Opções longas a serem reconhecidas\n"
+
+#: getopt.c:329
+#, fuzzy
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr ""
+"  -n, --name=nome_prog         O nome sob o qual erros são reportados\n"
+
+#: getopt.c:330
+#, fuzzy
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr "  -o, --options=texto_opções     Opções curtas a serem reconhecidas\n"
+
+#: getopt.c:331
+#, fuzzy
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr ""
+"  -q, --quiet                  Desativa a exibição de erros por getopt(3)\n"
+
+#: getopt.c:332
+#, fuzzy
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr "  -Q, --quiet-output           Sem saída normal\n"
+
+#: getopt.c:333
+#, fuzzy
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr ""
+"  -s, --shell=shell            Configura as convenções de aspas do "
+"interpretador de comandos\n"
+
+#: getopt.c:334
+#, fuzzy
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr "  -T, --test                   Teste de versão de getopt(1)\n"
+
+#: getopt.c:335
+#, fuzzy
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr "  -u, --unqote                 Não quota a saída\n"
+
+#: getopt.c:336
+#, fuzzy
+msgid " -V, --version                Output version information\n"
+msgstr "  -V, --version                Mostra informações de versão\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "faltou o argumento texto_opções"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getopt (melhorado) 1.1.0)\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "erro interno, entre em contato com o autor."

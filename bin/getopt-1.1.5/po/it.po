@@ -1,0 +1,136 @@
+# Italian messages for util-linux-ng.
+# Copyright (C) 2000, 2005, 2006, 2008 Free Software Foundation, Inc.
+# This file is distributed under the same license as the util-linux package.
+# Marco Colombo <m.colombo@ed.ac.uk>, 2005, 2006, 2008.
+# Beth Powell <bpowell@turbolinux.com>, 2000.
+#
+# partition table: tavola delle partizioni? tabella delle partizioni?
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux-ng 2.13.1-rc1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2008-04-18 13:44+0100\n"
+"Last-Translator: Marco Colombo <m.colombo@ed.ac.uk>\n"
+"Language-Team: Italian <tp@lists.linux.it>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: getopt.c:226
+#, fuzzy, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr ""
+"%s: %s\n"
+"Provare \"%s --help\" per ulteriori informazioni.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "opzione lunga vuota dopo parametro -l o --long"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "shell sconosciuta dopo parametro -s o --shell"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Uso: getopt optstring parametri\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "      getopt [opzioni] [--] optstring parametri\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "      getopt [opzioni] [--] optstring parametri\n"
+
+#: getopt.c:324
+msgid "              parameters\n"
+msgstr "             parametri\n"
+
+#: getopt.c:325
+#, fuzzy
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"%d partizioni:\n"
+
+#: getopt.c:326
+#, fuzzy
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr ""
+"  -a, --alternative            Consente le opzioni lunghe che iniziano con "
+"un singolo -\n"
+
+#: getopt.c:327
+#, fuzzy
+msgid " -h, --help                   This small usage guide\n"
+msgstr "  -h, --help                   Questa piccola guida all'utilizzo\n"
+
+#: getopt.c:328
+#, fuzzy
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr "  -l, --longoptions=longopts   Opzioni lunghe da riconoscere\n"
+
+#: getopt.c:329
+#, fuzzy
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr ""
+"  -n, --name=progname          Il nome con il quale vengono riportati gli "
+"errori\n"
+
+#: getopt.c:330
+#, fuzzy
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr "  -o, --options=optstring      Opzioni brevi da riconoscere\n"
+
+#: getopt.c:331
+#, fuzzy
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr ""
+"  -q, --quiet                  Disattiva errore riportato da getopt(3)\n"
+
+#: getopt.c:332
+#, fuzzy
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr "  -Q, --quiet-output           Nessun output normale\n"
+
+#: getopt.c:333
+#, fuzzy
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr "  -s, --shell=shell            Imposta la shell \n"
+
+#: getopt.c:334
+#, fuzzy
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr "  -T, --test                   Prova della versione getopt(1)\n"
+
+# FIXME UPSTREAM: unqote
+#: getopt.c:335
+#, fuzzy
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr "  -u, --unqote                 Non cita l'output\n"
+
+#: getopt.c:336
+#, fuzzy
+msgid " -V, --version                Output version information\n"
+msgstr "  -V, --version                Mostra le informazioni sulla versione\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "argomento optstring mancante"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getopt (avanzato) 1.1.4\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "errore interno, contattare l'autore."

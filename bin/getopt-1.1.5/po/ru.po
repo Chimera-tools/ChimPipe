@@ -1,0 +1,135 @@
+# Translation of util-linux-2.13-pre7.po to Russian
+# Copyright (C) 2003 Free Software Foundation Inc.
+# This file is put in the public domain.
+#
+# Pavel Maryanov <acid_jack@ukr.net>, 2003, 2004, 2005, 2006.
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux 2.13-pre7\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2006-03-07 12:42+0200\n"
+"Last-Translator: Pavel Maryanov <acid_jack@ukr.net>\n"
+"Language-Team: Russian <ru@li.org>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=KOI8-R\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.1\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: getopt.c:226
+#, fuzzy, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "Попробуйте `getopt --help' для получения дополнительной информации.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "пустая опция long после аргумента -l или --long"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "неизвестный шелл после аргумента -s или --shell"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Использование: getopt строка_опций параметры\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "       getopt [опции] [--] строка_опций параметры\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "       getopt [опции] [--] строка_опций параметры\n"
+
+#: getopt.c:324
+msgid "              parameters\n"
+msgstr "              параметры\n"
+
+#: getopt.c:325
+#, fuzzy
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"%d разделы:\n"
+
+#: getopt.c:326
+#, fuzzy
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr ""
+"  -a, --alternative            Разрешение длинных опций, начинающихся с "
+"одного -\n"
+
+#: getopt.c:327
+#, fuzzy
+msgid " -h, --help                   This small usage guide\n"
+msgstr ""
+"  -h, --help                   Это небольшое руководство по использованию\n"
+
+#: getopt.c:328
+#, fuzzy
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr "  -l, --longoptions=longopts   Длинные опции для распознавания\n"
+
+#: getopt.c:329
+#, fuzzy
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr ""
+"  -n, --name=имя_программы     Имя, от которого ведется отчет об ошибках\n"
+
+#: getopt.c:330
+#, fuzzy
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr "  -o, --options=строка_опций   Короткие опции для распознавания\n"
+
+#: getopt.c:331
+#, fuzzy
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr ""
+"  -q, --quiet                  Отключение отчета об ошибках getopt(3)\n"
+
+#: getopt.c:332
+#, fuzzy
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr "  -Q, --quiet-output           Без обычных выходных данных\n"
+
+#: getopt.c:333
+#, fuzzy
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr ""
+"  -s, --shell=шелл             Установка условий закл. в кавычки для шелла\n"
+
+#: getopt.c:334
+#, fuzzy
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr "  -T, --test                   Проверка версии getopt(1)\n"
+
+#: getopt.c:335
+#, fuzzy
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr ""
+"  -u, --unqote                 Не заключать в кавычки выходные данные\n"
+
+#: getopt.c:336
+#, fuzzy
+msgid " -V, --version                Output version information\n"
+msgstr "  -V, --version                Вывод информации о версии\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "отсутствует аргумент строки опций"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getopt (усовершенствованный) 1.1.4\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "внутренняя ошибка, свяжитесь с автором."

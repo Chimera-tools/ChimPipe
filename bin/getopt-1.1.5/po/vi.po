@@ -1,0 +1,131 @@
+# Vietnamese translation for Util-Linux-NG.
+# Copyright © 2010 Free Software Foundation, Inc.
+# This file is distributed under the same license as the util-linux-ng package.
+# Phan Vinh Thinh <teppi82@gmail.com>, 2005-2007
+# Clytie Siddall <clytie@riverland.net.au>, 2007-2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux-ng 2.18-rc2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2010-10-03 22:15+1030\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.8\n"
+
+#: getopt.c:226
+#, fuzzy, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr ""
+"%s: %s\n"
+"Thử lệnh trợ giúp « %s --help » để xem thông tin thêm.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "tùy chọn dài rỗng sau -l hay tham số --long"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "trình bao không rõ sau -s hay tham số --shell"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Sử dụng: getopt chuỗi_tùy_chọn tham_số\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "       getopt [tùychọn] [--] chuỗi_tùy_chọn tham_số\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "       getopt [tùychọn] [--] chuỗi_tùy_chọn tham_số\n"
+
+#: getopt.c:324
+msgid "              parameters\n"
+msgstr "              tham số\n"
+
+#: getopt.c:325
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"Tuỳ chọn:\n"
+
+#: getopt.c:326
+#, fuzzy
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr ""
+"  -a, --alternative            Cho phép tùy chọn dài bắt đầu với một - đơn\n"
+
+#: getopt.c:327
+#, fuzzy
+msgid " -h, --help                   This small usage guide\n"
+msgstr "  -h, --help                   Hướng dẫn sử dụng nhỏ này\n"
+
+#: getopt.c:328
+#, fuzzy
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr "  -l, --longoptions=tùychọndài   Tùy chọn dài cần nhận ra\n"
+
+#: getopt.c:329
+#, fuzzy
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr "  -n, --name=tên_chương_trình          Báo cáo lỗi dưới tên này\n"
+
+#: getopt.c:330
+#, fuzzy
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr "  -o, --options=chuỗi_tùy_chọn      Các tùy chọn ngắn cần nhận ra\n"
+
+#: getopt.c:331
+#, fuzzy
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr "  -q, --quiet                  Tắt bỏ báo cáo lỗi bằng getopt(3)\n"
+
+#: getopt.c:332
+#, fuzzy
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr "  -Q, --quiet-output           Không có kết quả ra thông thường\n"
+
+#: getopt.c:333
+#, fuzzy
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr "  -s, --shell=trình_bao            Đặt quy ước trích dẫn trình bao\n"
+
+#: getopt.c:334
+#, fuzzy
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr "  -T, --test                   Thử phiên bản getopt(1)\n"
+
+#: getopt.c:335
+#, fuzzy
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr "  -u, --unqote                 Không trích dẫn kết quả ra\n"
+
+#: getopt.c:336
+#, fuzzy
+msgid " -V, --version                Output version information\n"
+msgstr "  -V, --version                In ra thông tin phiên bản\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "thiếu đối số chuỗi_tùy_chọn"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getopt (đã nâng cao) 1.1.4\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "lỗi nội bộ, hãy liên hệ với tác giả."

@@ -1,0 +1,135 @@
+# Swedish messages for util-linux.
+# Copyright (C) 2001, 2002, 2003, 2004, 2007 Free Software Foundation, Inc.
+# Christian Rose <menthos@menthos.com>, 2001, 2002, 2003, 2004.
+# Daniel Nylander <po@danielnylander.se>, 2007.
+#
+# Permission is granted to freely copy and distribute
+# this file and modified versions, provided that this
+# header is not removed and modified versions are marked
+# as such.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux-ng 2.13.1-rc1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2007-11-14 09:20+0100\n"
+"Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
+"Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: getopt.c:226
+#, fuzzy, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr ""
+"%s: %s\n"
+"Prova med \"%s --help\" för mer information.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "tom lång flagga efter argumenten -l eller --long"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "okänt skal efter argumenten -s eller --shell"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Användning: getopt flaggsträng parametrar\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "       getopt [flaggor] [--] flaggsträng parametrar\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "       getopt [flaggor] [--] flaggsträng parametrar\n"
+
+#: getopt.c:324
+msgid "              parameters\n"
+msgstr "              parametrar\n"
+
+#: getopt.c:325
+#, fuzzy
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"%d partitioner:\n"
+
+#: getopt.c:326
+#, fuzzy
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr ""
+"  -a, --alternative            Tillåt långa flaggor som börjar med ensamt -\n"
+
+#: getopt.c:327
+#, fuzzy
+msgid " -h, --help                   This small usage guide\n"
+msgstr "  -h, --help                   Denna enkla användningsguide\n"
+
+#: getopt.c:328
+#, fuzzy
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr "  -l, --longoptions=långflg    Långa flaggor att känna igen\n"
+
+#: getopt.c:329
+#, fuzzy
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr "  -n, --name=programnamn       Det namn under vilket fel rapporteras\n"
+
+#: getopt.c:330
+#, fuzzy
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr "  -o, --options=flaggsträng    Korta flaggor att känna igen\n"
+
+#: getopt.c:331
+#, fuzzy
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr "  -q, --quiet                  Stäng av felrapportering av getopt(3)\n"
+
+#: getopt.c:332
+#, fuzzy
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr "  -Q, --quiet-output           Ingen normal utdata\n"
+
+#: getopt.c:333
+#, fuzzy
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr ""
+"  -s, --shell=skal             Ställ in konventioner för skalcitering\n"
+
+#: getopt.c:334
+#, fuzzy
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr "  -T, --test                   Undersök getopt(1)-version\n"
+
+#: getopt.c:335
+#, fuzzy
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr "  -u, --unquote                Citera inte utdata\n"
+
+#: getopt.c:336
+#, fuzzy
+msgid " -V, --version                Output version information\n"
+msgstr "  -V, --version                Skriv ut versionsinformation\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "flaggsträngsargument saknas"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getopt (utökad) 1.1.4\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "internt fel, kontakta författaren."

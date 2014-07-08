@@ -1,0 +1,133 @@
+# -*- mode: po -*- Slovenian translation for util-linux package.
+# Copyright (C) 2002, 2003 Free Software Foundation, Inc.
+# Primo¾ Peterlin <primoz.peterlin@biofiz.mf.uni-lj.si>, 2002, 2003.
+# Simon Mihevc <simonmihevc@volja.net>, 2005, 2006
+# $Id: sl.po,v 1.1 2012-08-12 09:07:18 frodo Exp $
+#
+# Permission is granted to freely copy and distribute
+# this file and modified versions, provided that this
+# header is not removed and modified versions are marked
+# as such.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux 2.13-pre6\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2006-03-05 12:29+0200\n"
+"Last-Translator: Simon Mihevc <simonmihevc@email.si>\n"
+"Language-Team: Slovenian <translation-team-sl@lists.sourceforge.net>\n"
+"Language: sl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-2\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: getopt.c:226
+#, fuzzy, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "Poskusite `getopt --help' za veè informacij.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "dolga prazna izbira po -l ali --long izbira"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "neznana lupina po -s ali -shell izbira"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Uporaba: getopt optstring parametri\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "       getopt [izbire] [--] optstring parametri\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "       getopt [izbire] [--] optstring parametri\n"
+
+#: getopt.c:324
+msgid "              parameters\n"
+msgstr "              parametri\n"
+
+#: getopt.c:325
+#, fuzzy
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"%d razdelkov:\n"
+
+#: getopt.c:326
+#, fuzzy
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr ""
+"  -a. --alternative            Dovoli dolge izbire, ki se zaènejo z enim -\n"
+
+#: getopt.c:327
+#, fuzzy
+msgid " -h, --help                   This small usage guide\n"
+msgstr "  -h  --help                   Manj¹a navodila\n"
+
+#: getopt.c:328
+#, fuzzy
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr "  -l  --longoptions=dolgeizbire   Dolge izbire za prepoznavo\n"
+
+#: getopt.c:329
+#, fuzzy
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr "  -n, --name=imeprograma       Ime na katerega se naslavljajo napake\n"
+
+#: getopt.c:330
+#, fuzzy
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr "  -o, --options=nizizbir       Kratke izbire za prepoznavo\n"
+
+#: getopt.c:331
+#, fuzzy
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr "  -q, --quiet                  Onemogoèi getopt(3) poroèanje napak\n"
+
+#: getopt.c:332
+#, fuzzy
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr "  -Q, --quiet-output           Brez normalnega izhoda\n"
+
+#: getopt.c:333
+#, fuzzy
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr "  -s,  --shell=lupina          Nastavi lupinsko konvencijo citiranja\n"
+
+#: getopt.c:334
+#, fuzzy
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr "  -T. --test                   Test za razlièico getopt(1)\n"
+
+#: getopt.c:335
+#, fuzzy
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr "  -u, --unqote                 Ne citiraj izhoda\n"
+
+#: getopt.c:336
+#, fuzzy
+msgid " -V, --version                Output version information\n"
+msgstr "  -V, --version                Izpi¹i informacije o razlièici\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "manjka izbira nizizbir "
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getpot (raz¹irjen) 1.1.3\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "notranja napaka, sporoèite avtorju."

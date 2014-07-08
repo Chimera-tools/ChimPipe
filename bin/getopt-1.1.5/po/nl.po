@@ -1,0 +1,134 @@
+# Dutch translations for the 'util-linux' Linux Utilities.
+# This file is distributed under the same license as the util-linux package.
+#
+# Permission is granted to freely copy and distribute this file
+# and modified versions, provided that this header is not removed
+# and modified versions are marked as such.
+#
+# "Ik wil dit niet."
+#
+# block    -> blok
+# sector   -> sector
+# cylinder -> cilinder
+# volume   -> volumen
+# (inode blijft onvertaald)
+#
+# Benno Schulenberg <benno@vertaalt.nl>, 2006, 2007, 2008, 2009, 2010, 2011, 2012.
+# Luk Claes <luk.claes@ugent.be>, 2005.
+# Taco Witte <tcwitte@cs.uu.nl>, 2002, 2003.
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux-2.21-rc2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2012-02-19 20:29+0100\n"
+"Last-Translator: Benno Schulenberg <benno@vertaalt.nl>\n"
+"Language-Team: Dutch <vertaling@vrijschrift.org>\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 1.0\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: getopt.c:226
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "Typ '%s --help' voor meer informatie.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "lege optiereeks na optie '-l' of '--long'"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "onbekende shell na optie '-s' of '--shell'"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Gebruik:  getopt optiereeks parameters\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "          getopt [opties] [--] optiereeks parameters\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "          getopt [opties] [--] optiereeks parameters\n"
+
+#: getopt.c:324
+#, fuzzy
+msgid "              parameters\n"
+msgstr "                Eerste     Laatste\n"
+
+#: getopt.c:325
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"Opties:\n"
+
+#: getopt.c:326
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr "  -a, --alternative             lange opties met één '-' toestaan\n"
+
+#: getopt.c:327
+msgid " -h, --help                   This small usage guide\n"
+msgstr "  -h, --help                    deze hulptekst tonen\n"
+
+#: getopt.c:328
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr "  -l, --longoptions=<optiereeks>  te herkennen lange opties\n"
+
+#: getopt.c:329
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr "  -n, --name=<programmanaam>    fouten rapporteren onder deze naam\n"
+
+#: getopt.c:330
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr "  -o, --options=<optiereeks>    te herkennen korte opties\n"
+
+#: getopt.c:331
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr ""
+"  -q, --quiet                   foutrapportage van getopt(3) uitzetten\n"
+
+#: getopt.c:332
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr "  -Q, --quiet-output            gewone uitvoer onderdrukken\n"
+
+#: getopt.c:333
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr ""
+"  -s, --shell=<shell>           aanhalingsconventies van deze shell "
+"gebruiken\n"
+
+#: getopt.c:334
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr ""
+"  -T, --test                    bepalen of dit een verbeterde getopt(1) is\n"
+
+#: getopt.c:335
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr "  -u, --unquoted                de uitvoer niet aanhalen\n"
+
+#: getopt.c:336
+msgid " -V, --version                Output version information\n"
+msgstr "  -V, --version                 programmaversie tonen\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "ontbrekende optiereeks"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getopt (verbeterde) 1.1.4\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "*interne fout*; neem contact op met de auteur"

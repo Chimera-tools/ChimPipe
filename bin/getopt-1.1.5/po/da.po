@@ -1,0 +1,178 @@
+# Danish translation util-linux.
+# Copyright (C) 2011 Free Software Foundation, Inc. og nedenstående oversættere.
+# This file is distributed under the same license as the util-linux package.
+# Claus Sørensen <cs@klid.dk>, 2000.
+# Keld Jørn Simonsen <keld@dkuug.dk>, 2000.
+# Claus Hindsgaul <claus_h@image.dk>, 2001-2002, 2004, 2005.
+# Joe Hansen <joedalton2@yahoo.dk>, 2010, 2011.
+#
+# alloc -> allokere (tildele)
+# argument -> parameter
+# blank -> tom (men meget usikker her)
+# bogus -> bogus (kunne måske godt være vrøvle)
+# buffer -> mellemlager
+# decompression -> dekomprimering
+# deprecated -> forældet
+# descriptor -> beskrivelse
+# divisor -> nævner
+# drift factor -> hastighedsfaktor
+# failed -> mislykkedes
+# get -> indhente (alternativer: finde, få)
+# inode -> inode (en inode er noget som alle filer på ext3 og lignende 
+#                 filsystemer har. Det angiver vist et logisk sted på 
+#                 disken hvor den ligger) Flertal inoder
+# label -> etiket (mærke (bruges for tag), mærkat)
+# link -> henvisning (lænke)
+# loop -> loop (kunne også være løkke)
+# parse -> fortolke
+# policy -> politik (retningslinje)
+# save file -> redningsfil (kunne også være gemmefil)
+# semaphore -> semafor (signalmast)
+# set -> angiv
+# SGI volhdr -> SGI volhdr (var tidligere SGI bndhvd, kunne også være dskhdr)
+# stat -> stat (stat (Unix), a system call on POSIX and Unix-like systems)
+# tag -> mærke
+# uncompressing -> udpakker (se decompression)
+# UTC -> GMT 
+#       (UTC (også kaldet zulutid) er den internationale tidszone, som (næsten) 
+#        er det samme som Greenwich Mean Time. Tidsforskellen mellem dansk tid 
+#        og UTC er plus én time ved normaltid og plus to timer ved sommertid.
+#        Bruges ofte som synonymer. Dette til trods for, at UTC og GMT kan afvige
+#        få tiendedele af et sekund fra hinanden på grund af Jordens uregelmæssige
+#        rotationshastighed.
+# volume -> diskenhed (bind, arkiv, diskområde)
+# wakeup -> opvågning
+# whole disk -> hele disken
+# "", '' -> »«
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux-2.19-rc2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2011-04-09 19:30+01:00\n"
+"Last-Translator: Joe Hansen <joedalton2@yahoo.dk>\n"
+"Language-Team: Danish <dansk@dansk-gruppen.dk>\n"
+"Language: da\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: getopt.c:226
+#, fuzzy, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr ""
+"%s: %s\n"
+"Brug »%s --help« for yderligere detaljer.\n"
+
+# Jeg kiggede på hjælpeudskriften for programmet getopt, og det gav i
+# hvertfald mening på den måde.  Det er et program til at fortolke
+# kommandolinjeparametre, så derfor er det måske forvirrende af den
+# grund.  Man giver tilvalget --long til getopt, og det argument man
+# angiver til --long, fortolker den så som et langt tilvalg til det
+# program, hvis kommandolinje man bruger getopt til at fortolke.
+# Forvirret? :)
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "tomt langt ­tilvalg efter -l eller parameteren --long"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "ukendt skal efter -s eller parameteren --shell"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Brug: getopt tilvalgsstreng parametre\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "       getopt [tilvalg] [--] tilvalgsstreng parametre\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "       getopt [tilvalg] [--] tilvalgsstreng parametre\n"
+
+#: getopt.c:324
+msgid "              parameters\n"
+msgstr "              parametre\n"
+
+#: getopt.c:325
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"Tilvalg:\n"
+
+#: getopt.c:326
+#, fuzzy
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr "  -a, --alternative            Tillad lange tilvalg med enkelt -\n"
+
+#: getopt.c:327
+#, fuzzy
+msgid " -h, --help                   This small usage guide\n"
+msgstr "  -h, --help                   Denne lille manual\n"
+
+#: getopt.c:328
+#, fuzzy
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr "  -l, --longoptions=langtilvalg  Lange tilvalg, der skal genkendes\n"
+
+#: getopt.c:329
+#, fuzzy
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr ""
+"  -n, --name=prognavn          Navnet som fejl skal rapporteres under\n"
+
+#: getopt.c:330
+#, fuzzy
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr "  -o, --options=tilvalgsstreng Korte tilvalg, der skal genkendes\n"
+
+#: getopt.c:331
+#, fuzzy
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr ""
+"  -q, --quiet                  Undertryk fejlrapportering fra getopt(3)\n"
+
+#: getopt.c:332
+#, fuzzy
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr "  -Q, --quiet-output           Ingen normale uddata\n"
+
+#: getopt.c:333
+#, fuzzy
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr "  -s, --shell=skal             Angiv konventioner for anførselstegn\n"
+
+#: getopt.c:334
+#, fuzzy
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr "  -T, --test                   Tjek versionen af getopt(1)\n"
+
+#: getopt.c:335
+#, fuzzy
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr "  -u, --unqote                 Indskyd ikke anførselstegn i uddata\n"
+
+#: getopt.c:336
+#, fuzzy
+msgid " -V, --version                Output version information\n"
+msgstr "  -V, --version                Vis versionsinformation\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "mangler tilvalgsstrengparameter"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getopt (udvidet) 1.1.4\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "intern fejl, kontakt programmøren."

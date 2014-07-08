@@ -80,88 +80,185 @@ function run {
     fi
 }
 
+# Function 5. 
+#############
+function getoptions {
+ARGS=`$getopt -o "i:g:a:q:e:sM:m:o:t:l:h" -l "input:,genome-index:,annotation:,quality:,sample-id:,stranded,mismatches-contiguous-mapping:,mismatches-split-mapping:,output-dir:,threads:,log:,help,read-directionality:,max-read-length:,max-read-length:,consensus-splice-sites:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats,tmp-dir:,dry" \
+      -n "$0" -- "$@"`
 
-# PARSING INPUT ARGUMENTS 
-#########################
-while getopts ":f:i:a:q:e:F:H:bsd:M:mL:c:S:o:D:l:t:Th" opt; do
-  case $opt in
-    f)
-      input="$OPTARG"
-      ;;
-    i)
-      index="`dirname $OPTARG | xargs readlink -e`/`basename $OPTARG`"
-      ;;
-    a)
-      annot="`dirname $OPTARG | xargs readlink -e`/`basename $OPTARG`"
-      ;;
-    q)
-      quality=$OPTARG
-      ;;
-    F)
-      filterConf=$OPTARG
-      ;;	
-    e)
-      lid=$OPTARG
-      ;;     
-    H)
-      simGnPairs=$OPTARG
-      ;;  
-    b)
-      bam=1
-      ;;
-    s)
-      stranded=1
-      ;;
-    d)
-      readDirectionality=$OPTARG
-      ;;
-    M)
-      mism=$OPTARG
-      ;;
-    m)
+#Bad arguments
+if [ $? -ne 0 ];
+then
+  exit 1
+fi
+
+# A little magic
+eval set -- "$ARGS"
+
+while true;
+do
+  case "$1" in
+    -i|--input)
+      if [ -n "$2" ];
+      then
+        input=$2
+      fi
+      shift 2;;
+
+    -g|--genome-index)
+      if [ -n "$2" ];
+      then
+        index=$2
+      fi
+      shift 2;;
+
+    -a|--annotation)
+      if [ -n "$2" ];
+      then
+        annot=$2
+      fi
+      shift 2;;
+  
+     -q|--quality)
+      if [ -n $2 ];
+      then
+        quality=$2
+      fi
+      shift 2;;
+    
+    -e|--sample-id)
+       if [ -n "$2" ];
+       then
+         lid=$2
+       fi
+       shift 2;;
+    
+    -s|--stranded)
+       stranded=1
+       shift;;
+     
+    --read-directionality)
+      if [ -n $2 ];
+      then
+        readDirectionality=$2
+      fi
+      shift 2;;
+     
+    --max-read-length)
+      if [ -n $2 ];
+      then
+        maxReadLength=$2
+      fi
+      shift 2;;
+
+	 -M|--mismatches-contiguous-mapping)
+       if [ -n "$2" ];
+       then
+         mism=$2
+       fi
+       shift 2;;
+	
+	-m|--mismatches-split-mapping)
+       if [ -n "$2" ];
+       then
+         mismSplit=$2
+       fi
+       shift 2;;
+
+	--consensus-splice-sites)
+       if [ -n "$2" ];
+       then
+         spliceSites=$2
+       fi
+       shift 2;;
+       
+    --min-split-size)
+       if [ -n "$2" ];
+       then
+         splitSize=$2
+       fi
+       shift 2;;   
+
+	--stats)
       mapStats="-m"  
-      ;;
-    L)
-      maxReadLength=$OPTARG 
-      ;; 
- 	c)
- 	  spliceSites=$OPTARG
- 	  ;;
- 	S)
- 	  splitSize=$OPTARG
- 	  ;;  
- 	o)
-      outDir=$OPTARG
-      ;;
-    D)
-      TMPDIR=$OPTARG
-      ;;  
- 	l)
-      logLevel=$OPTARG
-      ;; 
-    t)
-      threads=$OPTARG
-      ;;
-    T)
+      shift ;;
+
+    --filter-chimeras)
+      if [ -n $2 ];
+      then
+       filterConf="$2"
+      fi
+      shift 2;;
+      
+    --similarity-gene-pairs)
+      if [ -n $2 ];
+      then
+        simGnPairs="$2"
+      fi
+      shift 2;;
+
+	-o|--output-dir)
+      if [ -n $2 ];
+      then
+        outDir=$2
+      fi
+      shift 2;;
+      
+    --tmp-dir)
+      if [ -n $2 ];
+      then
+        TMPDIR=$2
+      fi
+      shift 2;;
+ 
+    -t|--threads)
+      if [ -n $2 ];
+      then
+        threads=$2
+      fi
+      shift 2;;
+ 
+    -l|--log)
+      if [ -n $2 ];
+      then
+        logLevel=$2
+      fi
+      shift 2;;
+ 
+    --dry)
       ECHO="echo "
-      ;;
-    h)
+      shift;;
+    
+    -h|--help)
       usage
-      exit 1
-      ;;
-    \?)
-      log "Invalid option: -$OPTARG\n" "ERROR" >&2; 
-      exit -1;
-      ;;
-    :)
-      log "Option -$OPTARG requires an argument\n" "ERROR" >&2; 
-      exit -1;
-      ;;
+      shift;;
+    
+    --)
+      shift
+      break;;
   esac
 done
+}
 
-# SETTING VARIABLES AND INPUT FILES
-###################################
+# SETTING UP THE ENVIRONMENT
+############################
+
+# 1. ChimPipe's root directory
+##############################
+# It will be exported as an environmental variable since it will be used by every ChimPipe's scripts 
+# to set the path to the bin, awk and bash directories. 
+root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
+
+export rootDir=$root 
+
+# 2. Parse input arguments with getopt  
+######################################
+getopt=$root/bin/getopt-1.1.5/getopt
+
+getoptions $0 $@ # call Function 5 and passing two parameters (name of the script and command used to call it)
+
+# 3. Check input variables 
+##########################
 if [[ ! -e $input ]]; then log "Please specify a valid input file\n" "ERROR" >&2; exit -1; fi
 if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; exit -1; fi
 if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; exit -1; fi
@@ -190,18 +287,8 @@ else
 	fi
 fi
 
-# SETTING UP THE ENVIRONMENT
-############################
-
-# = Export environmental variables = #
-
-# ChimPipe root directory 
-# This variable will be used by every ChimPipe's scripts to set the path to the bin, awk and bash directories. 
-root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
-
-export rootDir=$root TMPDIR=$TMPDIR
-
-# = Directories = #
+# 4. Directories
+################
 binDir=$rootDir/bin
 awkDir=$rootDir/src/awk
 bashDir=$rootDir/src/bash
@@ -211,7 +298,12 @@ if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; f
 if [[ ! -d $outDir/Chimsplice ]]; then mkdir $outDir/Chimsplice; fi
 if [[ ! -d $outDir/PE ]]; then mkdir $outDir/PE; fi
 
-# = Programs/Scripts = #
+# The temporary directory will be exported as an environmental variable since it will 
+# be used by every ChimPipe's scripts 
+export TMPDIR=$TMPDIR
+
+# 5. Programs/Scripts
+##################
 # Bash 
 pipeline=$bashDir/first_mapping_pipeline.sh
 chim1=$bashDir/find_exon_exon_connections_from_splitmappings.sh
@@ -236,34 +328,52 @@ juncFilter=$awkDir/chimjunc_filter.awk
 
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
+version=V0.7.0
 
-printf "\n\n"
-printf "*****ChimPipe configuration*****\n"
-printf "Version: V0.7.0\n"
-printf "Input: $input\n"
-printf "Index: $index\n"
-printf "Annotation: $annot\n"
-printf "Quality: $quality\n"
-printf "Filtering module configuration: $filterConf\n"
-printf "Strand: $stranded\n"
-printf "Directionality: $readDirectionality\n"
-printf "Number mismatches: $mism\n"
-printf "Max read length: $maxReadLength\n"
-printf "Consensus split sites: $spliceSites\n"
-printf "Min split size: $splitSize\n"
-printf "Outdir: $outDir\n"
-printf "Sample id: $lid\n"
-printf "Log level: $logLevel\n"	
-printf "Threads: $threads\n"	
 printf "\n"
+header="Pipeline configuration for $lid"
+echo $header
+eval "for i in {1..${#header}};do printf \"-\";done"
+printf "\n\n"
+printf "  %-34s %s\n\n" "ChimPipe Version $version"
+printf "  %-34s %s\n" "***** Mandatory *****"
+printf "  %-34s %s\n" "Input file:" "$input"
+printf "  %-34s %s\n" "Reference genome file:" "$index"
+printf "  %-34s %s\n" "Reference gene annotation file:" "$annot"
+printf "  %-34s %s\n" "Quality offset:" "$quality"
+printf "  %-34s %s\n\n" "Sample identifier:" "$lid"
 
+printf "  %-34s %s\n" "***** Reads information *****"
+printf "  %-34s %s\n" "Strandedness (1:stranded,0:unstranded):" "$stranded"
+printf "  %-34s %s\n" "Reads directionality:" "$readDirectionality"
+printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
 
-## START CHIMERA MAPPING PIPELINE 
-#################################
+printf "  %-34s %s\n" "***** Mapping *****"
+printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
+printf "  %-34s %s\n" "Max number of allowed mismatches split mapping:" "$mismSplit"
+printf "  %-34s %s\n" "Consensus-splice-sites:" "$spliceSites"
+printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSize"
+printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
 
-printHeader "Starting Chimera Mapping pipeline for $lid"
+printf "  %-34s %s\n" "***** Filters *****"
+printf "  %-34s %s\n" "Chimeric junctions filtering module configuration:" "$filterConf"
+printf "  %-34s %s\n\n" "Similarity information between gene pairs:" "$simGnPairs"
+
+printf "  %-34s %s\n" "***** General *****"
+printf "  %-34s %s\n" "Output directory:" "$outDir"
+printf "  %-34s %s\n" "Temporary directory:" "$TMPDIR"
+printf "  %-34s %s\n" "Number of threads:" "$threads"
+printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
+
+## START CHIMPIPE
+#################
+header="Executing ChimPipe $version for $lid"
+echo $header
+eval "for i in {1..${#header}};do printf \"-\";done"
+printf "\n\n"
 pipelineStart=$(date +%s)
 
+exit 1
 # 1) map all the reads to the genome, to the transcriptome and de-novo, using the standard rnaseq 
 #################################################################################################
 #   mapping pipeline but with max intron size larger than the biggest chromosome, and with an edit

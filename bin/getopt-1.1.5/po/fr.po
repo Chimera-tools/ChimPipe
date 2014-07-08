@@ -1,0 +1,132 @@
+# Translation of util-linux-ng runtime message to French.
+# Copyright © 1996-2006, 2008-2012 Free Software Foundation, Inc.
+# This file is distributed under the same license as the util-linux package.
+#
+# Permission is granted to freely copy and distribute
+# this file and modified versions, provided that this
+# header is not removed and modified versions are marked as such.
+#
+# Michel Robitaille <robitail@IRO.UMontreal.CA>, 1996-2006.
+# Nicolas Provost <nprovost@quadriv.com>, 2008-2009.
+# Milan Bouchet-Valat <nalimilan@club.fr>, 2010.
+# David Prévot <david@tilapin.org>, 2010-2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: util-linux 2.21-rc2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-12 10:55+0200\n"
+"PO-Revision-Date: 2012-02-13 14:39-0400\n"
+"Last-Translator: David Prévot <david@tilapin.org>\n"
+"Language-Team: French <traduc@traduc.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Lokalize 1.2\n"
+
+#: getopt.c:226
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr ""
+"Exécutez « %s --help » pour obtenir des renseignements complémentaires.\n"
+
+#: getopt.c:295
+msgid "empty long option after -l or --long argument"
+msgstr "option longue vide après l'argument -l ou --long"
+
+#: getopt.c:316
+msgid "unknown shell after -s or --shell argument"
+msgstr "shell inconnu après l'argument -s ou --shell"
+
+#: getopt.c:321
+msgid "Usage: getopt optstring parameters\n"
+msgstr "Utilisation : getopt chaîne-d-options paramètres\n"
+
+#: getopt.c:322
+msgid "       getopt [options] [--] optstring parameters\n"
+msgstr "       getopt [options] [--] paramètres de la chaîne d'option\n"
+
+#: getopt.c:323
+#, fuzzy
+msgid "       getopt [options] -o|--options optstring [options] [--]\n"
+msgstr "       getopt [options] [--] paramètres de la chaîne d'option\n"
+
+#: getopt.c:324
+msgid "              parameters\n"
+msgstr "              paramètres\n"
+
+#: getopt.c:325
+msgid ""
+"\n"
+"Options:\n"
+msgstr ""
+"\n"
+"Options :\n"
+
+#: getopt.c:326
+msgid ""
+" -a, --alternative            Allow long options starting with single -\n"
+msgstr ""
+" -a, --alternative            permettre les options longues avec un seul -\n"
+
+#: getopt.c:327
+msgid " -h, --help                   This small usage guide\n"
+msgstr " -h, --help                   afficher l'aide mémoire\n"
+
+#: getopt.c:328
+msgid " -l, --longoptions <longopts> Long options to be recognized\n"
+msgstr " -l, --longoptions <opt-long> options longues à reconnaître\n"
+
+#: getopt.c:329
+msgid ""
+" -n, --name <progname>        The name under which errors are reported\n"
+msgstr ""
+" -n, --name <nom-programme>   le nom sous lequel les erreurs sont signalées\n"
+
+#: getopt.c:330
+msgid " -o, --options <optstring>    Short options to be recognized\n"
+msgstr " -o, --options <chaîne_opt>   options courtes à reconnaître\n"
+
+#: getopt.c:331
+msgid " -q, --quiet                  Disable error reporting by getopt(3)\n"
+msgstr ""
+" -q, --quiet                  désactiver les rapports d'erreur par getopt"
+"(3)\n"
+
+#: getopt.c:332
+msgid " -Q, --quiet-output           No normal output\n"
+msgstr " -Q, --quiet-output           pas d'affichage normal\n"
+
+# getopt-1.1.2/getopt.c:335
+#: getopt.c:333
+msgid " -s, --shell <shell>          Set shell quoting conventions\n"
+msgstr ""
+" -s, --shell <interpréteur>   initialiser la convention de commentaire de "
+"l'interpréteur\n"
+
+#: getopt.c:334
+msgid " -T, --test                   Test for getopt(1) version\n"
+msgstr " -T, --test                   afficher la version de getopt(1)\n"
+
+#: getopt.c:335
+msgid " -u, --unquote                Do not quote the output\n"
+msgstr ""
+" -u, --unquote                ne pas protéger la sortie avec des guillemets\n"
+
+#: getopt.c:336
+msgid " -V, --version                Output version information\n"
+msgstr " -V, --version                afficher les informations de version\n"
+
+#: getopt.c:384 getopt.c:444
+msgid "missing optstring argument"
+msgstr "argument chaîne_opt manquant"
+
+#: getopt.c:433
+#, fuzzy, c-format
+msgid "%s (enhanced) %s\n"
+msgstr "getopt (amélioré) 1.1.4\n"
+
+#: getopt.c:439
+msgid "internal error, contact the author."
+msgstr "erreur interne, contacter l'auteur."
