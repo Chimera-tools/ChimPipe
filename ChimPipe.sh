@@ -11,7 +11,7 @@ cat <<help
 
 Execute ChimPipe (from paired-end RNA-Seq reads to chimeric junctions) on one RNA-Seq dataset (sample).
 	
-USAGE: ChimPipe.sh -i <fastq_file> -g <genome_index> -a <annotation> -q <quality> -e <sample_id> [OPTIONS]
+USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> -q <quality> -e <sample_id> [OPTIONS]
  
 IMPORTANT: By default runs in unstranded mode. If you have stranded data use the \"-s\" flag (see [OPTIONS]).
 
