@@ -32,8 +32,8 @@ Reads information:
 	--max-read-length		<NUMBER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	
 Mapping parameters:
-	-M|--mism-contiguous-map	<NUMBER>	Maximum number of mismatches for the contiguous mapping steps with the GEM mapper. Default 4?.
-	-m|mism-split-map		<NUMBER>	Maximum number of mismatches for the segmental mapping steps with the GEM rna-mapper. Default 4?.	
+	-M|--mism-contiguous-map	<NUMBER>	Maximum number of mismatches for the contiguous mapping steps with the GEM mapper. Default 4?. Not working
+	-m|--mism-split-map		<NUMBER>	Maximum number of mismatches for the segmental mapping steps with the GEM rna-mapper. Default 4?.	Not working
 	--min-split-size		<NUMBER>	Minimum split size for the segmental mapping steps. Default 15.
 	--stats				<FLAG>		Enable mapping statistics. Default disabled.
 	
@@ -92,7 +92,7 @@ function run {
 # Function 5. 
 #############
 function getoptions {
-ARGS=`$getopt -o "i:g:a:q:e:sM:m:o:t:l:h" -l "input:,genome-index:,annotation:,quality:,sample-id:,stranded,mismatches-contiguous-mapping:,mismatches-split-mapping:,output-dir:,threads:,log:,help,read-directionality:,max-read-length:,max-read-length:,consensus-splice-sites:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats,tmp-dir:,dry" \
+ARGS=`$getopt -o "i:g:a:q:e:sM:m:o:t:l:h" -l "input:,genome-index:,annotation:,quality:,sample-id:,stranded,mis-contiguous-map:,mism-split-map:,output-dir:,threads:,log:,help,read-directionality:,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats,tmp-dir:,dry" \
       -n "$0" -- "$@"`
 
 #Bad arguments
@@ -160,27 +160,20 @@ do
       fi
       shift 2;;
 
-	 -M|--mismatches-contiguous-mapping)
+	 -M|--mism-contiguous-map)
        if [ -n "$2" ];
        then
          mism=$2
        fi
        shift 2;;
 	
-	-m|--mismatches-split-mapping)
+	-m|--mism-split-map)
        if [ -n "$2" ];
        then
          mismSplit=$2
        fi
        shift 2;;
 
-	--consensus-splice-sites)
-       if [ -n "$2" ];
-       then
-         spliceSites=$2
-       fi
-       shift 2;;
-       
     --min-split-size)
        if [ -n "$2" ];
        then
@@ -240,6 +233,7 @@ do
     
     -h|--help)
       usage
+      exit 1
       shift;;
     
     --)
@@ -254,6 +248,9 @@ done
 
 # ChimPipe version 
 version=V0.7.0
+
+# Enable extended pattern matching 
+shopt -s extglob
 
 # 1. ChimPipe's root directory
 ##############################
@@ -271,33 +268,142 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 
 # 3. Check input variables 
 ##########################
-if [[ ! -e $input ]]; then log "Please specify a valid input file\n" "ERROR" >&2; usage; exit -1; fi
-if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; usage; exit -1; fi
-if [[ ! -e $index ]]; then log "Please specify a valid genome index file\n" "ERROR" >&2; usage; exit -1; fi
-if [[ ! -e $annot ]]; then log "Please specify a valid annotation file\n" "ERROR" >&2; usage; exit -1; fi
-if [[ "$quality" == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; usage; exit -1; fi
-if [[ "$lid" == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; usage; exit -1; fi
-if [[ "$bam" == "" ]]; then bam=0; fi
-if [[ "$stranded" == "" ]]; then stranded=0; fi
-if [[ "$readDirectionality" == "" ]]; then readDirectionality='NONE'; fi
-if [[ "$mism" == "" ]]; then mism='4'; fi
-if [[ "$maxReadLength" == "" ]]; then maxReadLength='150'; fi
-if [[ "$spliceSites" == "" ]]; then spliceSites='GT+AG' ; fi
-if [[ "$splitSize" == "" ]]; then splitSize='15'; fi
-if [[ ! -d "$outDir" ]]; then outDir=${SGE_O_WORKDIR-$PWD}; fi
-if [[ "$logLevel" == "" ]]; then logLevel='info'; fi
-if [[ "$threads" == "" ]]; then threads='1'; fi
-if [[ "$TMPDIR" == "" ]]; then TMPDIR='/tmp'; fi
 
-if [[ "$filterConf" == "" ]]; then 			# Checking filtering module configuration
+# Mandatory arguments
+if [[ ! -e $input ]]; then log "Your input file file does not exist\n" "ERROR" >&2; usage; exit -1; fi
+if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; usage; exit -1; fi
+if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usage; exit -1; fi
+if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usage; exit -1; fi
+if [[ "$quality" != @(33|64|ignore) ]]; then log "Please specify a proper quality value [33|64|ignore]\n" "ERROR" >&2; usage; exit -1; fi
+if [[ "$lid" == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; usage; exit -1; fi
+#if [[ "$bam" == "" ]]; then bam=0; fi
+
+# Flag to specify if the data is stranded
+if [[ "$stranded" == "" ]]; then stranded=0; fi
+
+# Read directionality
+if [[ "$readDirectionality" == "" ]]; 
+then 
+	readDirectionality='NONE'; 
+else
+	if [[ "$readDirectionality" != @(MATE1_SENSE|MATE2_SENSE|MATE_STRAND_CSHL|SENSE|ANTISENSE|NONE) ]];
+	then
+		log "Please specify a proper read directionality [MATE1_SENSE|MATE2_SENSE|MATE_STRAND_CSHL|SENSE|ANTISENSE|NONE]. Option --read-directionality\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi	
+fi
+
+# Maximum read legnth
+if [[ "$maxReadLength" == "" ]]; 
+then 
+	maxReadLength='150'; 
+else
+	if [[ ! "$maxReadLength" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
+# Number of mismatches contiguous mapping
+if [[ "$mism" == "" ]]; 
+then 
+	mism='4'; 
+else 
+	if [[ ! "$mism" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper number of mismatches for contiguous mapping steps. Option -M|--mism-contiguous-map\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
+# Consensus splice sites
+if [[ "$spliceSites" == "" ]]; then spliceSites='GT+AG' ; fi
+
+# Minimum split size for the segmental mappings
+if [[ "$splitSize" == "" ]];
+then 
+	splitSize='15'; 
+else
+	if [[ ! "$splitSize" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper minimum split size for the segmental mapping steps. Option --min-split-size\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
+# Filtering module configuration	
+if [[ "$filterConf" == "" ]]; 
+then 			
 	filterConf="5,0,80,30;1,1,80,30;";		# Default
 else
-	if [[ ! "$filterConf" =~ ^([0-9]+,[0-9]+,[0-9]{,3},[0-9]+;){1,2}$ ]]; then
-		log "Please check your filtering module configuration. Option -F\n\n" "ERROR" >&2; 
+	if [[ ! "$filterConf" =~ ^([0-9]+,[0-9]+,[0-9]{,3},[0-9]+;){1,2}$ ]]; 
+	then
+		log "Please check your filtering module configuration. Option --filter-chimeras\n" "ERROR" >&2; 
 		usage; 
 		exit -1;
 	fi
 fi
+
+# Similarity between gene pairs file
+if [[ ! -e $simGnPairs ]]; then log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; usage; exit -1; fi
+
+# Output directory
+if [[ "$outDir" == "" ]]; 
+then 
+	outDir=${SGE_O_WORKDIR-$PWD};
+else
+	if [[ ! -e "$outDir" ]]; 
+	then
+		log "Your output directory does not exist. Option -o|--output-dir\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi	
+fi
+
+# Temporary directory
+if [[ "$TMPDIR" == "" ]]; 
+then 
+	TMPDIR='/tmp'; 
+else	
+	if [[ ! -e "$TMPDIR" ]]; 
+	then
+		log "Your temporary directory does not exist. Option --tmp-dir\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
+# Number of threads
+if [[ "$threads" == "" ]]; 
+then 
+	threads='1'; 
+else
+	if [[ ! "$threads" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper threading value. Option -t|--threads\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
+# Log level
+if [[ "$logLevel" == "" ]]; 
+then 
+	logLevel='info'; 
+else	
+	if [[ "$logLevel" != @(error|warn|info|debug) ]];
+	then
+		log "Please specify a proper log status [error |warn | info | debug]. Option -l|--log\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
 
 # 4. Directories
 ################
@@ -315,7 +421,7 @@ if [[ ! -d $outDir/PE ]]; then mkdir $outDir/PE; fi
 export TMPDIR=$TMPDIR
 
 # 5. Programs/Scripts
-##################
+#####################
 # Bash 
 pipeline=$bashDir/first_mapping_pipeline.sh
 chim1=$bashDir/find_exon_exon_connections_from_splitmappings.sh
@@ -340,8 +446,6 @@ juncFilter=$awkDir/chimjunc_filter.awk
 
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
-
-
 printf "\n"
 header="Pipeline configuration for $lid"
 echo $header
@@ -385,7 +489,7 @@ eval "for i in {1..${#header}};do printf \"-\";done"
 printf "\n\n"
 pipelineStart=$(date +%s)
 
-exit 1
+
 # 1) map all the reads to the genome, to the transcriptome and de-novo, using the standard RNA-Seq 
 #################################################################################################
 #   mapping pipeline but with max intron size larger than the biggest chromosome, and with an edit
@@ -411,7 +515,7 @@ fi
 
 # 2) extract the reads that do not map with a number of mismatches lower than 6
 ###############################################################################
-#    from the gem file: get a fastq file 
+#    from the gem file: outDirget a fastq file 
 ########################################
 # output is: 
 ############
@@ -712,5 +816,9 @@ fi
 #########
 pipelineEnd=$(date +%s)
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
+
+# disable extglob
+shopt -u extglob
+
 exit 0
 
