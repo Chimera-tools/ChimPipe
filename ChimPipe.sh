@@ -39,18 +39,18 @@ Mapping parameters:
 	
 Chimeric junctions filter:
 	--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
-							i.e. "1,2,75,50;", where:
+							i.e. "1,2,75:50;", where:
 											
 								1st: minimum number of staggered reads spanning the chimeric junction.
-								2nd: maximum number of paired-end reads encompassing the chimeric junction.		
+								2nd: minimum number of paired-end reads encompassing the chimeric junction.		
 								3rd: maximum similarity between the connected genes.
-								4rd: minimum length of the high similar region between the connected genes.
+								4rd: maximum length of the high similar region between the connected genes.
 	
 							All these conditions have to be fulfilled for a chimeric junction to pass the filter. It is also possible to make 
 							complex condifions by setting two different conditions where at least one of them has to be fulfilled. 
-							I.e "10,0,00,00;1,1,00,00;". Default "5,0,80,30;1,1,80,30;".	
+							I.e "10,0,0:0;1,1,0:0;". Default "5,0,80:30;1,1,80:30;".	
 	--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
-							to discard junctions connecting highly similar genes. If not provided the junctions will not be filtered according this criteria. 
+							to discard junctions connecting highly similar genes. If not provided the junctions will not be filtered according to this criteria. 
 
 General:
 	-o|--output-dir			<PATH>		Output directory. Default current working directory.
