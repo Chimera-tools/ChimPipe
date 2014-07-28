@@ -14,42 +14,42 @@ $NF!="-"{
     n=split($NF,a,","); 
     if(n==1)
     {
-	n2=split($NF,b,"::"); 
-	if(n2==2)
-	{
-	    split(b[1],b1,":"); 
-	    split(b[2],b2,":");
-	    if (readDirectionality=="MATE1_SENSE")
-	    { 
-		split($1,id,"/"); 
-		if(id[2]==2)
+		n2=split($NF,b,"::"); 
+		if(n2==2)
 		{
-		    b1[2]=(b1[2]=="+" ? "-" : "+");
-		    b2[2]=(b2[2]=="+" ? "-" : "+");		    
-		} 
-	    }   	 
-	    else 
-	    {
-		if (readDirectionality=="MATE2_SENSE")
-		{
-		    split($1,id,"/"); 
-		    if(id[2]==1)
-		    {
-			b1[2]=(b1[2]=="+" ? "-" : "+");
-			b2[2]=(b2[2]=="+" ? "-" : "+");	   				
-		    } 
+	    	split(b[1],b1,":"); 
+	    	split(b[2],b2,":");
+	    	if (readDirectionality=="MATE1_SENSE")
+	    	{ 
+				split($1,id,"/"); 
+				if(id[2]==2)
+				{	
+			    	b1[2]=(b1[2]=="+" ? "-" : "+");
+			    	b2[2]=(b2[2]=="+" ? "-" : "+");		    
+				} 
+	    	}   	 
+	    	else 
+	    	{
+				if (readDirectionality=="MATE2_SENSE")
+				{
+				    split($1,id,"/"); 
+				    if(id[2]==1)
+				    {
+						b1[2]=(b1[2]=="+" ? "-" : "+");
+						b2[2]=(b2[2]=="+" ? "-" : "+");	   				
+				    } 
+				}
+    			else 
+				{
+				    if (readDirectionality=="ANTISENSE")
+				    {
+						b1[2]=(b1[2]=="+" ? "-" : "+");
+						b2[2]=(b2[2]=="+" ? "-" : "+");
+				    }
+				}
+	    	}
+	    	print $1, $2, $3, $4, b1[1]":"b1[2]":"b1[3]":"b1[4]"::"b2[1]":"b2[2]":"b2[3]":"b2[4];
 		}
-    		else 
-		{
-		    if (readDirectionality=="ANTISENSE")
-		    {
-			b1[2]=(b1[2]=="+" ? "-" : "+");
-			b2[2]=(b2[2]=="+" ? "-" : "+");
-		    }
-		}
-	    }
-	    print $1, $2, $3, $4, b1[1]":"b1[2]":"b1[3]":"b1[4]"::"b2[1]":"b2[2]":"b2[3]":"b2[4];
-	}
     }
 }	
 
