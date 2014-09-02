@@ -1,6 +1,6 @@
 #!/usr/bin/env awk
 
-# Takes a split mapping gem file from the gem-rna-mapper (June 2013) and the variable "readDirectionality" as input and outputs the unique 2 block split mappings with the correct strand. If the variable readDirectionality is not defined it consider the data unstranded, so it does not change the strand. Example:
+# Takes a split mapping gem file from the gem-rna-mapper (June 2013) and the variable "readDirectionality" as input and outputs the unique 2 block split mappings with the correct strand and block orientation. If the variable readDirectionality is not defined it consider the data unstranded, so it does not change the strand. Example:
 # awk -v readDirectionality=* -f bedCorrectStrand.awk input.map
 # where * can be "MATE1_SENSE", "MATE2_SENSE", "MATE_STRAND_CSHL", "SENSE", "ANTISENSE" OR "NONE"
 
@@ -8,6 +8,14 @@
 ##################
 # SINATRA_0006:1:1:7430:930#0/1	NCCTTCTCTTCGCTCCTGGTGTAAGGTATGGTACATAAGAGTCCAATGCTATTTGCGCAAGTGCTAGGGTAACGAG	BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB 0:0:0:0:1	chr1:+:80324753:15::chr12:+:112677685:61
 # SINATRA_0006:1:1:3790:968#0/1	NAACTCATCATAGTGTTCCTGCATCTCCACATCGCTCACGGCACAGTGTGAGCCGTCAGCCGTCTGTGCACTGTTT	BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB 0:0:1	chr21:+:44515810:44::chr21:+:44521476:32
+
+# Ouput if MATE2_SENSE data
+###########################
+# SINATRA_0006:1:1:7430:930#0/1	NCCTTCTCTTCGCTCCTGGTGTAAGGTATGGTACATAAGAGTCCAATGCTATTTGCGCAAGTGCTAGGGTAACGAG	BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB 0:0:0:0:1	chr12:-:112677685:61::chr1:-:80324753:15
+# SINATRA_0006:1:1:3790:968#0/1	NAACTCATCATAGTGTTCCTGCATCTCCACATCGCTCACGGCACAGTGTGAGCCGTCAGCCGTCTGTGCACTGTTT	BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB 0:0:1	chr21:-:44521476:32::chr21:-:44515810:44
+
+# Usage example:
+# awk -v readDirectionality="MATE2_SENSE" -f gemCorrectStrand.awk
 
 BEGIN{OFS="\t"}
 $NF!="-"{
