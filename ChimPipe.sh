@@ -438,7 +438,7 @@ gff2Gff=$awkDir/gff2gff.awk
 bed2bedPE=$awkDir/bed2bedPE.awk
 bedPECorrectStrand=$awkDir/bedPECorrectStrand.awk
 bedPE2gff=$awkDir/bedPE2gff.awk
-mapCorrectStrand=$awkDir/gemCorrectStrand.awk
+gemCorrectStrand=$awkDir/gemCorrectStrand.awk
 gemToGff=$awkDir/gemsplit2gff_unique4.awk
 addPEinfo=$awkDir/add_PE_info.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
@@ -619,8 +619,8 @@ if [ ! -e $gffFromMap ]; then
 	step="SECOND-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the gem into gff step"
-	log "Generating a ".gff.gz" file from the atypical mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
-	run "awk -v readDirectionality=$readDirectionality -f $mapCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz" "$ECHO"
+	log "Generating a ".gff.gz" file from the atypical mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step	
+	run "awk -v readDirectionality=$readDirectionality -f $gemCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz" "$ECHO"
 	log "done\n" 
 	if [ -e $gffFromMap ]; then
     	log "Computing md5sum for the gff file from the atypical mappings containing the reads mapping both uniquely and in 2 blocks..." $step
