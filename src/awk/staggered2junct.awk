@@ -1,24 +1,29 @@
-# 31/07/2014
-#
+#!/usr/bin/env awk
 
-# awk -v CSS='GT+AG,GC+AG,ATATC+A.,GTATC+AT' -f make_chimjunctions.awk input
+# Takes as input a file containing staggered reads split-mapping in two exons from different genes and the 8-kmer on each side of the blocks. It uses this information to make the correct chimeric junctions joining the donnor and acceptor sides of the blocks, compute the number of staggered reads supporting the junctions, their maximum beginning and end coordinates and their consensus splice sites. 
 
 # input
-# chr10_100018895_100018913_-:chr3_58279376_58279407_+	1	GGAGCCAC	ATGTGGGG	AGGTGGAG	GGAAAGAC		
-# chr10_100143466_100143480_+:chr3_183901336_183901371_+	1	GTACTAAC	CTGGGAAG	TGAACTAC	GGCCGCAG		
-# chr10_100154777_100154810_+:chr19_36214052_36214068_+	1	CGCAGTTC	GTGATGTG	ACGGCAAG	ATGTGGAC		
-# chr10_100171018_100171033_+:chr7_72419139_72419173_-	2	GCTTCCAT	GTGATGGT	GCTGAGCT	CTGCGCCT		
+# chr10_100013508_100013530_-:chr3_50392315_50392367_-	1	CTACTTGG	TGATGAAC	GTTTCCCT	GAGCCGAC		
+# chr10_100177011_100177032_-:chr2_85133614_85133667_+	3	CTCTGCTG	TTATCCTG	AGAGCCAC	GATGCCAC		
+# chr10_101464231_101464286_+:chr21_41447039_41447058_-	1	AAGGTGTC	CTTTGCCT	GGGTCTTG	CTGGTGAC		 
+# chr10_101874926_101874942_-:chr17_38137273_38137331_+	4	CTGCGCGC	CCGCAGCA	GGCGAAAC	ATGAAAGA		 
+# chr10_102045932_102045960_-:chrX_63946916_63946962_-	2	CTGCTGAA	GATGCCGC	ATGGACAT	AAAGGAAC		 
+
+# output
+# chr3_50392367_+:chr10_100013508_+ 1 1 50392315 100013530 GT AG
+# chr2_85133614_-:chr10_100177011_+ 2 6 85133671 100177032 GT AG
+# chr21_41447058_+:chr10_101464286_- 1 1 41447039 101464231 GT AG
+# chr17_38137273_-:chr10_101874926_+ 1 4 38137331 101874942 GT AG
+# chrX_63946962_+:chr10_102045932_+ 1 2 63946916 102045960 GT AG
+
+# Usage example:
+# awk -v strandedness="1" -v CSS='GT+AG,GC+AG,ATATC+A.,GTATC+AT' -f $MAKE_JUNCTIONS $outdir/staggered_nb_dnt.txt
 
 
-# Output
-# chr11_60781486_+:chr11_120100337_+ 1 1 60781475 120100375 GT AG
-# chr16_30537851_-:chr15_40629945_+ 1 1 30537885 40629960 AC AG
-# chr13_64414915_-:chr18_74690910_- 1 3 64414930 74690876 AC CT
-# chr11_71714505_+:chr22_50928336_- 1 1 71714472 50928320 GT CT
-
-
-# Position of the splice sites regarding on the strand the blocks map. 
-######################################################################
+# How the script find the position of the splice sites regarding on the strand the blocks map?? 
+###############################################################################################
+# Their position depend on the block orientation and this depend on last term on the strand the read maps.
+##########################################################################################################
 # +/+ 
 #	  BLOCK1			BLOCK2
 # c1a-------c1b		c2a-------c2b 
@@ -105,13 +110,6 @@ function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 		regexRevDonor=revDonor"$";
 		regexRevAcceptor="^"revAcceptor;
 
-#		print "----- forward -----";
-#		print seq1, regexDonor;
-#		print seq2, regexAcceptor;
-#		print "----- rev -----";
-#		print seq2, regexRevDonor;
-#		print seq1, regexRevAcceptor;
-
 		if ((seq1 ~ regexDonor)&&(seq2 ~ regexAcceptor))
 		{
 			juncDonor=donor;
@@ -132,7 +130,7 @@ function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 		}
 	}
 	
-	if ((juncStr1=="")||(juncStr2==""))
+	if ((juncStr1=="")||(juncStr2=="")) # If no consensus splice sites (css). However this case should not exist, since the rna-mapper requires css to split-map the reads
 	{
 		juncStr1=".";
 		juncStr2=".";
@@ -147,7 +145,7 @@ function makeChimJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, 
 	{	
 		chimJunc=chr1"_"breakpoint1"_"juncStr1":"chr2"_"breakpoint2"_"juncStr2;	
 	}
-	else
+	else # Reverse to write first the donnor block and then the acceptor
 	{	
 		chimJunc=chr2"_"breakpoint2"_"juncStr2":"chr1"_"breakpoint1"_"juncStr1;		
 	}
@@ -225,7 +223,7 @@ function findMaxBegEnd(beg, end, chimJunc)
 			
 			# Make the chimeric junction
 			makeChimJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
-			
+			strandedness
 			# Determine the maximum external coordinates of the junction 		
 			beg=(rev=="0" ? b1[2] : b2[3]);
 			end=(rev=="0" ? b2[3] : b1[2]);
@@ -302,8 +300,9 @@ function findMaxBegEnd(beg, end, chimJunc)
 			findMaxBegEnd(beg, end, chimJunc);
 		}
 	}	
-	if ((stranded!="1")||(rev!="1"))
-	{
+	if ((strandedness!="1")||(rev!="1")) # Filter out junction if it is stranded data and the read split-map with the complementary
+									 # reverse of the consensus splice sites. This case is a gem mapping artefact.
+	{												
 		# Save the donor and the acceptor associated to the chimeric junction into a dictionary
 		juncDonors[chimJunc]=juncDonor;
 		juncAcceptors[chimJunc]=juncAcceptor;
