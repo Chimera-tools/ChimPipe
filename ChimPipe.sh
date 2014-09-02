@@ -434,11 +434,12 @@ gtfilter=$binDir/gemtools-1.7.1-i3/bin/gt.filter
 
 # Awk 
 unmapped=$awkDir/extract_unmapped.awk
-bed12ToGff=$awkDir/bed12fields2gff.awk
 gff2Gff=$awkDir/gff2gff.awk
-gemToGff=$awkDir/gemsplit2gff_unique4.awk
-bedCorrectStrand=$awkDir/bedCorrectStrand.awk
+bed2bedPE=$awkDir/bed2bedPE.awk
+bedPECorrectStrand=$awkDir/bedPECorrectStrand.awk
+bedPE2gff=$awkDir/bedPE2gff.awk
 mapCorrectStrand=$awkDir/gemCorrectStrand.awk
+gemToGff=$awkDir/gemsplit2gff_unique4.awk
 addPEinfo=$awkDir/add_PE_info.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
 juncFilter=$awkDir/chimjunc_filter.awk
@@ -587,6 +588,9 @@ if [ ! -e $gffFromBam ]; then
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the bam into gff step"
 	log "Generating a ".gff.gz" file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
+		
+	$bedtools bamtobed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip
+	
 	$bedtools bamtobed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v readDirectionality=$readDirectionality -f $bedCorrectStrand | awk -v rev="1" -f $bed12ToGff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
 	log "done\n"
 	if [ -e $gffFromBam ]; then
