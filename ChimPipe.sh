@@ -321,7 +321,7 @@ else
 fi
 
 # Consensus splice sites
-if [[ "$spliceSites" == "" ]]; then spliceSites='GT+AG' ; fi
+if [[ "$spliceSites" == "" ]]; then spliceSites='GT+AG'; fi
 
 # Minimum split size for the segmental mappings
 if [[ "$splitSize" == "" ]];
@@ -670,7 +670,7 @@ if [ ! -e $chimJunctions ]; then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
-	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $index $annot $outDir/Chimsplice $stranded > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $index $annot $outDir/Chimsplice $stranded $spliceSites > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -e $chimJunctions ]; then
         log "Error running chimsplice\n" "ERROR" 

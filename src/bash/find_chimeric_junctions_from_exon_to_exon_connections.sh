@@ -43,33 +43,43 @@ fi
 ##############################################################
 if [ ! -n "$2" ]
 then
-genome=/users/rg/sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/Human/Homo_sapiens.GRCh37.chromosomes.chr.gem
-annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
-outdir=.
-stranded=0
+	genome=/users/rg/sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/Human/Homo_sapiens.GRCh37.chromosomes.chr.gem
+	annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
+	outdir=.
+	stranded=0
+	spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
 else
-genome=$2
-if [ ! -n "$3" ]
-then
-annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
-outdir=.
-stranded=0
-else
-annot=$3
-if [ ! -n "$4" ]
-then
-outdir=.
-stranded=0
-else
-outdir=$4
-if [ ! -n "$5" ]
-then
-stranded=0
-else
-stranded=$5
-fi
-fi
-fi
+	genome=$2
+	if [ ! -n "$3" ]
+	then
+		annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
+		outdir=.
+		stranded=0
+		spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+	else
+		annot=$3
+		if [ ! -n "$4" ]
+		then
+			outdir=.
+			stranded=0
+			spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+		else
+			outdir=$4
+			if [ ! -n "$5" ]
+			then
+				stranded=0
+				spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+			else
+				stranded=$5
+				if [ ! -n "$6" ]
+				then
+					spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+				else
+					spliceSites=$6
+				fi
+			fi
+		fi
+	fi
 fi
 
 # Directories 
@@ -84,9 +94,8 @@ bashDir=$rootDir/src/bash
 # Programs
 ###########
 GFF2GFF=$awkDir/gff2gff.awk
-STAG=$awkDir/staggered_to_junction.awk
+MAKE_JUNCTIONS=$bashDir/make_chimjunctions.sh
 MATRIX=$bashDir/make_chimeric_junction_matrix.sh
-SPLICE_SITES=$bashDir/find_consensus_splice_sites.sh
 
 # Exons and a list of overlapping genes
 #############################################
@@ -135,18 +144,10 @@ awk '{split($3,a,","); k=1; while(a[k]!=""){print a[k]; k++;}}' $outdir/exonA_ex
 
 # then the distinct junctions (keep redundancy value and direction) as well as their beg and end
 ################################################################################################
-echo then the distinct junctions \(keeping redundancy value and direction\) as their beg and end>&2
-awk -v stranded=$stranded -f $STAG $outdir/distinct_staggered_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
+echo then the distinct junctions \(keeping redundancy value and direction\) as their consensus splice sites, maximum beginning and ending>&2
+bash $MAKE_JUNCTIONS $outdir/distinct_staggered_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt $genome $stranded $spliceSites $outdir > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt 
 
-wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt | awk '{print "total number of distinct chimeric junctions:", $1}' 
-
-# Find canonical splice sites GT-AG or GC-AG and their complementary reverse AC-CT or GC-CT. Add this information to the matrix and for unstranded data writes the junctions
-############################################################################################################################################################################
-# in biological order (first part donor and second part acceptor) and add strand information to each part of the junction whenever it is possible 
-#################################################################################################################################################
-# Output: $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt 
-echo I am finding the canonical splice sites GT-AG or GC-AG, adding this information to the matrix and also for unstranded data writing the junctions in biological order and adding the strand to each part of the junction whenever it is possible >&2
-bash $SPLICE_SITES $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt $genome $stranded $outdir 1> $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt 
+wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt | awk '{print "total number of distinct chimeric junctions:", $1}' 
 
 # Complete the chimeric junctions matrix with additional information: whether the two parts are on the same chr and strand, whether they are on the expected genomic order, 
 ##########################################################################################################################################################################
@@ -166,4 +167,4 @@ echo I am outputting the distinct chimeric junctions found by more than 10 stagg
 awk '$2>=10' $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt | awk '{print "number of distinct chimeric junctions seen by at least 10 staggered split-mappings:", $1}' 
 
-rm $outdir/exoncoord_gnlist.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
+#rm $outdir/exoncoord_gnlist.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
