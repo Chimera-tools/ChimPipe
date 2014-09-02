@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Takes as input a file containing staggered reads split-mapping in two exons from different genes. It uses this information to make the correct chimeric junctions joining the donnor and acceptor sides of the blocks, compute the number of staggered reads supporting the junctions, their maximum beginning and end coordinates and their consensus splice sites. It does it in two consecutive steps:
+
+# 1-) Substract with the gem retriever 8-kmer on each side of the blocks. This will will 4 8-kmer, 2 of them containing the splice site sequence. 
+# 2-) Make the chimeric junctions looking at the splice sites in the k-mers. 
+
 ## Input 
 # chr10_100018895_100018913_-:chr3_58279376_58279407_+ 1
 # chr10_100143466_100143480_+:chr3_183901336_183901371_+ 1
@@ -75,7 +80,7 @@ awkDir=$rootDir/src/awk
 ###########
 RETRIEVER=$binDir/gemtools-1.7.1-i3/bin/gem-retriever
 GFF2GFF=$awkDir/gff2gff.awk
-MAKE_JUNCTIONS=$awkDir/staggered_to_junction.awk
+MAKE_JUNCTIONS=$awkDir/staggered2junct.awk
 
 
 # Subtract the two pairs of nucleotides that should correspond to the donor and acceptor respectively. 
