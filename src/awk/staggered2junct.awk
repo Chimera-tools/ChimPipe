@@ -96,6 +96,12 @@ function revComp(seq)
 
 function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 {
+	# Initializing variables
+	juncStr1="";
+	juncStr2="";
+	juncDonor="";
+	juncAcceptor="";
+	
 	nbcss=split(CSS,b,",");
 	for (i = 1; i <= nbcss; i++) # Iterate over the consensus splice sites given as input
 	{
@@ -132,10 +138,8 @@ function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 	
 	if ((juncStr1=="")||(juncStr2=="")) # If no consensus splice sites (css). However this case should not exist, since the rna-mapper requires css to split-map the reads
 	{
-		juncStr1=".";
-		juncStr2=".";
-		juncDonor="NA";
-		juncAcceptor="NA";
+		print "[ERROR] Consensus splice sites were not found." > "/dev/stderr"
+        exit 1
 	}
 }
 
@@ -196,7 +200,7 @@ function findMaxBegEnd(beg, end, chimJunc)
 	}
 }
 
-{
+{ 
 	blocks=$1;
    	split(blocks,b,":"); 
   	split(b[1],b1,"_"); 
@@ -205,7 +209,7 @@ function findMaxBegEnd(beg, end, chimJunc)
 	chr2=b2[1];
 	mapStr1=b1[4];
 	mapStr2=b2[4];
-#	print mapStr1, mapStr2;
+
 	if (mapStr1=="+")
 	{
 		if (mapStr2=="+") # 2 Blocks mapped in +/+
