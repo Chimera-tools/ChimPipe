@@ -20,6 +20,8 @@
 # total number of distinct chimeric junctions: 70778
 # number of distinct chimeric junctions seen by at least 10 staggered split-mappings: 243
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
 
 # In case the user does not provide any input file
 ###################################################
