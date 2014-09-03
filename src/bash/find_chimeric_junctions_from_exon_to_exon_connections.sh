@@ -49,7 +49,7 @@ then
 	annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
 	outdir=.
 	stranded=0
-	spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+	spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
 else
 	genome=$2
 	if [ ! -n "$3" ]
@@ -57,25 +57,25 @@ else
 		annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf
 		outdir=.
 		stranded=0
-		spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+		spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
 	else
 		annot=$3
 		if [ ! -n "$4" ]
 		then
 			outdir=.
 			stranded=0
-			spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+			spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
 		else
 			outdir=$4
 			if [ ! -n "$5" ]
 			then
 				stranded=0
-				spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+				spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
 			else
 				stranded=$5
 				if [ ! -n "$6" ]
 				then
-					spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+					spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
 				else
 					spliceSites=$6
 				fi

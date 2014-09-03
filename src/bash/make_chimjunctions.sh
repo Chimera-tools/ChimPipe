@@ -48,14 +48,14 @@ genome=$2
 ##################################################
 if [ ! -n "$3" ]
 then
-	spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+	spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
 	outdir=.
 	stranded=0
 else
 	stranded=$3
 	if [ ! -n "$4" ]
 	then
-		spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+		spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
 		outdir=.
 	else
 		spliceSites=$4
@@ -95,6 +95,6 @@ awk -v strandedness=$stranded -v CSS=$spliceSites -f $MAKE_JUNCTIONS $outdir/sta
 
 # Cleaning. 
 ###########
-rm $outdir/Chimsplice/staggered_nbReads_nts.txt
+rm $outdir/staggered_nbReads_nts.txt
 
 

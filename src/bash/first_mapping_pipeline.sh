@@ -12,6 +12,7 @@ function usage {
     echo ""
     echo "Options:"
     printf "\t-M\tMax number of mismatches. Default \"4\"\n"
+    printf "\t-S\tDe-novo junction detection parameters:. Default \"4\"\n"
     printf "\t-m\tFlag to enable mapping stats. Default disabled.\n"
     printf "\t-L \tMax read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default \"150\"\n"
     printf "\t-s\tFlag to specify whether the sample has strandness information for the reads. Default \"false\"\n" 
@@ -89,7 +90,7 @@ function copyToTmp {
 ## Parsing arguments
 #
 
-while getopts ":i:g:a:q:M:mL:sd:e:l:t:Th" opt; do
+while getopts ":i:g:a:q:M:S:mL:sd:e:l:t:Th" opt; do
   case $opt in
     i)
       input="$OPTARG"
@@ -105,6 +106,9 @@ while getopts ":i:g:a:q:M:mL:sd:e:l:t:Th" opt; do
       ;;
     M)
       mism=$OPTARG
+      ;;
+    S)
+      spliceSites=$OPTARG
       ;;
     m)
       mapStats='1' 
@@ -171,11 +175,13 @@ if [[ "$annotation" == "" ]]; then log "Please specify the annotation file\n" "E
 if [[ "$quality" == "" ]]; then log "Please specify the quality\n" "ERROR" >&2; exit -1; fi
 if [[ "$stranded" == "" ]]; then stranded="0"; fi
 if [[ "$readStrand" == "" ]]; then readStrand="NONE"; fi
+if [[ "$maxReadLength" == "" ]]; then maxReadLength="150"; fi
+if [[ "$mism" == "" ]]; then mism="4"; fi
+if [[ "$spliceSites" == "" ]]; then spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'; fi
 if [[ "$sample" == "" ]]; then basename=$(basename $input); sample=${basename%_1*}; fi
 if [[ "$loglevel" == "" ]]; then loglevel="info"; fi
-if [[ "$mism" == "" ]]; then mism="4"; fi
 if [[ "$mapStats" != "1" ]]; then stats="--no-stats"; count="--no-count"; fi
-if [[ "$maxReadLength" == "" ]]; then maxReadLength="150"; fi
+
 annName=`basename $annotation`
 if [[ "$threads" == "" ]]; then threads='1'; fi
 if [[ "$threads" == "1" ]]; then hthreads='1'; else hthreads=$((threads/2)); fi	
@@ -197,7 +203,7 @@ if [ ! -e $sample.map.gz ];then
     copyToTmp "index,annotation,t-index,keys"
 
     log "Running gemtools rna pipeline on ${sample}..." $step
-    run "$gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $sample --max-read-length $maxReadLength --max-intron-length 300000000 -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
+    run "$gemtools --loglevel $loglevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $sample --max-read-length $maxReadLength --max-intron-length 300000000 --junction-consensus $spliceSites -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
 	log "done\n"
     if [ -e $sample.map.gz ]; then
         log "Computing md5sum for map file..." $step

@@ -34,6 +34,8 @@ Reads information:
 Mapping parameters:
 	-M|--mism-contiguous-map	<NUMBER>	Maximum number of mismatches for the contiguous mapping steps with the GEM mapper. Default 4?. Not working
 	-m|--mism-split-map		<NUMBER>	Maximum number of mismatches for the segmental mapping steps with the GEM rna-mapper. Default 4?.	Not working
+	-c|--consensus-splice-sites	<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
+                                 			(list of couples of donor/acceptor splice site consensus sequences, default='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
 	--min-split-size		<NUMBER>	Minimum split size for the segmental mapping steps. Default 15.
 	--stats				<FLAG>		Enable mapping statistics. Default disabled.
 	
@@ -92,7 +94,7 @@ function run {
 # Function 5. 
 #############
 function getoptions {
-ARGS=`$getopt -o "i:g:a:q:e:sM:m:o:t:l:h" -l "input:,genome-index:,annotation:,quality:,sample-id:,stranded,mis-contiguous-map:,mism-split-map:,output-dir:,threads:,log:,help,read-directionality:,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats,tmp-dir:,dry" \
+ARGS=`$getopt -o "i:g:a:q:e:sM:m:c:o:t:l:h" -l "input:,genome-index:,annotation:,quality:,sample-id:,stranded,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,output-dir:,threads:,log:,help,read-directionality:,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats,tmp-dir:,dry" \
       -n "$0" -- "$@"`
 
 #Bad arguments
@@ -173,13 +175,20 @@ do
          mismSplit=$2
        fi
        shift 2;;
-
+       
     --min-split-size)
        if [ -n "$2" ];
        then
          splitSize=$2
        fi
        shift 2;;   
+	
+	-c|--consensus-splice-sites)
+       if [ -n "$2" ];
+       then
+         spliceSites=$2
+       fi
+       shift 2;;
 
 	--stats)
       mapStats="-m"  
@@ -321,7 +330,20 @@ else
 fi
 
 # Consensus splice sites
-if [[ "$spliceSites" == "" ]]; then spliceSites='GT+AG'; fi
+if [[ "$spliceSites" == "" ]]; 
+then 
+	spliceSites="\(GT,AG\),\(GC,AG\),\(ATATC,A.\),\(GTATC,AT\)"; 
+else		
+	if [[ ! "$spliceSites" =~ ^(\([ACGT.]+,[ACGT.]+\),)*(\([ACGT.]+,[ACGT.]+\))$ ]]; 
+	then
+		log "Please specify a proper consensus splice site sequence for the first mapping. Option -c|--consensus-splice-sites\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	else
+		spliceSites=`echo $spliceSites | awk '{ gsub(/\(/, "/\("); print }'` 	
+		spliceSites=`echo $spliceSites | awk '{ gsub(/\)/, "/\)"); print }'` 
+	fi
+fi
 
 # Minimum split size for the segmental mappings
 if [[ "$splitSize" == "" ]];
@@ -467,7 +489,7 @@ printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
 printf "  %-34s %s\n" "***** Mapping *****"
 printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
 printf "  %-34s %s\n" "Max number of allowed mismatches split mapping:" "$mismSplit"
-printf "  %-34s %s\n" "Consensus-splice-sites:" "$spliceSites"
+printf "  %-34s %s\n" "Consensus-splice-sites for the first mapping:" "$spliceSites"
 printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSize"
 printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
 
@@ -480,6 +502,8 @@ printf "  %-34s %s\n" "Output directory:" "$outDir"
 printf "  %-34s %s\n" "Temporary directory:" "$TMPDIR"
 printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
+
+exit -1
 
 ## START CHIMPIPE
 #################
@@ -506,7 +530,7 @@ if [ ! -e $bamFirstMapping ]; then
 	step="FIRST-MAP"
 	startTime=$(date +%s)
 	printHeader "Executing first mapping step"    
-    run "$pipeline -i $input -g $index -a $annot -q $quality -M $mism $mapStats -L $maxReadLength -e $lid -l $logLevel -t $threads" "$ECHO" 
+    run "$pipeline -i $input -g $index -a $annot -q $quality -M $mism -S $spliceSites $mapStats -L $maxReadLength -e $lid -l $logLevel -t $threads" "$ECHO" 
 	endTime=$(date +%s)
 	printHeader "First mapping for $lid completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
@@ -559,7 +583,7 @@ if [ ! -e $gemSecondMapping ]; then
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
 	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads -c $spliceSites --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
+	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads -c 'GT+AG' --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
 	log "done\n" 
 	if [ -e $gemSecondMapping ]; then
     	log "Computing md5sum for the gem file with the second mappings..." $step

@@ -101,11 +101,14 @@ function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 	juncStr2="";
 	juncDonor="";
 	juncAcceptor="";
-	
-	nbcss=split(CSS,b,",");
-	for (i = 1; i <= nbcss; i++) # Iterate over the consensus splice sites given as input
+	gsub(/\),/, ")+", CSS) # (GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)-> (GT,AG)+(GC,AG)+(ATATC,A.)+(GTATC,AT)
+	nbcss=split(CSS,b,"+"); # (GT,AG)+(GC,AG)+(ATATC,A.)+(GTATC,AT)-> (GT,AG) (GC,AG) (ATATC,A.) (GTATC,AT)
+
+	for (i = 1; i <= nbcss; i++) # Iterate over the consensus splice sites given as input 
 	{
-		split(b[i],c,"+");
+		gsub(/\(/, "", b[i]); # (GT,AG) -> (GT,AG 
+		gsub(/\)/, "", b[i]); # (GT,AG -> GT,AG
+		split(b[i], c, ","); # GT,AG -> GT AG 
 		donor=c[1];
 		acceptor=c[2];
 		revDonor=revComp(donor);
