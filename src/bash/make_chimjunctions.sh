@@ -85,16 +85,16 @@ MAKE_JUNCTIONS=$awkDir/staggered2junct.awk
 
 # Subtract the two pairs of nucleotides that should correspond to the donor and acceptor respectively. 
 ######################################################################################################
-paste <(awk -v OFS='\t' '{split($1,a,":"); split(a[1],a1,"_"); chrA=a1[1]; begA=a1[2]; endA=a1[3]; strA=a1[4]; split(a[2],a2,"_"); chrB=a2[1]; begB=a2[2]; endB=a2[3]; strB=a2[4]; print chrA, strA, (begA-8), (begA-1); print chrA, strA, (endA+1), (endA+8); print chrB, strB, (begB-8), (begB-1); print chrB, strB, (endB+1), (endB+8)}' $input  | $RETRIEVER $genome | sed 's/.*/\U&/' | awk 'BEGIN{counter=1;key=1;}{seq[key]=seq[key]" "$1; counter++; if (counter==5) {counter=1; key++}}END{for (i=1;i<key;i++){print seq[i]}}') | awk -f $GFF2GFF > $outdir/staggered_nb_dnt.txt
+paste <(cat $input) <(awk -v OFS='\t' '{split($1,a,":"); split(a[1],a1,"_"); chrA=a1[1]; begA=a1[2]; endA=a1[3]; strA=a1[4]; split(a[2],a2,"_"); chrB=a2[1]; begB=a2[2]; endB=a2[3]; strB=a2[4]; print chrA, strA, (begA-8), (begA-1); print chrA, strA, (endA+1), (endA+8); print chrB, strB, (begB-8), (begB-1); print chrB, strB, (endB+1), (endB+8)}' $input  | $RETRIEVER $genome | sed 's/.*/\U&/' | awk 'BEGIN{counter=1;key=1;}{seq[key]=seq[key]" "$1; counter++; if (counter==5) {counter=1; key++}}END{for (i=1;i<key;i++){print seq[i]}}') | awk -f $GFF2GFF > $outdir/staggered_nbReads_nts.txt
 
 # Make the chimeric junctions, compute the number of staggered and total reads supporting the junctions,  
 ########################################################################################################
 # the consensus splice sites and the maximum beginning and end
 ##############################################################
-awk -v strandedness=$stranded -v CSS=$spliceSites -f $MAKE_JUNCTIONS $outdir/staggered_nb_dnt.txt
+awk -v strandedness=$stranded -v CSS=$spliceSites -f $MAKE_JUNCTIONS $outdir/staggered_nbReads_nts.txt
 
 # Cleaning. 
 ###########
-rm $outdir/staggered_nb_dnt.txt 
+rm $outdir/Chimsplice/staggered_nbReads_nts.txt
 
 
