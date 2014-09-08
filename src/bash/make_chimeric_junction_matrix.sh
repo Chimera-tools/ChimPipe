@@ -41,7 +41,7 @@ awkDir=$rootDir/src/awk
 CUTGFF=$awkDir/cutgff.awk
 GFF2GFF=$awkDir/gff2gff.awk
 JUNC2GFF=$awkDir/chimjunc_to_gff.awk 
-OVERLAP=$binDir/overlap-3.1/overlap
+OVERLAP=$binDir/overlap
 
 # Setting input variables
 #########################

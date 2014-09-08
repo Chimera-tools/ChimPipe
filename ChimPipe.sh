@@ -450,9 +450,9 @@ chim2=$bashDir/find_chimeric_junctions_from_exon_to_exon_connections.sh
 findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
 
 # Bin 
-gemrnatools=$binDir/gemtools-1.7.1-i3/bin/gem-rna-tools
-bedtools=$binDir/bedtools2-2.20.1/bin/bedtools
-gtfilter=$binDir/gemtools-1.7.1-i3/bin/gt.filter
+gemrnatools=$binDir/gemtools-1.7.1-i3/gem-rna-tools
+gtfilter=$binDir/gemtools-1.7.1-i3/gt.filter
+getopt=$binDir/getopt
 
 # Awk 
 unmapped=$awkDir/extract_unmapped.awk
@@ -461,7 +461,7 @@ bed2bedPE=$awkDir/bed2bedPE.awk
 bedPECorrectStrand=$awkDir/bedPECorrectStrand.awk
 bedPE2gff=$awkDir/bedPE2gff.awk
 gemCorrectStrand=$awkDir/gemCorrectStrand.awk
-gemToGff=$awkDir/gemsplit2gff_unique4.awk
+gemToGff=$awkDir/gemsplit2gff_unique.awk
 addPEinfo=$awkDir/add_PE_info.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
 juncFilter=$awkDir/chimjunc_filter.awk
@@ -502,8 +502,6 @@ printf "  %-34s %s\n" "Output directory:" "$outDir"
 printf "  %-34s %s\n" "Temporary directory:" "$TMPDIR"
 printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
-
-exit -1
 
 ## START CHIMPIPE
 #################
@@ -612,7 +610,7 @@ if [ ! -e $gffFromBam ]; then
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the bam into gff step"
 	log "Generating a ".gff.gz" file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
-	$bedtools bamtobed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
+	bedtools bamtobed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
 	log "done\n"
 	if [ -e $gffFromBam ]; then
     	log "Computing md5sum for the gff file from the ".bam" containing the reads mapping both uniquely and in 2 blocks..." $step

@@ -162,11 +162,10 @@ bashDir=$rootDir/src/bash
 
 # = Binaries = #
 addXS=$bashDir/sam2cufflinks.sh
-gemtools=$binDir/gemtools-1.7.1-i3/bin/gemtools
-gem2sam=$binDir/gemtools-1.7.1-i3/bin/gem-2-sam
-samtools=$binDir/samtools-0.1.19/samtools
-gt_filter=$binDir/miscellaneous/gt.filter.remove
-pigz=$binDir/miscellaneous/pigz
+gemtools=$binDir/gemtools-1.7.1-i3/gemtools
+gem2sam=$binDir/gemtools-1.7.1-i3/gem-2-sam
+gt_filter=$binDir/gemtools-1.7.1-i3/gt.filter.remove
+pigz=$binDir/pigz
 
 # = Variables and input files = #
 if [[ "$input" == "" ]]; then log "Please specify the input file\n" "ERROR" >&2; exit -1; fi
@@ -284,7 +283,7 @@ if [ ! -e $filteredBam ];then
     copyToTmp "index"
 
     log "Converting $sample to bam..." $step
-    run "$pigz -p $hthreads -dc $filteredGem | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-$quality -l | sed 's/chrMT/chrM/g' | $addXS $readStrand | $samtools view -@ $threads -Sb - | $samtools sort -@ $threads -m 4G - $TMPDIR/${filteredBam%.bam}" "$ECHO"
+    run "$pigz -p $hthreads -dc $filteredGem | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-$quality -l | sed 's/chrMT/chrM/g' | $addXS $readStrand | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - $TMPDIR/${filteredBam%.bam}" "$ECHO"
     log "done\n"
     if [ -e $TMPDIR/$filteredBam ]; then
         log "Computing md5sum for bam file..." $step

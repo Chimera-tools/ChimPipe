@@ -78,7 +78,7 @@ awkDir=$rootDir/src/awk
 
 # Programs
 ###########
-RETRIEVER=$binDir/gemtools-1.7.1-i3/bin/gem-retriever
+RETRIEVER=$binDir/gemtools-1.7.1-i3/gem-retriever
 GFF2GFF=$awkDir/gff2gff.awk
 MAKE_JUNCTIONS=$awkDir/staggered2junct.awk
 

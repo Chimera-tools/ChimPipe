@@ -114,7 +114,6 @@ binDir=$rootDir/bin
 
 # Programs
 ##########
-BEDTOOLS=$binDir/bedtools2-2.20.1/bin/bedtools
 CUTGFF=$awkDir/cutgff.awk
 REMOVEREDUND=$awkDir/remove_redund.awk
 GFF2GFF=$awkDir/gff2gff.awk
@@ -129,7 +128,7 @@ echo I am intersecting the bam file with the exons of the annotation and providi
 echo for each mapping of a read the read id with the non redundant list of genes whose >&2
 echo exons are overlapped by the read \(longest step, overlap is done unstrandedly but >&2
 echo type of stranded bam file is considered to filter the reads overlapping the annotation\) >&2
-awk -v elt=$elt '$3==elt' $annot | awk -v to=12 -f $CUTGFF | $BEDTOOLS intersect -abam $bamfile -b stdin -split -bed -wo | awk -v mate_strand=$mate_strand -f $INTER2GNLIST | awk -v fldlist=gnlist:2 -f $REMOVEREDUND | awk '{split($4,a,","); k=1; s=""; while(a[k]!=""){split(a[k],b,":"); s=(s)(b[1])(","); k++} print $1, s}' | gzip > $outdir/readid_gnlist_whoseexoverread_noredund.txt.gz
+awk -v elt=$elt '$3==elt' $annot | awk -v to=12 -f $CUTGFF | bedtools intersect -abam $bamfile -b stdin -split -bed -wo | awk -v mate_strand=$mate_strand -f $INTER2GNLIST | awk -v fldlist=gnlist:2 -f $REMOVEREDUND | awk '{split($4,a,","); k=1; s=""; while(a[k]!=""){split(a[k],b,":"); s=(s)(b[1])(","); k++} print $1, s}' | gzip > $outdir/readid_gnlist_whoseexoverread_noredund.txt.gz
 echo done >&2
 
 # For each read that has both mates with a gene list, provide all the pairs 

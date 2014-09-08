@@ -69,7 +69,7 @@ bashDir=$rootDir/src/bash
 ##########
 CUTGFF=$awkDir/cutgff.awk
 GFF2GFF=$awkDir/gff2gff.awk
-OVERLAP=$binDir/overlap-3.1/overlap
+OVERLAP=$binDir/overlap
 
 # START
 ########
