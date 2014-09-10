@@ -176,7 +176,7 @@ if [[ "$stranded" == "" ]]; then stranded="0"; fi
 if [[ "$readStrand" == "" ]]; then readStrand="NONE"; fi
 if [[ "$maxReadLength" == "" ]]; then maxReadLength="150"; fi
 if [[ "$mism" == "" ]]; then mism="4"; fi
-if [[ "$spliceSites" == "" ]]; then spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'; fi
+if [[ "$spliceSites" == "" ]]; then spliceSites="\(GT,AG\),\(GC,AG\),\(ATATC,A.\),\(GTATC,AT\)"; fi
 if [[ "$sample" == "" ]]; then basename=$(basename $input); sample=${basename%_1*}; fi
 if [[ "$loglevel" == "" ]]; then loglevel="info"; fi
 if [[ "$mapStats" != "1" ]]; then stats="--no-stats"; count="--no-count"; fi
