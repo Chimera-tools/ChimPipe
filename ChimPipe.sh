@@ -271,7 +271,7 @@ export rootDir=$root
 
 # 2. Parse input arguments with getopt  
 ######################################
-getopt=$root/bin/getopt-1.1.5/getopt
+getopt=$root/bin/getopt
 
 getoptions $0 $@ # call Function 5 and passing two parameters (name of the script and command used to call it)
 
@@ -452,7 +452,6 @@ findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
 # Bin 
 gemrnatools=$binDir/gemtools-1.7.1-i3/gem-rna-tools
 gtfilter=$binDir/gemtools-1.7.1-i3/gt.filter
-getopt=$binDir/getopt
 
 # Awk 
 unmapped=$awkDir/extract_unmapped.awk
