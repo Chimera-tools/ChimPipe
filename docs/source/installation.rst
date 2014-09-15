@@ -17,7 +17,7 @@ Software:
 * 64-bit Linux System
 * `Bedtools`_ v2.20.1 or higher  
 * `Samtools`_ v0.1.19 or higher
-* `Blast`_ v2.2.29+ or higher
+* `Blast`_ v2.2.29+ or higher (only if you want to generate your own similarity text files, see **Reference between gene pairs** in the :ref:`manual` section)
 
 .. _Bedtools: http://bedtools.readthedocs.org/en/latest/
 .. _Samtools: http://www.htslib.org/
