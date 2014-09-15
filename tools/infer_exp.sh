@@ -5,8 +5,8 @@ if [[ $# != 2 ]]; then
     exit 1
 fi
 # binaries
-gtfToGenePred=/users/rg/epalumbo/bin/gtfToGenePred
-genePredToBed12=/users/rg/epalumbo/bin/genePredToBed12.awk
+gtfToGenePred=../bin/gtfToGenePred
+genePredToBed12=../src/awk/genePredToBed12.awk
 
 # I/O
 anno=$1
@@ -23,7 +23,6 @@ if [ ! -e $bed12 ]; then
 fi
 
 echo "Inferring experiment" >&2
-. /software/rg/el6.3/virtualenvs/python2.7.3/bin/activate
 infer_experiment.py -i $bam -r $bed12
 echo "Removing temporary files" >&2
 rm $genePred $genePred.err $bed12
