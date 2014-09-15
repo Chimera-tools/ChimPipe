@@ -340,8 +340,8 @@ else
 		usage; 
 		exit -1; 
 	else
-		spliceSites=`echo $spliceSites | awk '{ gsub(/\(/, "/\("); print }'` 	
-		spliceSites=`echo $spliceSites | awk '{ gsub(/\)/, "/\)"); print }'` 
+		spliceSites="`echo $spliceSites | awk '{ gsub(/\(/, "\\\(", $0); print }'`"; 	# Three backslashes to substitute ( by \(
+		spliceSites="`echo $spliceSites | awk '{ gsub(/\)/, "\\\)", $0); print }'`"; 	# Three backslashes to substitute ) by \)
 	fi
 fi
 

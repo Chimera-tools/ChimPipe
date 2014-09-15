@@ -48,7 +48,6 @@ function run {
     else
         eval ${command[@]}
     fi
-
 }
 
 function copyToTmp {
@@ -176,7 +175,15 @@ if [[ "$stranded" == "" ]]; then stranded="0"; fi
 if [[ "$readStrand" == "" ]]; then readStrand="NONE"; fi
 if [[ "$maxReadLength" == "" ]]; then maxReadLength="150"; fi
 if [[ "$mism" == "" ]]; then mism="4"; fi
-if [[ "$spliceSites" == "" ]]; then spliceSites="\(GT,AG\),\(GC,AG\),\(ATATC,A.\),\(GTATC,AT\)"; fi
+
+if [[ "$spliceSites" == "" ]]; 
+then 
+	spliceSites="\(GT,AG\),\(GC,AG\),\(ATATC,A.\),\(GTATC,AT\)";
+else
+	spliceSites="`echo $spliceSites | awk '{ gsub(/\(/, "\\\(", $0); print }'`"; 	# Three backslashes to substitute ( by \(
+	spliceSites="`echo $spliceSites | awk '{ gsub(/\)/, "\\\)", $0); print }'`"; 	# Three backslashes to substitute ) by \)
+fi
+
 if [[ "$sample" == "" ]]; then basename=$(basename $input); sample=${basename%_1*}; fi
 if [[ "$loglevel" == "" ]]; then loglevel="info"; fi
 if [[ "$mapStats" != "1" ]]; then stats="--no-stats"; count="--no-count"; fi
@@ -184,7 +191,6 @@ if [[ "$mapStats" != "1" ]]; then stats="--no-stats"; count="--no-count"; fi
 annName=`basename $annotation`
 if [[ "$threads" == "" ]]; then threads='1'; fi
 if [[ "$threads" == "1" ]]; then hthreads='1'; else hthreads=$((threads/2)); fi	
-#threads=${NSLOTS-1}
 
 
 ## START
