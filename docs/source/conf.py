@@ -184,7 +184,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'ChimPipe.tex', u'ChimPipe Documentation',
-   u'Bernardo Rodríguez-Martín and Sarah Djebali', 'manual'),
+   u'Bernardo Rodríguez-Martín, , Emilio Palumbo and Sarah Djebali', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -214,7 +214,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'chimpipe', u'ChimPipe Documentation',
-     [u'Bernardo Rodríguez-Martín and Sarah Djebali'], 1)
+     [u'Bernardo Rodríguez-Martín, Emilio Palumbo and Sarah Djebali'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -246,9 +246,9 @@ texinfo_documents = [
 
 # Bibliographic Dublin Core info.
 epub_title = u'ChimPipe'
-epub_author = u'Bernardo Rodríguez-Martín and Sarah Djebali'
-epub_publisher = u'Bernardo Rodríguez-Martín and Sarah Djebali'
-epub_copyright = u'2014, Bernardo Rodríguez-Martín and Sarah Djebali'
+epub_author = u'Bernardo Rodríguez-Martín, Emilio Palumbo and Sarah Djebali'
+epub_publisher = u'Bernardo Rodríguez-Martín, Emilio Palumbo and Sarah Djebali'
+epub_copyright = u'2014, Bernardo Rodríguez-Martín, Emilio Palumbo and Sarah Djebali'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

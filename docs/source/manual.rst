@@ -8,7 +8,7 @@ This section describes the files ChimPipe takes as input, how to generate them, 
 
 Input files
 ===========
-ChimPipe needs 4 mandatory different types of files plus 1 optional.  
+ChimPipe needs 4 mandatory types of files plus 1 optional.  
 
 Mandatory:
 
@@ -19,7 +19,7 @@ Mandatory:
 
 Optional:
 
-* Similarity between gene pairs text file
+* Similarity between transcript pairss text file
 
 
 Paired-end (PE) RNA-seq reads
@@ -34,7 +34,7 @@ ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing da
 
 E. g. BERGER_1.fastq.gz and BERGER_2.fastq.gz would be the compressed FASTQ files for mate 1 and mate 2 in the BERGER sample. Note that you should use the same convention for both mates, so if mate 1 is BERGER_1.fastq.gz, mate 2 can not be BERGER.2.txt.gz
 
-The FASTQ file uses four lines per sequencing read. You need to check the format of the first line of each read, which begins with the '@' character and is followed by an identifier. This identifier should meet one of the two Illumina standards to specify which member of the pair the read is:
+The FASTQ file uses four lines per sequencing read. You need to check the format of the first line of each read, which begins with the '@' character and is followed by a read identifier. This identifier should meet one of the two Illumina standards to specify which member of the pair the read is:
 
 * Illumina CASAVA package lower than 1.8. The identifier has to be a single string ended in /1 or /2 for mate 1 and mate 2, respectively. E. g.:
 
@@ -75,7 +75,7 @@ I case your FASTQ files do not meet this format you should modify the identifier
 	
 	$ cd /users/rg/brodriguez/bin/ChimPipe/reads/berger
 	
-	$ # But it does not have a proper identifier
+	$ # But it does not have a proper identifier. It has three strings as identifier and does not end with "/1"
 	$ head -4 berger_1.fastq
 	
 	@SRR018259.1 BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868 length=51
@@ -112,8 +112,8 @@ Note that you can specify multiple threads with the option -t. You should get th
 
 
 Genome annotation
-~~~~~~~~~~~~~~~~~ 
-Chimpipe also takes as input a genome annotation in `GTF`_ format to find reads spanning splice junctions between exons from two different genes. This annotation has to contain at least one tag-value pair in the attributes field with the gene id and two optional pairs will be taken into account by ChimPipe if supplied: gene name and gene type. E.g:
+~~~~~~~~~~~~~~~~~~
+Chimpipe also takes as input a genome annotation in `GTF`_ format with the annotated exons. It can contain other features different from exons, i. e. introns or UTR, but they will be not considered by the pipeline in the chimera detection process. This annotation has to contain at least one tag-value pair in the attributes field with the gene id and two optional pairs will be taken into account by ChimPipe if supplied: gene name and gene type. E.g:
 
 .. _GTF: http://www.ensembl.org/info/website/upload/gff.html
 
@@ -149,7 +149,7 @@ You can specify multiple threads with -t. You should get the following message i
 
 **IMPORTANT**: The indexed gene annotation has to be placed in the same folder as the genome annotation to be used by ChimPipe
 
-Similarity between gene pairs (Optional)
+Similarity between transcript pairs (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Execute pipeline
@@ -157,7 +157,7 @@ Execute pipeline
 
 1. Set up the environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-As explained in the :ref:`installation` section, you need to have installed BEDtools and SAMtools to execute ChimPipe, plus blast in case you want to produce your own similarity between gene pairs text files (See **Similarity between gene pairs**). In case you do not have them, you can not download an install them from their webpages. Once installed, you have to export the path to their binaries as follow:  
+As explained in the :ref:`installation` section, you need to have installed BEDtools and SAMtools to execute ChimPipe, plus blast in case you want to produce your own similarity between transcript pairs text files (See **Similarity between transcript pairs**). In case you do not have them, you can not download an install them from their webpages. Once installed, you have to export the path to their binaries as follow:  
 
 .. code-block:: bash
 
@@ -247,36 +247,38 @@ MAP file containing reads segmentally mapped in the genome allowing for interchr
 
 Chimeric junctions text file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-chimeric_junctions.txt
+Tabular text file containing the detected chimeric junctions in your RNA-seq dataset. It has rows of 19 fields, where each row corresponds to a chimeric junction and the fields harbour information about. Here is a brief description of the 19 fields:
 
-Here is a brief description of the GFF fields:
-
-1. **juncId** -  	
-2. **nbstag** - 
-3. **nbtotal** -
-4. **maxbeg** -
-5. **maxEnd** - 
-6. **samechr** -
-7. **samestr** -
-8. **dist** -
-9. **ss1** -
-10. **ss2**	- 
-11. **gnlist1** -	
-12. **gnlist2**	- 
-13. **gnname1** - 
-14. **gnname2**	- 
-15. **bt1** -	
-16. **bt2**	- 
-17. **PEsupport** -
-18. **maxSim** -	
-19. **maxLgal** -
+1. **juncId** - Chimeric junction identifier. It is an string encoding the position of the chimeric junction in the genome as follows: chrA"_"breakpointA"_"strandA":"chrB"_"breakpointB"_"strandB. E. g., "chr4_90653092_+:chr17_22023757_+" is a chimeric junction between the position 90653092 of the chromosome 4 in the plus strand, and the position 22023757 of the chromosome chr17 in the plus strand. 
+2. **nbstag** - Number of staggered reads supporting the chimera.
+3. **nbtotal** - Total number of reads supporting the chimera.
+4. **maxbeg** - Maximum beginning of the chimeric junction,  The starting position at which 
+5. **maxEnd** - Maximum end of the junction
+6. **samechr** - Flag to specify if the connected gene pairs are in the same cromosome (1) or not (0).
+7. **samestr** - Flag to specify if the connected gene pairs are in the same strand (1) or not (0), NA in case the *samechr* field was 0.
+8. **dist** - Distance between the two breakpoints, NA in case the "samestr" field was 0.
+9. **ss1** - Splice donor site sequence.
+10. **ss2**	- Splice acceptor site sequence.
+11. **gnlist1** - List of genes overlapping the first part of the chimera. 	
+12. **gnlist2**	- List of genes overlapping the second part of the chimera. 
+13. **gnname1** - Name of the genes in the field *gnlist1*, "." if unknown. 
+14. **gnname2**	- Name of the genes in the field *gnlist1*, "." if unknown.
+15. **bt1** - Biotype of the genes in the field *gnlist1*, "." if unknown. 
+16. **bt2**	- Biotype of the genes in the field *gnlist2*, "." if unknown.
+17. **PEsupport** - Total number of read pairs supporting the chimera, "." if not Paired-end support. It is a string containing information about the number of read pairs supporting the connection between the involved gene pairs as follows: geneA1-GeneA2:nbReadPairs,geneB1-geneB2:nbReadPairs. E.g.: "1-1:1,3-1:2" means that the connection between the genes 1, in the *gnlist1* and *gnlist2* respectively, is supported by 1 read pair; and the connection between the gene 3 in the *gnlist1* and the gene 1 in the *gnlist2" is supported by 2 read pairs. 
+18. **maxSim** - Maximum percent of similarity in the BLAST alignment between the transcript with the longest BLAST alignment, "." if no blast hit found.
+19. **maxLgal** - Maximum length of the BLAST alignment between all the transcripts of the gene pairs connected by the chimeric junction, "." if no blast hit found. 
 
 **Example**
 
 .. code-block:: bash
 
-	Here's an example of a GFF-based track.
+	Here is an example of a chimeric junction detected by ChimPipe
 
 	juncId	nbstag	nbtotal	maxbeg	maxEnd	samechr	samestr	dist	ss1	ss2	gnlist1	gnlist2	gnname1	gnname2	bt1	bt2	PEsupport	maxSim	maxLgal
 	chr1_121115975_+:chr1_206566046_+ 1 1 121115953 206566073 1 1 85450071 GC AG SRGAP2D, SRGAP2,SRGAP2C, SRGAP2D, SRGAP2,SRGAP2C, . . 1-1:2,1-2:2, 99.44 1067
+
+
+.. image:: gnu.png
+   (options)
 
