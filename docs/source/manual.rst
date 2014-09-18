@@ -19,7 +19,7 @@ Mandatory:
 
 Optional:
 
-* Similarity between gene pairs text file
+* Similarity between transcript pairss text file
 
 
 Paired-end (PE) RNA-seq reads
@@ -112,8 +112,8 @@ Note that you can specify multiple threads with the option -t. You should get th
 
 
 Genome annotation
-~~~~~~~~~~~~~~~~~ 
-Chimpipe also takes as input a genome annotation in `GTF`_ format to find reads spanning splice junctions between exons from two different genes. This annotation has to contain at least one tag-value pair in the attributes field with the gene id and two optional pairs will be taken into account by ChimPipe if supplied: gene name and gene type. E.g:
+~~~~~~~~~~~~~~~~~~
+Chimpipe also takes as input a genome annotation in `GTF`_ format with the annotated exons. It can contain other features different from exons, i. e. introns or UTR, but they will be not considered by the pipeline in the chimera detection process. This annotation has to contain at least one tag-value pair in the attributes field with the gene id and two optional pairs will be taken into account by ChimPipe if supplied: gene name and gene type. E.g:
 
 .. _GTF: http://www.ensembl.org/info/website/upload/gff.html
 
@@ -149,7 +149,7 @@ You can specify multiple threads with -t. You should get the following message i
 
 **IMPORTANT**: The indexed gene annotation has to be placed in the same folder as the genome annotation to be used by ChimPipe
 
-Similarity between gene pairs (Optional)
+Similarity between transcript pairs (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Execute pipeline
@@ -157,7 +157,7 @@ Execute pipeline
 
 1. Set up the environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-As explained in the :ref:`installation` section, you need to have installed BEDtools and SAMtools to execute ChimPipe, plus blast in case you want to produce your own similarity between gene pairs text files (See **Similarity between gene pairs**). In case you do not have them, you can not download an install them from their webpages. Once installed, you have to export the path to their binaries as follow:  
+As explained in the :ref:`installation` section, you need to have installed BEDtools and SAMtools to execute ChimPipe, plus blast in case you want to produce your own similarity between transcript pairs text files (See **Similarity between transcript pairs**). In case you do not have them, you can not download an install them from their webpages. Once installed, you have to export the path to their binaries as follow:  
 
 .. code-block:: bash
 
