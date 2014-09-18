@@ -150,7 +150,7 @@ You can specify multiple threads with -t. You should get the following message i
 **IMPORTANT**: The indexed gene annotation has to be placed in the same folder as the genome annotation to be used by ChimPipe
 
 Similarity between transcript pairs (Optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Execute pipeline
 ================
@@ -243,7 +243,7 @@ Second mapping MAP file
 ~~~~~~~~~~~~~~~~~~~~~~~
 MAP file containing reads segmentally mapped in the genome allowing for interchromosomal, different strand and unexpected genomic order mappings. 
 
-*Unfortunatelly, there is not an official documentation describing this mapping format. 
+
 
 Chimeric junctions text file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -265,7 +265,7 @@ Tabular text file containing the detected chimeric junctions in your RNA-seq dat
 14. **gnname2**	- Name of the genes in the field *gnlist1*, "." if unknown.
 15. **bt1** - Biotype of the genes in the field *gnlist1*, "." if unknown. 
 16. **bt2**	- Biotype of the genes in the field *gnlist2*, "." if unknown.
-17. **PEsupport** - Total number of read pairs supporting the chimera, "." if not Paired-end support. It is a string containing information about the number of read pairs supporting the connection between the involved gene pairs as follows: geneA1-GeneA2:nbReadPairs,geneB1-geneB2:nbReadPairs. E.g.: "1-1:1,3-1:2" means that the connection between the genes 1, in the *gnlist1* and *gnlist2* respectively, is supported by 1 read pair; and the connection between the gene 3 in the *gnlist1* and the gene 1 in the *gnlist2" is supported by 2 read pairs. 
+17. **PEsupport** - Total number of read pairs supporting the chimera, "." if not Paired-end support. It is a string containing information about the number of read pairs supporting the connection between the involved gene pairs as follows: geneA1-GeneA2:nbReadPairs,geneB1-geneB2:nbReadPairs. E.g.: "1-1:1,3-1:2" means that the connection between the genes 1, in the *gnlist1* and *gnlist2* respectively, is supported by 1 read pair; and the connection between the gene 3 in the *gnlist1* and the gene 1 in the *gnlist2* is supported by 2 read pairs. 
 18. **maxSim** - Maximum percent of similarity in the BLAST alignment between the transcript with the longest BLAST alignment, "." if no blast hit found.
 19. **maxLgal** - Maximum length of the BLAST alignment between all the transcripts of the gene pairs connected by the chimeric junction, "." if no blast hit found. 
 
@@ -277,8 +277,4 @@ Tabular text file containing the detected chimeric junctions in your RNA-seq dat
 
 	juncId	nbstag	nbtotal	maxbeg	maxEnd	samechr	samestr	dist	ss1	ss2	gnlist1	gnlist2	gnname1	gnname2	bt1	bt2	PEsupport	maxSim	maxLgal
 	chr1_121115975_+:chr1_206566046_+ 1 1 121115953 206566073 1 1 85450071 GC AG SRGAP2D, SRGAP2,SRGAP2C, SRGAP2D, SRGAP2,SRGAP2C, . . 1-1:2,1-2:2, 99.44 1067
-
-
-.. image:: gnu.png
-   (options)
 
