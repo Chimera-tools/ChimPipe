@@ -220,6 +220,58 @@ In case you do not know the protocol used to produce your data, you can use a to
 4. Run ChimPipe
 ~~~~~~~~~~~~~~~
 
+.. code-block:: bash
+
+	** Mandatory arguments:
+		-i|--input			<INPUT_FILE>	First mate sequencing reads in FASTQ format. Pipeline designed to deal with paired-end
+	 						data. Please make sure the second mate file is in the same directory as the first mate 
+	 						file, and the files are named "YourSampleId_1.fastq.gz" and "YourSampleId_2.fastq.gz" 
+	 						respectively. YourSampleId has to be provided with the -e argument.
+		-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
+		-a|--annotation			<GTF>		Reference gene annotation file in GTF format.
+		-q|--quality			<NUMBER>	Quality offset of the FASTQ files [33 | 64 | ignore].
+		-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).    
+		
+	** [OPTIONS] can be:
+	Reads information:
+		-s|--stranded			<FLAG>		Flag to specify whether data is stranded. Default false (unstranded).
+		--read-directionality		<STRING>	Directionality of the reads [MATE1_SENSE | MATE2_SENSE | MATE_STRAND_CSHL | SENSE | ANTISENSE | NONE]. Default NONE.
+		--max-read-length		<NUMBER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
+		
+	Mapping parameters:
+		-M|--mism-contiguous-map	<NUMBER>	Maximum number of mismatches for the contiguous mapping steps with the GEM mapper. Default 4?. Not working
+		-m|--mism-split-map		<NUMBER>	Maximum number of mismatches for the segmental mapping steps with the GEM rna-mapper. Default 4?.	Not working
+		-c|--consensus-splice-sites	<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
+	                                 			(list of couples of donor/acceptor splice site consensus sequences, default='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
+		--min-split-size		<NUMBER>	Minimum split size for the segmental mapping steps. Default 15.
+		--stats				<FLAG>		Enable mapping statistics. Default disabled.
+		
+	Chimeric junctions filter:
+			--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
+								i.e. "1,2,75:50;", where:
+												
+									1st: minimum number of staggered reads spanning the chimeric junction.
+									2nd: minimum number of paired-end reads encompassing the chimeric junction.		
+									3rd: maximum similarity between the connected genes.
+									4rd: maximum length of the high similar region between the connected genes.
+		
+								All these conditions have to be fulfilled for a chimeric junction to pass the filter. It is also possible to make 
+								complex condifions by setting two different conditions where at least one of them has to be fulfilled. 
+								I.e "10,0,0:0;1,1,0:0;". Default "5,0,80:30;1,1,80:30;".	
+			--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
+								to discard junctions connecting highly similar genes. If not provided the junctions will not be filtered according to this criteria. 
+
+	General:
+		-o|--output-dir			<PATH>		Output directory. Default current working directory.
+		--tmp-dir			<PATH>		Temporary directory. Default /tmp.
+		-t|--threads			<PATH>		Number of threads to use. Default 1.
+		-l|--log			<PATH>		Log level [error |warn | info | debug). Default info.
+		--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
+		--help				<FLAG>		Display usage information.
+
+
+
+
 Output
 ======
 
