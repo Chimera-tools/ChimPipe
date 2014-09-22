@@ -19,11 +19,11 @@ Contents:
    :maxdepth: 3
   
    aim
-   method	
    installation 
    manual
+   FAQ
    downloads
-
+   contact
 
 
 

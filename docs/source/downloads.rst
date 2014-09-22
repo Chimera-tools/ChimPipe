@@ -4,44 +4,66 @@
 Downloads
 ==========
 
-
-GEM Indexes
-===========
-
-Genome indexes
-~~~~~~~~~~~~~~
+GEM indexed genomes
+====================
 
 *Homo sapiens*
 ---------------
 
-* December 2013 (GRCh38/hg38) 
-* February 2009 (GRCh37/hg19)
+* February 2009 (`GRCh37/hg19`_)
+
+.. _GRCh37/hg19: http://public-docs.crg.es/rguigo/Data/brodriguez/genomes/h.sapiens/hg19/hg19_genome_GEM.tar.gz
 
 *Mus musculus*
 ---------------
 
-* Decembre 2011 (GRCm38/mm10)
-* July 2007 (NCBI37/mm9)
+* July 2007 (`NCBI37/mm9`_)
 
-Transcriptome annotation indexes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _NCBI37/mm9: http://public-docs.crg.es/rguigo/Data/brodriguez/genomes/m.musculus/mm9/mm9_genome_GEM.tar.gz
 
-*H.sapiens*
+
+*Drosophila melanogaster*
+--------------------------
+
+
+GEM indexed transcriptomes and genome annotation
+=================================================
+
+*H. sapiens*
 ------------
 
-* Gencode 17
-* Gencode 15
+* `Gencode v19`_ long transcripts. 
+* `Gencode v10`_ long transcripts.
 
-*M.musculus*
--------------
+.. _Gencode v19: http://public-docs.crg.es/rguigo/Data/brodriguez/annotations/h.sapiens/gencode/gencode19/gencode_annot_v19_long_GEM.tar.gz
+.. _Gencode v10: http://public-docs.crg.es/rguigo/Data/brodriguez/annotations/h.sapiens/gencode/gencode10/gencode_annot_v10_long_GEM.tar.gz
 
-* Gencode M3
+*Small RNAs group comprises*: ribosomal, micro, transfer, small cytoplasmic, small nucleolar and small nuclear RNAs
 
-Similarity between transcript pairs 
-===================================
+* `UCSC known genes`_ February 2009 (GRCh37/hg19).
 
-*H.sapiens*
-~~~~~~~~~~~~
+.. _UCSC known genes: http://public-docs.crg.es/rguigo/Data/brodriguez/annotations/h.sapiens/UCSCknownGenes/UCSCgenes_hg19_fixed/UCSC_annot_hg19_GEM.tar.gz
+
+
+*M. musculus*
+--------------
+
+* `Ensembl v65`_ long transcripts.
+
+.. _Ensembl v65: http://public-docs.crg.es/rguigo/Data/brodriguez/annotations/d.melanogaster/flybase_annot_v5.46_GEM.tar.gz
+
+
+*D. melanogaster*
+------------------
+
+* `FlyBase v5.46`_
+
+.. _FlyBase v5.46: http://public-docs.crg.es/rguigo/Data/brodriguez/annotations/d.melanogaster/flybase_annot_v5.46_GEM.tar.gz
+
+
+
+Similarity between gene pairs 
+==============================
 
 *H.sapiens*
 ~~~~~~~~~~~~
@@ -51,5 +73,6 @@ Similarity between transcript pairs
 
 *M.musculus*
 ~~~~~~~~~~~~~
+
 
 

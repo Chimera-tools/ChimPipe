@@ -14,12 +14,12 @@ Mandatory:
 
 * Paired-end (PE) RNA-seq reads
 * Genome index 
-* Transcriptome annotation
+* Genome annotation
 * Transcriptome annotation index
 
 Optional:
 
-* Similarity between transcript pairss text file
+* Similarity between gene pairs text file
 
 
 Paired-end (PE) RNA-seq reads
@@ -57,13 +57,13 @@ The FASTQ file uses four lines per sequencing read. You need to check the format
 
 .. code-block:: bash
 	
-	$ # Mate 1
+	# Mate 1
 	@seq.1_set1:140:D034KACXX:1:2105:18345:62400 1:N:0:
 	CCCAGCCTGTTTCCCTGCCTGGGAAACTAGAAAGAGGGCTTCTTTCTCCT
 	+
 	IJJJIIIIIGIGIEBHHHGFFFF=CDEEEEEDDDDCCCDDA?55><CBBB
 	
-	$ # Mate 2
+	# Mate 2
 	@seq.1_set1:140:D034KACXX:1:2105:18345:62400 2:N:0:
 	GCACCCTTCACTCCCTCCCTTGGGCGCCTCCCTCCCGAGGGTAGGGACCC
 	+
@@ -73,20 +73,18 @@ I case your FASTQ files do not meet this format you should modify the identifier
 
 .. code-block:: bash
 	
-	$ cd /users/rg/brodriguez/bin/ChimPipe/reads/berger
-	
-	$ # But it does not have a proper identifier. It has three strings as identifier and does not end with "/1"
-	$ head -4 berger_1.fastq
+
+	# Mate 1 read without a proper identifier. It has three strings as identifier and does not end with "/1"
 	
 	@SRR018259.1 BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868 length=51
 	GTAACATATTCACAGACATGTCAGTGTGCACTCAGGAACACTGGTTTCATT
 	+SRR018259.1 BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868 length=51
 	IIIIIIIIIIIIIII>=CII=8=H032/-++D+'.@)2+4/+)1'4.#"*.
 	
-	$ ## So, I use awk to modify it. 
+	# No worries, I can use awk to fix it. 
 	
-	$ awk '{if (NR%2==1){print $1"_"$2"_"$3"#0/1"} else {print $0}} berger_1.fastq > berger_fixed_1.fastq		
-	$ head -4 berger_fixed_1.fastq 
+	$ awk '{if (NR%2==1){print $1"_"$2"_"$3"#0/1"} else {print $0}} dataset_1.fastq 		
+	
 	@SRR018259.1_BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868_length=51#0/1
 	GTAACATATTCACAGACATGTCAGTGTGCACTCAGGAACACTGGTTTCATT
 	+SRR018259.1_BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868_length=51#0/1
@@ -96,19 +94,21 @@ I case your FASTQ files do not meet this format you should modify the identifier
 
 Genome index
 ~~~~~~~~~~~~
-An indexed reference genome in GEM format has to be provided to do the mapping steps. You just need to run the GEMtools indexer (supplied with ChimPipe distribution) with your genome in FASTA format to produce it:
+An indexed reference genome in GEM format has to be provided to do the mapping steps. You just need to run the *GEMtools indexer* (supplied with ChimPipe) with your genome in FASTA format to produce it:
 
 .. _FASTA:
  
 .. code-block:: bash
 
-	$ cd /users/rg/brodriguez/bin/ChimPipe/genomes/GRCh37
-	$ gemtools=/users/rg/brodriguez/bin/ChimPipe/bin/gemtools-1.7.1-i3/gemtools
-	$ $gemtools index -i Homo_sapiens.GRCh37.chromosomes.chr.M.fa
+	$ gemtools index -i genome.fa 
 
-Note that you can specify multiple threads with the option -t. You should get the following message if everything goes well:
+It will produce 3 files in the directory where the genome is placed:
 
-.. code-block:: bash
+* **genome.gem** – indexed genome in GEM format (needed for running ChimPipe).   
+* genome.hash – hash table with the genome (no needed). 
+* genome.log – indexer log file.    
+
+**Note:** It is recommended to use multiple threads with the option -t. 
 
 
 Genome annotation
@@ -134,89 +134,57 @@ ChimPipe has been benchmarked with `Gencode v10`_ and `UCSC Known Genes`_ annota
 
 Transcriptome annotation index
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-An indexed transcriptome annotation in GEM format has to be given as input to find reads spanning annotated splice junctions. You only have to run the GEMtools transcriptome indexer (provided with ChimPipe distribution) with your GEM indexed genome and its annotation in GTF format to generate it. 
+An indexed transcriptome annotation in GEM format has to be given as input to find reads spanning annotated splice junctions. You only have to run the *GEMtools transcriptome indexer* (supplied with ChimPipe) with your previously generated GEM windexed genome and its annotation in GTF format to generate it. 
 
 .. code-block:: bash
 
-	$ cd /users/rg/brodriguez/bin/ChimPipe/annotations/gencode10
-	$ gemtools=/users/rg/brodriguez/bin/ChimPipe/bin/gemtools-1.7.1-i3/gemtools
-	$ genome=/users/rg/brodriguez/bin/ChimPipe/genomes/GRCh37/Homo_sapiens.GRCh37.chromosomes.chr.gem
-	$ $gemtools t-index -i $genome -a gen10.long.gtf	
+	$ $gemtools t-index -i genome.gem -a annotation.gtf	
 
-You can specify multiple threads with -t. You should get the following message if everything goes well: 
+It will produce 5 files in your current working directory:
 
-.. code-block:: bash
+* annotation.gtf.junctions – annotated splice junctions coordinates (no needed)
+* annotation.gtf.junctions.fa – annotated splice junctions sequence (no needed)
+* **annotation.gtf.junctions.gem** – transcriptome index in GEM format (needed)
+* **annotation.gtf.junctions.keys** – keys to convert from transcriptome to genome (needed)
+* annotation.gtf.junctions.log – indexer log file
 
-**IMPORTANT**: The indexed gene annotation has to be placed in the same folder as the genome annotation to be used by ChimPipe
+**Note**: It is recommended to use multiple threads with the option -t. 
 
-Similarity between transcript pairs (Optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**IMPORTANT**: The indexed transcriptome annotation has to be placed in the same folder as the genome annotation to be used by ChimPipe.
+
+Similarity between gene pairs (Optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Execute pipeline
 ================
 
 1. Set up the environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-As explained in the :ref:`installation` section, you need to have installed BEDtools and SAMtools to execute ChimPipe, plus blast in case you want to produce your own similarity between transcript pairs text files (See **Similarity between transcript pairs**). In case you do not have them, you can not download an install them from their webpages. Once installed, you have to export the path to their binaries as follow:  
+As explained in the :ref:`installation` section, you need to have installed BEDtools and SAMtools to execute ChimPipe, plus blast in case you want to produce your own similarity between transcript pairs text files (See **Similarity between gene pairs**). In case you do not have them, you can download an install them from their webpages. Once installed, you have to export the path to their binaries. 
 
-.. code-block:: bash
+Please check our :ref:`FAQ` section in case you have any problem to do it.  
 
-	# Check the current path setting
-	$ echo "$PATH"
-	$ /software/rg/el6.3/pythonz/bin:/software/rg/el6.3/bin:/software/rg/el6.3/texlive/2012/bin/x86_64-linux:/software/as/el6.3/test/modules/Modules/3.2.10/bin/:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/lib64/openmpi/bin/:/usr/lib64/compat-openmpi/bin/:/users/rg/brodriguez/bin:/software/rg/bin/
-
-	# Add the path to bedtools, samtools and blast binaries to the $PATH variable
-	$ export PATH=/users/rg/brodriguez/bin/bedtools2-2.20.1/bin:/users/rg/brodriguez/bin/samtools-0.1.19:/users/rg/brodriguez/bin/blast-2.2.29+/bin:$PATH
-	$ echo $PATH
-	$ /users/rg/brodriguez/bin/bedtools2-2.20.1/bin:/users/rg/brodriguez/bin/samtools-0.1.19:/users/rg/brodriguez/bin/blast-2.2.29+/bin:/software/rg/el6.3/pythonz/bin:/software/rg/el6.3/bin:/software/rg/el6.3/texlive/2012/bin/x86_64-linux:/software/as/el6.3/test/modules/Modules/3.2.10/bin/:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/lib64/openmpi/bin/:/usr/lib64/compat-openmpi/bin/:/users/rg/brodriguez/bin:/software/rg/bin/
-	# Now, if you can call directly bedtools, samtools or blast to check if it is working. E.g:
-	$ samtools
-	
-
-2. Check the quality offset (Skip if you already know)  
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2. Check the quality offset in your dataset   
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The quality scores (Q) measure the probability that a base is called incorrectly by the sequencing machine. Within your FASTQ files, they are represented in the fourth line of each read as an string of ASCII characters (each character correspond to the Q score of a certain base in the sequencing read). The correspondence between each ASCII character and the Q score is based on some offset. These offset vary with the sequencing platform (current Illumina machines uses 33, while older ones 33). 
 
-Along with ChimPipe, we supply an in-house bash script you can use to detect the offset of your reads before running ChimPipe:
+**NOTE**: ChimPipe needs to know the offset used in your RNA-seq dataset to do the mapping steps. If you do not have this information, we provide a short script to easily check it (see :ref:`FAQ` section). 
 
-.. code-block:: bash
-
-	$ cd /users/rg/brodriguez/bin/ChimPipe/reads/berger
-	$ ls 
-	$ berger_1.fastq berger_2.fastq
-	$ # I will use the detect.fq.qual to know the offset. 
-	$ quality=/users/rg/brodriguez/bin/ChimPipe/tools/detect.fq.qual.sh
-	$ $quality berger_1.fastq
-	$ Offset 33
-	$ # Ok, the offset is 33. I will use this information to run the pipeline afterwards. 
-
-3. Check the RNA-seq library type (Skip if you already know)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3. Check the RNA-seq library type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Different protocols that can be used to generate a RNA-seq library. There are also important differences among them that have to be taken into account in several steps of the chimera detection pipeline. However, ChimPipe can not determine the protocol used to produce your reads, so you need to supply this information manually with the option **--read-directionality <STRING>**. Where **STRING** has to be one of these library types:
 
-* NONE. Not strand-specific protocol (unstranded data). The information about from which strand the transcript is transcribed is not available. **Default configuration**
+* **NONE**. Not strand-specific protocol (unstranded data). The information about from which strand the transcript is transcribed is not available. Default configuration.
 
 Strand-specific protocols (stranded data):
  
-* SENSE. Transcript directly sequenced. Reads map to the transcript strand.
-* ANTISENSE. Reverse complementary sequence of the transcript sequenced. Reads map to the opposite strand of the transcript. 
-* MATE1_SENSE. Reads on the left of the fragment (mates 1) sequenced from the transcript (map in the transcrip strand), and the ones in the right (mates 2) sequenced from the complementary reverse sequence (map in the opposite strand). 
-* MATE2_SENSE. Reads on the left of the fragment (mates 1) sequenced from the complementary reverse sequence (map in the opposite strand), and the ones in the right (mates 2) sequenced from the transcript (map in the transcrip strand). 
-
-In case you do not know the protocol used to produce your data, you can use a tool provided along ChimPipe to infer it from a subset of mapped reads as follows:
-
-.. code-block:: bash
-
-	$ cd /users/rg/brodriguez/bin/ChimPipe/reads/berger
-	$ # I will substract a subset of 1000 reads 
-	$ head -4000 berger_1.fastq > berger.subset1000_1.fastq
-	$ head -4000 berger_2.fastq > berger.subset1000_2.fastq
-	$ gemtools=/users/rg/brodriguez/bin/ChimPipe/bin/gemtools-1.7.1-i3/gemtools
-	$ index=
-	$ annot=
-	$ gemtools --loglevel $loglevel rna-pipeline -f berger.subset1000_1.fastq -i $index -a $annot -q  -n berger 
+* **SENSE**. Transcript directly sequenced. Reads map to the transcript strand.
+* **ANTISENSE**. Reverse complementary sequence of the transcript sequenced. Reads map to the opposite strand of the transcript. 
+* **MATE1_SENSE**. Reads on the left of the fragment (mates 1) sequenced from the transcript (map in the transcrip strand), and the ones in the right (mates 2) sequenced from the complementary reverse sequence (map in the opposite strand). 
+* **MATE2_SENSE**. Reads on the left of the fragment (mates 1) sequenced from the complementary reverse sequence (map in the opposite strand), and the ones in the right (mates 2) sequenced from the transcript (map in the transcrip strand). 
 	
-
+**NOTE**: if you do not know, you can ask your RNA-seq data provider or use our bash script (see :ref:`FAQ` section).
+	
 4. Run ChimPipe
 ~~~~~~~~~~~~~~~
 
@@ -281,11 +249,11 @@ By default, ChimPipe produces 3 files as output:
 * Second mapping MAP file
 * Chimeric junctions text file
 
-
+**NOTE**: you can use the optional flag option **--no-cleanup** to ouput also intermediate files. 
 
 First mapping BAM file
 ~~~~~~~~~~~~~~~~~~~~~~
-`BAM`_ file containing the reads mapped in the genome, transcriptome and *de novo* transcriptome with the GEMtools RNA pipeline. 
+`BAM`_ file containing the reads mapped in the genome, transcriptome and *de novo* transcriptome with the *GEMtools RNA pipeline*. 
 
 Many next-generation sequencing analysis tools work with this format, so it can be used to do very different analyses such as gene and transcript quantification or differential gene expression analysis.
 
@@ -296,10 +264,9 @@ Second mapping MAP file
 MAP file containing reads segmentally mapped in the genome allowing for interchromosomal, different strand and unexpected genomic order mappings. 
 
 
-
 Chimeric junctions text file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Tabular text file containing the detected chimeric junctions in your RNA-seq dataset. It has rows of 19 fields, where each row corresponds to a chimeric junction and the fields harbour information about. Here is a brief description of the 19 fields:
+Tabular text file containing the detected chimeric junctions in your RNA-seq dataset. It has rows of 19 fields, where each row corresponds to a chimeric junction and the fields contains information about it. Here is a brief description of the 19 fields:
 
 1. **juncId** - Chimeric junction identifier. It is an string encoding the position of the chimeric junction in the genome as follows: chrA"_"breakpointA"_"strandA":"chrB"_"breakpointB"_"strandB. E. g., "chr4_90653092_+:chr17_22023757_+" is a chimeric junction between the position 90653092 of the chromosome 4 in the plus strand, and the position 22023757 of the chromosome chr17 in the plus strand. 
 2. **nbstag** - Number of staggered reads supporting the chimera.

@@ -20,34 +20,21 @@ Chimeras are transcripts whose sequence is encoded in two or more different gene
 	* **SHS-transcriptional slippage**. Pairing of short homologous sequences (SHS) among two different transcripts that leads to a recombination producing a chimeric transcript. 
 
 
+ChimPipe principle
+~~~~~~~~~~~~~~~~~~~
+Briefly, ChimPipe uses the `GEMtools RNA-seq pipeline`_ to continuously map the read pairs to the genome and the annotated transcriptome, and segmentally maps them into the genome to find *de novo* splice junctions in the same chromosome and strand. Then, in a second mapping step, it further segmentally maps the reads that could not be mapped this way to find *de novo* splice junctions allowing for different chromosome and strand through the `GEM RNA mapper`_. ChimPipe further aggregates the two block of segmentally mapped reads whose two parts map in two different genes into chimeric junctions, and applies several filters such as number of reads spanning and read pairs encompassing the chimeric junction. 
+
+Currently, we are working in ChimPipe's paper where our approach is deeply described. 
+
+.. _GEMtools RNA-seq pipeline: http://gemtools.github.io/
+.. _GEM RNA mapper: http://algorithms.cnag.cat/wiki/The_GEM_library
+
+
+
 ChimPipe features
 ~~~~~~~~~~~~~~~~~~
 
-* Aims to detect chimeric transcripts arising from transcriptional events and genomic rearrangements.
-
-* Deals with stranded and unstranded **Paired End RNA-seq** data. 	
-
-* Provides precise chimeric junction coordinates between connected genes.
-
-* Ouput many qualitative and quantitative information associated to the chimeric junctions.
-
-* Considers two sources of evidence to find them: reads spanning and read pairs encompassing chimeric junctions.
-
-* Performs a continuous and segmental aligment of the reads to detect them. 
-
-* Read mapping done with `GEM`_ and the `GEM rna-mapper`_, two exhaustive read mappers, through the `GEMtools`_ library. 
-
-* Implements a set of filters to discard spurious chimeras arising from sequencing and alignment artefacts: 
-
-	* Nb. staggered spanning reads filter
-	* Nb. encompassing read pairsv filter
-	* Sequence similarity filter between connected gene pairs
-	* PCR-duplicates filter
-	* Minimum anchor length filter
-
-* Evaluated on several positive and negative datasets on which other programs were already benchmarked, and out of five programs, ChimPipe ranked first for sensitivity, third for specificity and first overall. Unpublished data, we are working on the manuscript.  
-
-.. _GEM: http://algorithms.cnag.cat/wiki/The_GEM_library
-.. _GEM rna-mapper: http://algorithms.cnag.cat/wiki/The_GEM_library
-.. _GEMtools: http://gemtools.github.io/
-
+* Can handle both unstranded and stranded data
+* Provides the precise chimeric junction coordinates
+* Outputs many pieces of information for each chimeric junction
+* Has a good balance sensitivity/specificity according to our benchmark
