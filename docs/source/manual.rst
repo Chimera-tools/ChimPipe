@@ -24,7 +24,7 @@ Optional:
 
 Paired-end (PE) RNA-seq reads
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing data. It takes two `FASTQ`_ files as input, one for the first mates and another one for the second mates in the read pairs respectively. Make sure that they are in the same directory and they are named according to this convention: 
+ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing data. It takes two `FASTQ`_ files as input, one for the first mates and another one for the second mates in the read pairs respectively. They have to be located in the same directory and named according to this convention: 
 
 .. _Illumina paired-end: http://technology.illumina.com/technology/next-generation-sequencing/paired-end-sequencing_assay.ilmn
 .. _FASTQ: http://maq.sourceforge.net/fastq.shtml
@@ -32,7 +32,9 @@ ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing da
 * **Mate 1**. "SampleId + [.1|_1] + [.fastq|.txt] (+ .gz if compressed)"
 * **Mate 2**. "SampleId + [.2|_2] + [.fastq|.txt] (+ .gz if compressed)"
 
-E. g. BERGER_1.fastq.gz and BERGER_2.fastq.gz would be the compressed FASTQ files for mate 1 and mate 2 in the BERGER sample. Note that you should use the same convention for both mates, so if mate 1 is BERGER_1.fastq.gz, mate 2 can not be BERGER.2.txt.gz
+E. g. BERGER_1.fastq.gz and BERGER_2.fastq.gz would be the compressed FASTQ files for mate 1 and mate 2 in the BERGER sample. 
+
+.. warning:: Please make sure the 2 FASTQ files are in the **same directory** and you use the **same convention** for both mates. E. g: if mate 1 is BERGER_1.fastq.gz, mate 2 can not be BERGER.2.txt.gz
 
 The FASTQ file uses four lines per sequencing read. You need to check the format of the first line of each read, which begins with the '@' character and is followed by a read identifier. This identifier should meet one of the two Illumina standards to specify which member of the pair the read is:
 
@@ -108,7 +110,9 @@ It will produce 3 files in the directory where the genome is placed:
 * genome.hash – hash table with the genome (no needed). 
 * genome.log – indexer log file.    
 
-**Note:** It is recommended to use multiple threads with the option -t. 
+We also provide some **pre-generated genome indices** for human, mouse and drosophila genomes in the :ref:`Downloads` section. 
+
+.. tip:: If your machine has more than one CPU it is recommended to run the indexer with multiple threads. Use the option ``-t <threads>``, where **threads** is the number of CPUs available. 
 
 
 Genome annotation
@@ -127,7 +131,7 @@ Chimpipe also takes as input a genome annotation in `GTF`_ format with the annot
 	transcript_type "protein_coding"; transcript_status "KNOWN"; transcript_name "OR4F5-001"; exon_number 1; exon_id "ENSE00002319515.1"; level 2; tag "basic"; tag "appris_principal";
 	tag	"CCDS"; ccdsid "CCDS30547.1"; havana_gene "OTTHUMG00000001094.1"; havana_transcript "OTTHUMT00000003223.1";
 
-ChimPipe has been benchmarked with `Gencode v10`_ and `UCSC Known Genes`_ annotation. It displayed a better sensitivity with Gencode v10 while the similar false positive rate was similar (see Benchmark section). Thus, we encourage the user to use Gencode annotation, it is a richer annotation what increase the sensitivity of the chimera detection process. 
+.. note:: ChimPipe has been benchmarked with `Gencode v10`_ and `UCSC Known Genes`_  humna annotation. It displayed a better sensitivity with Gencode v10 while the similar false positive rate was similar. Thus, it is advisable to use Gencode annotation, it is a richer annotation what increase the sensitivity of the chimera detection process. 
 
 .. _Gencode v10: http://www.gencodegenes.org/releases/10.html
 .. _UCSC Known Genes: https://genome.ucsc.edu/cgi-bin/hgTables?command=start
@@ -148,31 +152,65 @@ It will produce 5 files in your current working directory:
 * **annotation.gtf.junctions.keys** – keys to convert from transcriptome to genome (needed)
 * annotation.gtf.junctions.log – indexer log file
 
-**Note**: It is recommended to use multiple threads with the option -t. 
+We also provide some **pre-generated transcriptome indices** for human, mouse and drosophila annotations in the :ref:`Downloads` section. 
 
-**IMPORTANT**: The indexed transcriptome annotation has to be placed in the same folder as the genome annotation to be used by ChimPipe.
+.. tip:: If your machine has more than one CPU it is recommended to run the indexer with multiple threads. Use the option ``-t <threads>``, where **threads** is the number of CPUs available. 
+
+.. warning:: The indexed transcriptome annotation has to be placed in the same folder as the genome annotation to be used by ChimPipe.
 
 Similarity between gene pairs (Optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+One of ChimPipe's filtering steps to discard actefactual chimeras is to filter out those chimeric junctions connecting genes that encode transcripts with a high sequence homology. Although it is an optional filter, it is **strongly recommended**, since accoding our benchmark it improves much the specificity with a minimal decrease of the sensitivity.  
+
+To enable this homology-based filtering you only need to run ChimPipe with the option ``--similarity-gene-pairs <TEXT FILE>``, where **TEXT FILE** is a file containing the matrix with information about the sequence similarity between gene pairs. 
+
+You can download our **pre-generated matrices** por human, mouse and drosophila annotations from :ref:`Downloads` section or you can produce your own matrix with the script ``ChimPipe/src/bash/tools/similarity_bt_gnpairs.sh`` as follows:
+
+	$ bash similarity_bt_gnpairs.sh annot.gtf genome.gem
+
+This script will produce the matrix through 4 steps:
+
+1. Extract the cDNA sequence of each transcript in the annotation.
+
+2. Make a BLAST database out of the transcript sequences. 
+
+3. Run BLAST on all trancript against all transcripts to detect local similarity between transcripts.
+
+4. Produce a 8 fields matrix where each row corresponds to a gene pair and it contains information about the alignment between the pair of transcripts of this two genes with the maximum alignment similarity and length. Here is a brief description of the 8 fields:
+
+	1. Gene name A
+	2. Gene name B
+	3. Transcripts alignment similarity
+	4. Transcript alignment length
+	5. Transcript name A
+	6. Transcript name B
+	7. Trancript A exonic length
+	8. Transcript B exonic length
+
+**Example** 
+
+ENSG00000000003.10 ENSG00000003402.15 91.43 70 ENST00000373020.4 ENST00000309955.3 2206 14672
+	
+.. warning:: Make sure you run ChimPipe with a similarity matrix generated from the annotation and genome you are using.  
 
 Execute pipeline
 ================
 
 1. Set up the environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-As explained in the :ref:`installation` section, you need to have installed BEDtools and SAMtools to execute ChimPipe, plus blast in case you want to produce your own similarity between transcript pairs text files (See **Similarity between gene pairs**). In case you do not have them, you can download an install them from their webpages. Once installed, you have to export the path to their binaries. 
+As explained in the :ref:`installation` section, you need to have installed BEDtools and SAMtools to execute ChimPipe, plus blast in case you want to produce your own similarity between gene pairs text files (See **Similarity between gene pairs**). In case you do not have them, you can download an install them from their webpages. Once installed, you have to export the path to their binaries. 
 
-Please check our :ref:`FAQ` section in case you have any problem to do it.  
+Please check our :ref:`FAQ` section in case you have any problem.  
 
 2. Check the quality offset in your dataset   
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The quality scores (Q) measure the probability that a base is called incorrectly by the sequencing machine. Within your FASTQ files, they are represented in the fourth line of each read as an string of ASCII characters (each character correspond to the Q score of a certain base in the sequencing read). The correspondence between each ASCII character and the Q score is based on some offset. These offset vary with the sequencing platform (current Illumina machines uses 33, while older ones 33). 
+The quality scores (Q) measure the probability that a base is called incorrectly by the sequencing machine. Within your FASTQ files, they are represented in the fourth line of each read as an string of ASCII characters (each character correspond to the Q score of a certain base in the sequencing read). The correspondence between each ASCII character and the Q score is based on some offset. These offset vary with the sequencing platform (current Illumina machines uses 33, while older 33). 
 
-**NOTE**: ChimPipe needs to know the offset used in your RNA-seq dataset to do the mapping steps. If you do not have this information, we provide a short script to easily check it (see :ref:`FAQ` section). 
+.. tip:: ChimPipe needs to know the offset considered in your RNA-seq data to do the mapping steps. If you do not have this information, a short script is provided to easily check it (see :ref:`FAQ` section). 
 
 3. Check the RNA-seq library type
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Different protocols that can be used to generate a RNA-seq library. There are also important differences among them that have to be taken into account in several steps of the chimera detection pipeline. However, ChimPipe can not determine the protocol used to produce your reads, so you need to supply this information manually with the option **--read-directionality <STRING>**. Where **STRING** has to be one of these library types:
+Different protocols that can be used to generate a RNA-seq library. There are also important differences among them that have to be taken into account in several steps of the chimera detection pipeline. However, ChimPipe can not determine the protocol used to produce your reads, so you need to supply this information manually with the option ``--read-directionality <library>``. Where **library** has to be one of these library types:
 
 * **NONE**. Not strand-specific protocol (unstranded data). The information about from which strand the transcript is transcribed is not available. Default configuration.
 
@@ -183,62 +221,46 @@ Strand-specific protocols (stranded data):
 * **MATE1_SENSE**. Reads on the left of the fragment (mates 1) sequenced from the transcript (map in the transcrip strand), and the ones in the right (mates 2) sequenced from the complementary reverse sequence (map in the opposite strand). 
 * **MATE2_SENSE**. Reads on the left of the fragment (mates 1) sequenced from the complementary reverse sequence (map in the opposite strand), and the ones in the right (mates 2) sequenced from the transcript (map in the transcrip strand). 
 	
-**NOTE**: if you do not know, you can ask your RNA-seq data provider or use our bash script (see :ref:`FAQ` section).
+.. tip:: In case you do not know the type of library, use the bash script provided along ChimPipe (see :ref:`FAQ` section) or ask your RNA-seq data provider.
 	
 4. Run ChimPipe
 ~~~~~~~~~~~~~~~
+Once you have the genome and transcriptome indices prepared, and you know the quality offset and the library type of your PE RNA-seq reads you can run ChimPipe as follows:
+
+.. code-block:: bash
+	
+	bash ChimPipe.sh -i reads_1.fastq -g genome.gem -a annotation.gtf -q 33 -l UNSTRANDED -e sample1
+
+All these files and parameters given as input to ChimPipe are **mandatory arguments**. Please see bellow a descripion of them: 
 
 .. code-block:: bash
 
-	** Mandatory arguments:
-		-i|--input			<INPUT_FILE>	First mate sequencing reads in FASTQ format. Pipeline designed to deal with paired-end
-	 						data. Please make sure the second mate file is in the same directory as the first mate 
-	 						file, and the files are named "YourSampleId_1.fastq.gz" and "YourSampleId_2.fastq.gz" 
-	 						respectively. YourSampleId has to be provided with the -e argument.
-		-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
-		-a|--annotation			<GTF>		Reference gene annotation file in GTF format.
-		-q|--quality			<NUMBER>	Quality offset of the FASTQ files [33 | 64 | ignore].
-		-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).    
-		
-	** [OPTIONS] can be:
-	Reads information:
-		-s|--stranded			<FLAG>		Flag to specify whether data is stranded. Default false (unstranded).
-		--read-directionality		<STRING>	Directionality of the reads [MATE1_SENSE | MATE2_SENSE | MATE_STRAND_CSHL | SENSE | ANTISENSE | NONE]. Default NONE.
-		--max-read-length		<NUMBER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
-		
-	Mapping parameters:
-		-M|--mism-contiguous-map	<NUMBER>	Maximum number of mismatches for the contiguous mapping steps with the GEM mapper. Default 4?. Not working
-		-m|--mism-split-map		<NUMBER>	Maximum number of mismatches for the segmental mapping steps with the GEM rna-mapper. Default 4?.	Not working
-		-c|--consensus-splice-sites	<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
-	                                 			(list of couples of donor/acceptor splice site consensus sequences, default='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
-		--min-split-size		<NUMBER>	Minimum split size for the segmental mapping steps. Default 15.
-		--stats				<FLAG>		Enable mapping statistics. Default disabled.
-		
-	Chimeric junctions filter:
-			--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
-								i.e. "1,2,75:50;", where:
-												
-									1st: minimum number of staggered reads spanning the chimeric junction.
-									2nd: minimum number of paired-end reads encompassing the chimeric junction.		
-									3rd: maximum similarity between the connected genes.
-									4rd: maximum length of the high similar region between the connected genes.
-		
-								All these conditions have to be fulfilled for a chimeric junction to pass the filter. It is also possible to make 
-								complex condifions by setting two different conditions where at least one of them has to be fulfilled. 
-								I.e "10,0,0:0;1,1,0:0;". Default "5,0,80:30;1,1,80:30;".	
-			--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
-								to discard junctions connecting highly similar genes. If not provided the junctions will not be filtered according to this criteria. 
+	-i|--input reads_1.fastq – First mate sequencing reads. ChimPipe deals with paired-end data. 
+				   Please make sure the second mate file is in the same directory as 
+				   the first one, and the files are named according to the same convention. 
+				   E.g: the second mate of "reads_1.fastq" should be "reads_2.fastq". 
+						   
+	-g|--genome-index genome.gem – Index for the reference genome in GEM format.
 
-	General:
-		-o|--output-dir			<PATH>		Output directory. Default current working directory.
-		--tmp-dir			<PATH>		Temporary directory. Default /tmp.
-		-t|--threads			<PATH>		Number of threads to use. Default 1.
-		-l|--log			<PATH>		Log level [error |warn | info | debug). Default info.
-		--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
-		--help				<FLAG>		Display usage information.
+	-a|--annotation annotation.gtf – Reference genome annotation file in GTF format. The transcriptome 
+						index has to be in the same directory as the annotation. 
+								 
+	-q|--quality 33 – Quality offset of the FASTQ files [33 | 64 | ignore].
 
+	-l|--seq-library NONE – Type of sequencing library [MATE1_SENSE | MATE2_SENSE | 
+				MATE_STRAND_CSHL | SENSE | ANTISENSE | UNSTRANDED]. UNSTRANDED for not strand-specific 
+				protocol (unstranded data) and the others for the different types of 
+				strand-specific protocols (stranded data).
+		          
+	-e|--sample-id sample1 – Sample identifier (the output files will be named according to this id).
 
+ChimPipe pipeline has some **optional arguments**, please do ``ChimPipe.sh --help`` to see the list.
 
+.. tip:: If your machine has more than one CPU it is recommended to run ChimPipe with multiple threads. It will speed up the mapping steps a lot. Use the option ``-t|--threads <threads>``, where **threads** is the number of CPUs available. 
+
+.. tip:: It is strongly advisable to use the option ``--similarity-gene-pairs <TEXT FILE>`` to discard junctions connecting genes which encode transcripts with a high sequence homology, which are likely sequencing or mapping artefacts. Please check **Similarity between gene pairs** above to learn how to produce the text file needed. 
+
+.. note:: The pipeline is restartable. That means if ChimPipe fails at some point and you run it again, it will skip the already completed steps. You just need to make sure you remove the files generated in the step the pipeline failed. 
 
 Output
 ======
@@ -249,7 +271,7 @@ By default, ChimPipe produces 3 files as output:
 * Second mapping MAP file
 * Chimeric junctions text file
 
-**NOTE**: you can use the optional flag option **--no-cleanup** to ouput also intermediate files. 
+.. tip:: If you want to keep intermediate files in your output run ChimPipe with the flag ``--no-cleanup``. 
 
 First mapping BAM file
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -262,7 +284,6 @@ Many next-generation sequencing analysis tools work with this format, so it can 
 Second mapping MAP file
 ~~~~~~~~~~~~~~~~~~~~~~~
 MAP file containing reads segmentally mapped in the genome allowing for interchromosomal, different strand and unexpected genomic order mappings. 
-
 
 Chimeric junctions text file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -290,10 +311,5 @@ Tabular text file containing the detected chimeric junctions in your RNA-seq dat
 
 **Example**
 
-.. code-block:: bash
-
-	Here is an example of a chimeric junction detected by ChimPipe
-
-	juncId	nbstag	nbtotal	maxbeg	maxEnd	samechr	samestr	dist	ss1	ss2	gnlist1	gnlist2	gnname1	gnname2	bt1	bt2	PEsupport	maxSim	maxLgal
-	chr1_121115975_+:chr1_206566046_+ 1 1 121115953 206566073 1 1 85450071 GC AG SRGAP2D, SRGAP2,SRGAP2C, SRGAP2D, SRGAP2,SRGAP2C, . . 1-1:2,1-2:2, 99.44 1067
+chr1_121115975_+:chr1_206566046_+	1	1	121115953	206566073	1	1	85450071	GC	AG	SRGAP2D,	SRGAP2,	SRGAP2D,	SRGAP2	.	.	1-1:2,	99.44	1067
 
