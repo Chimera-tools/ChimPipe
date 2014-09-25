@@ -178,10 +178,7 @@ if [[ "$mism" == "" ]]; then mism="4"; fi
 
 if [[ "$spliceSites" == "" ]]; 
 then 
-	spliceSites="\(GT,AG\),\(GC,AG\),\(ATATC,A.\),\(GTATC,AT\)";
-else
-	spliceSites="`echo $spliceSites | awk '{ gsub(/\(/, "\\\(", $0); print }'`"; 	# Three backslashes to substitute ( by \(
-	spliceSites="`echo $spliceSites | awk '{ gsub(/\)/, "\\\)", $0); print }'`"; 	# Three backslashes to substitute ) by \)
+	spliceSites="GT+AG,GC+AG,ATATC+A.,GTATC+AT"; 
 fi
 
 if [[ "$sample" == "" ]]; then basename=$(basename $input); sample=${basename%_1*}; fi

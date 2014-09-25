@@ -332,16 +332,13 @@ fi
 # Consensus splice sites
 if [[ "$spliceSites" == "" ]]; 
 then 
-	spliceSites="\(GT,AG\),\(GC,AG\),\(ATATC,A.\),\(GTATC,AT\)"; 
-else		
-	if [[ ! "$spliceSites" =~ ^(\([ACGT.]+,[ACGT.]+\),)*(\([ACGT.]+,[ACGT.]+\))$ ]]; 
+	spliceSites="GT+AG,GC+AG,ATATC+A.,GTATC+AT"; 
+else			
+	if [[ ! "$spliceSites" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
 	then
 		log "Please specify a proper consensus splice site sequence for the first mapping. Option -c|--consensus-splice-sites\n" "ERROR" >&2;
 		usage; 
 		exit -1; 
-	else
-		spliceSites="`echo $spliceSites | awk '{ gsub(/\(/, "\\\(", $0); print }'`"; 	# Three backslashes to substitute ( by \(
-		spliceSites="`echo $spliceSites | awk '{ gsub(/\)/, "\\\)", $0); print }'`"; 	# Three backslashes to substitute ) by \)
 	fi
 fi
 
