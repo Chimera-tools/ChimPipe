@@ -9,8 +9,11 @@ Welcome to ChimPipe's Documentation!
 
 ChimPipe is a pipeline for the detection of chimeric transcripts from Paired-End RNA-seq data developed at the `Computational Biology of RNA Processing group`_ of the `Centre for Genomic Regulation`_ (CRG) in Barcelona. 
 
+ChimPipe's source code is freely available in our `GitHub repository`_.
+
 .. _Computational Biology of RNA Processing group: http://www.crg.eu/en/programmes-groups/computational-biology-rna-processing
 .. _Centre for Genomic Regulation: http://www.crg.eu 
+.. _GitHub repository: https://github.com/brguez/ChimPipe
 
 Contents:
 ~~~~~~~~~
