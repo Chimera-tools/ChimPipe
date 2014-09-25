@@ -73,8 +73,6 @@ You can apply the following rules to infer the used library from this informatio
 
 Strand-specific protocols (stranded data):
  
-* **SENSE**... I am not totally sure if this protocol trully exists.
-* **ANTISENSE**...  I am not totally sure if this protocol trully exists.
 * **MATE1_SENSE**. Fraction of reads explained by "1++,1--,2+-,2-+" close to 1.0000. 
 * **MATE2_SENSE**. Fraction of reads explained by "1+-,1-+,2++,2--" close to 1.0000.
 

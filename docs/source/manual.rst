@@ -216,8 +216,6 @@ Different protocols that can be used to generate a RNA-seq library. There are al
 
 Strand-specific protocols (stranded data):
  
-* **SENSE**. Transcript directly sequenced. Reads map to the transcript strand.
-* **ANTISENSE**. Reverse complementary sequence of the transcript sequenced. Reads map to the opposite strand of the transcript. 
 * **MATE1_SENSE**. Reads on the left of the fragment (mates 1) sequenced from the transcript (map in the transcrip strand), and the ones in the right (mates 2) sequenced from the complementary reverse sequence (map in the opposite strand). 
 * **MATE2_SENSE**. Reads on the left of the fragment (mates 1) sequenced from the complementary reverse sequence (map in the opposite strand), and the ones in the right (mates 2) sequenced from the transcript (map in the transcrip strand). 
 	
@@ -247,10 +245,9 @@ All these files and parameters given as input to ChimPipe are **mandatory argume
 								 
 	-q|--quality 33 – Quality offset of the FASTQ files [33 | 64 | ignore].
 
-	-l|--seq-library NONE – Type of sequencing library [MATE1_SENSE | MATE2_SENSE | 
-				MATE_STRAND_CSHL | SENSE | ANTISENSE | UNSTRANDED]. UNSTRANDED for not strand-specific 
-				protocol (unstranded data) and the others for the different types of 
-				strand-specific protocols (stranded data).
+	-l|--seq-library NONE – Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED]. 
+				UNSTRANDED for not strand-specific protocol (unstranded data) and the others for 
+				the different types of strand-specific protocols (stranded data).
 		          
 	-e|--sample-id sample1 – Sample identifier (the output files will be named according to this id).
 

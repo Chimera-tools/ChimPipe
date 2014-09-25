@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'ChimPipe'
-copyright = u'2014, Bernardo Rodríguez-Martín and Sarah Djebali'
+copyright = u'2014, Bernardo Rodríguez-Martín, Emilio Palumbo and Sarah Djebali'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -184,7 +184,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'ChimPipe.tex', u'ChimPipe Documentation',
-   u'Bernardo Rodríguez-Martín, , Emilio Palumbo and Sarah Djebali', 'manual'),
+   u'Bernardo Rodríguez-Martín, Emilio Palumbo and Sarah Djebali', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -228,7 +228,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'ChimPipe', u'ChimPipe Documentation',
-   u'Bernardo Rodríguez-Martín and Sarah Djebali', 'ChimPipe', 'One line description of project.',
+   u'Bernardo Rodríguez-Martín, Emilio Palumbo and Sarah Djebali', 'ChimPipe', 'One line description of project.',
    'Miscellaneous'),
 ]
 
