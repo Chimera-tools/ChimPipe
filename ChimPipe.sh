@@ -16,13 +16,23 @@ USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> -q <quality> -e <sam
 IMPORTANT: By default runs in unstranded mode. If you have stranded data use the \"-s\" flag (see [OPTIONS]).
 
 ** Mandatory arguments:
-	-i|--input			<INPUT_FILE>	First mate sequencing reads in FASTQ format. Pipeline designed to deal with paired-end
-	 						data. Please make sure the second mate file is in the same directory as the first mate 
-	 						file, and the files are named "YourSampleId_1.fastq.gz" and "YourSampleId_2.fastq.gz" 
-	 						respectively. YourSampleId has to be provided with the -e argument.
+	
+	-i|--input			<INPUT_FILE>	First mate sequencing reads. ChimPipe deals with paired-end data.
+                          				Please make sure the second mate file is in the same directory as
+                           				the first one, and the files are named according to the same convention.
+                           				E.g: the second mate of "reads_1.fastq" should be "reads_2.fastq".
+	
 	-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
-	-a|--annotation			<GTF>		Reference gene annotation file in GTF format.
+	
+	-a|--annotation			<GTF>		Reference genome annotation file in GTF format. The transcriptome
+                                       			index has to be in the same directory as the annotation.
+	
 	-q|--quality			<NUMBER>	Quality offset of the FASTQ files [33 | 64 | ignore].
+	
+	-l|--seq-library 		<STRING> 	Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED].
+                        				UNSTRANDED for not strand-specific protocol (unstranded data) and the others 
+                        				for the different types of strand-specific protocols (stranded data).
+	
 	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).    
 	
 ** [OPTIONS] can be:
@@ -31,7 +41,7 @@ General:
 	-o|--output-dir			<PATH>		Output directory. Default current working directory.
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.
 	-t|--threads			<PATH>		Number of threads to use. Default 1.
-	-l|--log			<PATH>		Log level [error |warn | info | debug). Default info.
+	--log			<PATH>		Log level [error |warn | info | debug). Default info.
 	--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
 	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
 	--long-help			<FLAG>		Display full usage information. 
@@ -43,15 +53,13 @@ function usage_long
 {
 cat <<help
 Reads information:
-	-s|--stranded			<FLAG>		Flag to specify whether data is stranded. Default false (unstranded).
-	--read-directionality		<STRING>	Directionality of the reads [MATE1_SENSE | MATE2_SENSE | MATE_STRAND_CSHL | SENSE | ANTISENSE | NONE]. Default NONE.
 	--max-read-length		<NUMBER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	
 Mapping parameters:
 	-M|--mism-contiguous-map	<NUMBER>	Maximum number of mismatches for the contiguous mapping steps with the GEM mapper. Default 4?. Not working
 	-m|--mism-split-map		<NUMBER>	Maximum number of mismatches for the segmental mapping steps with the GEM rna-mapper. Default 4?.	Not working
 	-c|--consensus-splice-sites	<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
-                                 			(list of couples of donor/acceptor splice site consensus sequences, default='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
+                                 			(list of couples of donor/acceptor splice site consensus sequences, default='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
 	--min-split-size		<NUMBER>	Minimum split size for the segmental mapping steps. Default 15.
 	--stats				<FLAG>		Enable mapping statistics. Default disabled.
 	
@@ -102,7 +110,7 @@ function run {
 # Function 5. 
 #############
 function getoptions {
-ARGS=`$getopt -o "i:g:a:q:e:o:t:l:hsM:m:c:" -l "input:,genome-index:,annotation:,quality:,sample-id:,output-dir:,tmp-dir:,threads:,log:,dry,help,long-help,stranded,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,read-directionality:,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats" \
+ARGS=`$getopt -o "i:g:a:q:l:e:o:t:hsM:m:c:" -l "input:,genome-index:,annotation:,quality:,seq-library:,sample-id:,output-dir:,tmp-dir:,threads:,log:,dry,help,long-help,stranded,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -145,24 +153,20 @@ do
       fi
       shift 2;;
     
+    -l|--seq-library)
+      if [ -n $2 ];
+      then
+        readDirectionality=$2
+      fi
+      shift 2;;
+      
     -e|--sample-id)
        if [ -n "$2" ];
        then
          lid=$2
        fi
        shift 2;;
-    
-    -s|--stranded)
-       stranded=1
-       shift;;
-     
-    --read-directionality)
-      if [ -n $2 ];
-      then
-        readDirectionality=$2
-      fi
-      shift 2;;
-     
+      
     --max-read-length)
       if [ -n $2 ];
       then
@@ -304,22 +308,19 @@ if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR"
 if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 if [[ "$quality" != @(33|64|ignore) ]]; then log "Please specify a proper quality value [33|64|ignore]\n" "ERROR" >&2; usage; exit -1; fi
 if [[ "$lid" == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; usage; exit -1; fi
-#if [[ "$bam" == "" ]]; then bam=0; fi
 
-# Flag to specify if the data is stranded
-if [[ "$stranded" == "" ]]; then stranded=0; fi
-
-# Read directionality
-if [[ "$readDirectionality" == "" ]]; 
-then 
-	readDirectionality='NONE'; 
+if [[ "$readDirectionality" != @(NONE|MATE1_SENSE|MATE2_SENSE) ]];
+then
+	log "Please specify a proper sequencing library [NONE|MATE1_SENSE|MATE2_SENSE]\n" "ERROR" >&2;
+	usage; 
+	exit -1; 
 else
-	if [[ "$readDirectionality" != @(MATE1_SENSE|MATE2_SENSE|MATE_STRAND_CSHL|SENSE|ANTISENSE|NONE) ]];
+	if [[ "$readDirectionality" == "NONE" ]];
 	then
-		log "Please specify a proper read directionality [MATE1_SENSE|MATE2_SENSE|MATE_STRAND_CSHL|SENSE|ANTISENSE|NONE]. Option --read-directionality\n" "ERROR" >&2;
-		usage; 
-		exit -1; 
-	fi	
+		stranded=0;
+	else
+		stranded=1;
+	fi
 fi
 
 # Maximum read legnth
@@ -330,7 +331,8 @@ else
 	if [[ ! "$maxReadLength" =~ ^[0-9]+$ ]]; 
 	then
 		log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
-		usage; 
+		usage;
+		usage_long; 
 		exit -1; 
 	fi
 fi
@@ -344,6 +346,7 @@ else
 	then
 		log "Please specify a proper number of mismatches for contiguous mapping steps. Option -M|--mism-contiguous-map\n" "ERROR" >&2;
 		usage; 
+		usage_long;
 		exit -1; 
 	fi
 fi
@@ -357,6 +360,7 @@ else
 	then
 		log "Please specify a proper consensus splice site sequence for the first mapping. Option -c|--consensus-splice-sites\n" "ERROR" >&2;
 		usage; 
+		usage_long;
 		exit -1; 
 	fi
 fi
@@ -370,6 +374,7 @@ else
 	then
 		log "Please specify a proper minimum split size for the segmental mapping steps. Option --min-split-size\n" "ERROR" >&2;
 		usage; 
+		usage_long;
 		exit -1; 
 	fi
 fi
@@ -383,12 +388,18 @@ else
 	then
 		log "Please check your filtering module configuration. Option --filter-chimeras\n" "ERROR" >&2; 
 		usage; 
+		usage_long;
 		exit -1;
 	fi
 fi
 
 # Similarity between gene pairs file
-#if [[ ! -e $simGnPairs ]]; then log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; usage; exit -1; fi
+if [[ ! -e $simGnPairs ]]; 
+then 
+	log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; 
+	usage; 
+	exit -1; 
+fi
 
 # Output directory
 if [[ "$outDir" == "" ]]; 
