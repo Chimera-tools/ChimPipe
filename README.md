@@ -1,6 +1,6 @@
 ###Welcome to ChimPipe's repository!
 
-ChimPipe is a pipeline for the detection of chimeric transcripts from Paired-End RNA-seq data developed at the [Centre for Genomic Regulation] (http://www.crg.eu) (CRG) in Barcelona. 
+ChimPipe is a pipeline for the detection of chimeric transcripts from Paired-End RNA-seq data developed at the Centre for Genomic Regulation (CRG) in Barcelona. 
 
 Please check [ChimPipe's documentation] (https://chimpipe.readthedocs.org/) to find information about:
 
