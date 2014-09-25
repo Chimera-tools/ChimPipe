@@ -26,6 +26,22 @@ IMPORTANT: By default runs in unstranded mode. If you have stranded data use the
 	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).    
 	
 ** [OPTIONS] can be:
+
+General:
+	-o|--output-dir			<PATH>		Output directory. Default current working directory.
+	--tmp-dir			<PATH>		Temporary directory. Default /tmp.
+	-t|--threads			<PATH>		Number of threads to use. Default 1.
+	-l|--log			<PATH>		Log level [error |warn | info | debug). Default info.
+	--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
+	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
+	--long-help			<FLAG>		Display full usage information. 
+	
+help
+}
+
+function usage_long
+{
+cat <<help
 Reads information:
 	-s|--stranded			<FLAG>		Flag to specify whether data is stranded. Default false (unstranded).
 	--read-directionality		<STRING>	Directionality of the reads [MATE1_SENSE | MATE2_SENSE | MATE_STRAND_CSHL | SENSE | ANTISENSE | NONE]. Default NONE.
@@ -53,15 +69,7 @@ Chimeric junctions filter:
 							I.e "10,0,0:0;1,1,0:0;". Default "5,0,80:30;1,1,80:30;".	
 	--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
 							to discard junctions connecting highly similar genes. If not provided the junctions will not be filtered according to this criteria. 
-
-General:
-	-o|--output-dir			<PATH>		Output directory. Default current working directory.
-	--tmp-dir			<PATH>		Temporary directory. Default /tmp.
-	-t|--threads			<PATH>		Number of threads to use. Default 1.
-	-l|--log			<PATH>		Log level [error |warn | info | debug). Default info.
-	--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
-	--help				<FLAG>		Display usage information.
-
+													
 help
 }
 
@@ -94,9 +102,9 @@ function run {
 # Function 5. 
 #############
 function getoptions {
-ARGS=`$getopt -o "i:g:a:q:e:sM:m:c:o:t:l:h" -l "input:,genome-index:,annotation:,quality:,sample-id:,stranded,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,output-dir:,threads:,log:,help,read-directionality:,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats,tmp-dir:,dry" \
+ARGS=`$getopt -o "i:g:a:q:e:o:t:l:hsM:m:c:" -l "input:,genome-index:,annotation:,quality:,sample-id:,output-dir:,tmp-dir:,threads:,log:,dry,help,long-help,stranded,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,read-directionality:,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats" \
       -n "$0" -- "$@"`
-
+	
 #Bad arguments
 if [ $? -ne 0 ];
 then
@@ -245,9 +253,20 @@ do
       exit 1
       shift;;
     
+    -h|--help)
+      usage
+      exit 1
+      shift;;
+      
+    --long-help)
+      usage
+      usage_long
+      exit 1
+      shift;;
+     
     --)
       shift
-      break;;
+      break;;  
   esac
 done
 }
@@ -499,6 +518,7 @@ printf "  %-34s %s\n" "Temporary directory:" "$TMPDIR"
 printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
 
+exit 1
 ## START CHIMPIPE
 #################
 header="Executing ChimPipe $version for $lid"
