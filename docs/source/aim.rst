@@ -38,3 +38,6 @@ ChimPipe features
 * Provides the precise chimeric junction coordinates
 * Outputs many pieces of information for each chimeric junction
 * Has a good balance sensitivity/specificity according to our benchmark
+
+
+
