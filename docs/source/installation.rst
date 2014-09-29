@@ -10,7 +10,7 @@ System requirements
 Hardware:
 
 * 64-bits CPU 
-* RAM: 37.7G and 42.4G for two *Homo sapiens* datasets of 95 and 115 million of paired-end reads 
+* RAM: ~40G for 100 million human PE reads of 52 bases. 
 * Disk space:
 
 Software:
