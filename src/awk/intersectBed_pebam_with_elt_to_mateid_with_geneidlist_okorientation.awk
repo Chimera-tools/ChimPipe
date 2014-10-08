@@ -1,11 +1,38 @@
-# ~sdjebali/Awk/intersectBed_pebam_with_exon_to_mateid_with_nbmappings_okorientation.awk
+#!/usr/bin/env awk
+
+# *****************************************************************************
+	
+#	intersectBed_pebam_with_elt_to_mateid_with_geneidlist_okorientation.awk
+	
+#	This file is part of the ChimPipe pipeline 
+
+#	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+#					   Emilio Palumbo 
+#					   Sarah djebali 
+	
+#	Computational Biology of RNA Processing group
+#	Department of Bioinformatics and Genomics
+#	Centre for Genomic Regulation (CRG)
+					   
+#	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+#	Documentation - https://chimpipe.readthedocs.org/
+
+#	Contact - chimpipe.pipeline@gmail.com
+	
+#	Licenced under the GNU General Public License 3.0 license.
+#******************************************************************************
+
+# Description
+##############
 # takes as input the result of intersectBed on a pe rnaseq bam file and an exon gff file with gene id in field no 10
 # (surrounded by quotes and ending with semicon) as well as a mate_strand parameter for the rnaseq (among the following:
-# MATE2_SENSE, MATE1_SENSE, MATE_STRAND_CSHL and NONE), and produces a 2 column file with the mate id (like name/1 
+# MATE2_SENSE, MATE1_SENSE, MATE_STRAND_CSHL and UNSTRANDED), and produces a 2 column file with the mate id (like name/1 
 # or name/2) and the number of mappings that (strandedly if data is stranded) overlap it on the genome, according to 
 # the mate_strand parameter
 
-# usage
+# Usage
+#########
 # CUTGFF=~sdjebali/Awk/cutgff.awk
 # INTER=/software/rg/el6.3/bin/intersectBed
 # REMOVEREDUND=~sdjebali/Awk/remove_redund_better.awk
@@ -30,18 +57,18 @@
 	}
     }
     split($j,b,"\"");  # gene, is used for all mate_strand
-    if((mate_strand=="MATE2_SENSE")||(mate_strand=="MATE1_SENSE")||(mate_strand=="MATE_STRAND_CSHL")||(mate_strand=="NONE")) # only possible values to produce anything
+    if((mate_strand=="MATE2_SENSE")||(mate_strand=="MATE1_SENSE")||(mate_strand=="MATE_STRAND_CSHL")||(mate_strand=="UNSTRANDED")) # only possible values to produce anything
     {
 	if($6==$19)       # same strand between the mapping and the exon
 	{
-	    if(((mate_strand=="MATE2_SENSE")&&(a[2]==2))||((mate_strand=="MATE1_SENSE")&&(a[2]==1))||(mate_strand=="MATE_STRAND_CSHL")||(mate_strand=="NONE"))
+	    if(((mate_strand=="MATE2_SENSE")&&(a[2]==2))||((mate_strand=="MATE1_SENSE")&&(a[2]==1))||(mate_strand=="MATE_STRAND_CSHL")||(mate_strand=="UNSTRANDED"))
 	    {
 		gnlist[$4]=(gnlist[$4])(b[2])(",");
 	    }
 	}
-	else             # diff strand between the mapping and the exon, in the case only MATE2_SENSE, MATE1_SENSE and NONE are considered, not MATE_STRAND_CSHL
+	else             # diff strand between the mapping and the exon, in the case only MATE2_SENSE, MATE1_SENSE and UNSTRANDED are considered, not MATE_STRAND_CSHL
 	{
-	    if(((mate_strand=="MATE2_SENSE")&&(a[2]==1))||((mate_strand=="MATE1_SENSE")&&(a[2]==2))||(mate_strand=="NONE"))
+	    if(((mate_strand=="MATE2_SENSE")&&(a[2]==1))||((mate_strand=="MATE1_SENSE")&&(a[2]==2))||(mate_strand=="UNSTRANDED"))
 	    {
 		gnlist[$4]=(gnlist[$4])(b[2])(",");
 	    }

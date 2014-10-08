@@ -1,5 +1,31 @@
-# /users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk/similarity_filter.awk
-# 17/01/2014 
+#!/usr/bin/env awk
+
+# *****************************************************************************
+	
+#	add_sim_bt_gnPairs.awk
+	
+#	This file is part of the ChimPipe pipeline 
+
+#	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+#					   Emilio Palumbo 
+#					   Sarah djebali 
+	
+#	Computational Biology of RNA Processing group
+#	Department of Bioinformatics and Genomics
+#	Centre for Genomic Regulation (CRG)
+					   
+#	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+#	Documentation - https://chimpipe.readthedocs.org/
+
+#	Contact - chimpipe.pipeline@gmail.com
+	
+#	Licenced under the GNU General Public License 3.0 license.
+#******************************************************************************
+
+# Description
+##############
+# Need to be done..
 
 BEGIN{
 	while (getline < fileRef >0)

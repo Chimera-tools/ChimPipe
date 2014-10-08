@@ -1,5 +1,30 @@
 #!/bin/bash
 
+<<authors
+*****************************************************************************
+	
+	make_chimeric_junction_matrix.sh
+	
+	This file is part of the ChimPipe pipeline 
+
+	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+					   Emilio Palumbo 
+					   Sarah djebali 
+	
+	Computational Biology of RNA Processing group
+	Department of Bioinformatics and Genomics
+	Centre for Genomic Regulation (CRG)
+					   
+	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+	Documentation - https://chimpipe.readthedocs.org/
+
+	Contact - chimpipe.pipeline@gmail.com
+	
+	Licenced under the GNU General Public License 3.0 license.
+******************************************************************************
+authors
+
 # usage
 #######
 # make_chimeric_junction_matrix.sh junctions annot stranded outdir
@@ -9,9 +34,6 @@
 # 		annot. 		Annotation file in gtf format 
 # 		stranded. 	Data strandedness. 0 for unstranded and 1 for stranded data
 # 		Outdir. 	Output directory. 
-
-# This script has been thought to part of chimsplice, so I does not display help and all the argument must be provided. 
- 
 
 # Input (chimeric junctions file):
 # chrX_39164738_+:chr10_101180417_+ 1 2 39164722 101180450

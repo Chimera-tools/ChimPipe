@@ -1,7 +1,32 @@
 #!/bin/bash
 
-# !!! assumes /1 and /2 for pe stranded data 
-# note that this script heavily depends on the format of the split mapping gff files
+<<authors
+*****************************************************************************
+	
+	find_exon_exon_connections_from_splitmappings.sh
+	
+	This file is part of the ChimPipe pipeline 
+
+	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+					   Emilio Palumbo 
+					   Sarah djebali 
+	
+	Computational Biology of RNA Processing group
+	Department of Bioinformatics and Genomics
+	Centre for Genomic Regulation (CRG)
+					   
+	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+	Documentation - https://chimpipe.readthedocs.org/
+
+	Contact - chimpipe.pipeline@gmail.com
+	
+	Licenced under the GNU General Public License 3.0 license.
+******************************************************************************
+authors
+
+# Note: assumes /1 and /2 for pe stranded data 
+# Note that this script heavily depends on the format of the split mapping gff files
 # and expects a format like this
 # chr4	C434.1.unmapped.gem.split-map.gz	splitread	103592073	103592124	.	-	.	ID "HWI-ST858_57:2:1101:10001:72658#15@0/1"; Identity "1:0:0"; Split "[52]"
 # chr4	C434.1.unmapped.gem.split-map.gz	splitread	103590183	103590206	.	-	.	ID "HWI-ST858_57:2:1101:10001:72658#15@0/1"; Identity "1:0:0"; Split "[52]"
@@ -12,6 +37,7 @@
 # !!! be careful: in fact I realize that I could sort the file1 of overlap beforehand
 # since the order will be retrieved afterwards, and then no need to specify and input 
 # in overlap a sorting directory ....
+
 # usage
 #######
 # find_exon_exon_connections_from_splitmappings_better2.sh split_mapping_files_paths.txt annot.gtf outputdir strandedness 
@@ -21,8 +47,6 @@
 # cd ~/ENCODE_AWG/Analyses/ChimericConnections
 # time find_exon_exon_connections_from_splitmappings_better2.sh 001N/split_mapping_files_exp_001N.txt /users/rg/projects/encode/scaling_up/whole_genome/Gencode/version15/gencode.v15.annotation.gtf 001N 1 2> 001N/find_exon_exon_connections_from_splitmappings.err
 
-# - Made for using on a 64 bit linux architecture
-# - uses awk scripts
 
 function usage
 {

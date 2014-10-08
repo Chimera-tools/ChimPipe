@@ -1,6 +1,32 @@
-# ~/Awk/gemsplit2gff_unique4.awk
+#!/usr/bin/env awk
 
-# takes as input a split mapping gem file from gem-rna-mapper (June 2013) and outputs the unique 2 block split mappings
+# *****************************************************************************
+	
+#	gemsplit2gff_unique.awk
+	
+#	This file is part of the ChimPipe pipeline 
+
+#	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+#					   Emilio Palumbo 
+#					   Sarah djebali 
+	
+#	Computational Biology of RNA Processing group
+#	Department of Bioinformatics and Genomics
+#	Centre for Genomic Regulation (CRG)
+					   
+#	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+#	Documentation - https://chimpipe.readthedocs.org/
+
+#	Contact - chimpipe.pipeline@gmail.com
+	
+#	Licenced under the GNU General Public License 3.0 license.
+#******************************************************************************
+
+# Description
+###############
+
+# Takes as input a split mapping gem file from gem-rna-mapper (June 2013) and outputs the unique 2 block split mappings
 # in gff format = each block on a different gff row (consecutive for a given split mapping) and with the read id in column 10
 # but different from ~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk/gemsplit2gff_unique3.awk since it is able to write the blocks in reverse order when the split-mappings are in the same chromosome, same strand and in the minus strand. This is to generate a gff file with the same convention than the
 # one generated from a bam file, since bam and gem has different conventions, while the bam provides the alignment in genomic order gem does it in the biological one (from 5' to 3').

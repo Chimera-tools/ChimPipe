@@ -1,6 +1,30 @@
 #!/bin/bash
 
-# ~/bin/find_gene_to_gene_connections_from_pe_rnaseq_fast2.sh
+<<authors
+*****************************************************************************
+	
+	find_gene_to_gene_connections_from_pe_rnaseq.sh
+	
+	This file is part of the ChimPipe pipeline 
+
+	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+					   Emilio Palumbo 
+					   Sarah djebali 
+	
+	Computational Biology of RNA Processing group
+	Department of Bioinformatics and Genomics
+	Centre for Genomic Regulation (CRG)
+					   
+	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+	Documentation - https://chimpipe.readthedocs.org/
+
+	Contact - chimpipe.pipeline@gmail.com
+	
+	Licenced under the GNU General Public License 3.0 license.
+******************************************************************************
+authors
+
 # Works for pe data, stranded or not.
 # Improvement of find_gene_to_gene_connections_from_pe_rnaseq_fast.sh to be able to
 # deal with standard PE strabded bam files = where the two mates point towards each other
@@ -22,7 +46,7 @@
 # - annot.gff is the annotation file, which should at least have exons (default v19 on hg19)
 # - outputdir is the directory in which the user wants the results to be stored (default cwd)
 # - mate_strand is a string that specifies the directionality convention for the dataset among those: 
-#   MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL, NONE (default NONE)
+#   UNSTRANDED, MATE1_SENSE, MATE2_SENSE, SENSE OR ANTISENSE (default UNSTRANDED) 
 # - elt is the kind of element from the gff file that we want to overlap with the mappings (eg exon, gene ...) (default exon)
 # NOTE: the mapping must be paired end and the read names must end by /1 and /2 (should be more general in the future)
 # NOTE: we consider all exons of the annotation and the mappings only have to overlap them by 1 bp (not inclusion)
@@ -41,11 +65,11 @@ then
     echo Example:  find_gene_to_gene_connections_from_pe_rnaseq_fast2.sh >&2 
     echo /users/rg/dgonzalez/Projects/TripleMama/hg19/TM05B9085PE/SAM/05B9085.merged.bam >&2  
     echo /users/rg/dgonzalez/ReferenceAnnotations/H.sapiens/gencode.v6.annot.plus.tRNAs.female.gtf >&2  
-    echo ~/BreastCancer/Selection_for_RTPCR/Confirm_by_Solexa/05B9085_map.PE.40 NONE exon >&2
+    echo ~/BreastCancer/Selection_for_RTPCR/Confirm_by_Solexa/05B9085_map.PE.40 UNSTRANDED exon >&2
     echo "" >&2
     echo "Takes a PE RNAseq mapping file in bam format of an experiment, an annotation in gff format," >&2
     echo "an output directory, the directionality convention (mate_strand) of the dataset (among" >&2 
-    echo "MATE1_SENSE, MATE2_SENSE,MATE_STRAND_CSHL, NONE (default NONE), and the kind of elements" >&2
+    echo "UNSTRANDED, MATE1_SENSE, MATE2_SENSE, SENSE OR ANTISENSE (UNSTRANDED default) and the kind of elements" >&2
     echo "we want to intersect with the mappings (eg exon, gene ...) (default exon)." >&2 
     echo "It produces the file of (directed if data is stranded) gene to gene connections" >&2  
     echo "found by the pe mappings with the number of mappings supporting the connection." >&2 
@@ -66,27 +90,27 @@ if [ ! -n "$2" ]
 then
     annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version19/gencode.v19.annotation.gtf
     outdir=.
-    mate_strand=NONE
+    mate_strand=UNSTRANDED
     elt=exon
 else
     annot=$2
     if [ ! -n "$3" ]
     then
 	outdir=.
-	mate_strand=NONE
+	mate_strand=UNSTRANDED
 	elt=exon
     else
 	outdir=$3
 	if [ ! -n "$4" ]
 	then
-	    mate_strand=NONE
+	    mate_strand=UNSTRANDED
 	    elt=exon
 	else
-	    if [ "$4" != "MATE1_SENSE" ] &&  [ "$4" != "MATE2_SENSE" ] && [ "$4" != "MATE_STRAND_CSHL" ] && [ "$4" != "NONE" ]
+	    if [ "$4" != "MATE1_SENSE" ] &&  [ "$4" != "MATE2_SENSE" ] && [ "$4" != "MATE_STRAND_CSHL" ] && [ "$4" != "UNSTRANDED" ]
 	    then 
 		echo "" >&2
 		echo Usage: find_gene_to_gene_connections_from_pe_rnaseq_fast2.sh mapping.bam annot.gff outputdir mate_strand elt >&2
-		echo Wrong value for mate_strand: it can only be MATE1_SENSE, MATE2_SENSE, MATE_STRAND_CSHL or NONE, not anything else >&2
+		echo Wrong value for mate_strand: it can only be UNSTRANDED, MATE1_SENSE, MATE2_SENSE, SENSE OR ANTISENSE, not anything else >&2
 		echo "" >&2
 		exit 1
 	    else

@@ -1,8 +1,33 @@
 #!/usr/bin/env awk
 
+# *****************************************************************************
+	
+#	bedPECorrectStrand.awk
+	
+#	This file is part of the ChimPipe pipeline 
+
+#	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+#					   Emilio Palumbo 
+#					   Sarah djebali 
+	
+#	Computational Biology of RNA Processing group
+#	Department of Bioinformatics and Genomics
+#	Centre for Genomic Regulation (CRG)
+					   
+#	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+#	Documentation - https://chimpipe.readthedocs.org/
+
+#	Contact - chimpipe.pipeline@gmail.com
+	
+#	Licenced under the GNU General Public License 3.0 license.
+#******************************************************************************
+
+# Description
+##############
 # Takes a bed file and the variable "readDirectionality" as input and outputs a bed with the correct the strand. If the variable readDirectionality is not defined it consider the data unstranded, so it does not change the strand. Example:
 # awk -v readDirectionality=* -f bedCorrectStrand.awk input.bed
-# where * can be "MATE1_SENSE", "MATE2_SENSE", "MATE_STRAND_CSHL", "SENSE", "ANTISENSE" OR "NONE"
+# where * can be UNSTRANDED, MATE1_SENSE, MATE2_SENSE, SENSE OR ANTISENSE 
 
 # example of input (".bed" text file)
 ##################

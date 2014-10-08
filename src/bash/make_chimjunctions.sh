@@ -1,5 +1,33 @@
 #!/bin/bash
 
+<<authors
+*****************************************************************************
+	
+	make_chimeric_junctions.sh
+	
+	This file is part of the ChimPipe pipeline 
+
+	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+					   Emilio Palumbo 
+					   Sarah djebali 
+	
+	Computational Biology of RNA Processing group
+	Department of Bioinformatics and Genomics
+	Centre for Genomic Regulation (CRG)
+					   
+	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+	Documentation - https://chimpipe.readthedocs.org/
+
+	Contact - chimpipe.pipeline@gmail.com
+	
+	Licenced under the GNU General Public License 3.0 license.
+******************************************************************************
+authors
+
+# Description
+##############
+
 # Takes as input a file containing staggered reads split-mapping in two exons from different genes. It uses this information to make the correct chimeric junctions joining the donnor and acceptor sides of the blocks, compute the number of staggered reads supporting the junctions, their maximum beginning and end coordinates and their consensus splice sites. It does it in two consecutive steps:
 
 # 1-) Substract with the gem retriever 8-kmer on each side of the blocks. This will will 4 8-kmer, 2 of them containing the splice site sequence. 
@@ -48,14 +76,14 @@ genome=$2
 ##################################################
 if [ ! -n "$3" ]
 then
-	spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
+	spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
 	outdir=.
 	stranded=0
 else
 	stranded=$3
 	if [ ! -n "$4" ]
 	then
-		spliceSites='(GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)'
+		spliceSites='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
 		outdir=.
 	else
 		spliceSites=$4

@@ -1,5 +1,31 @@
 #!/usr/bin/env awk
 
+# *****************************************************************************
+	
+#	staggered2junct.awk
+	
+#	This file is part of the ChimPipe pipeline 
+
+#	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+#					   Emilio Palumbo 
+#					   Sarah djebali 
+	
+#	Computational Biology of RNA Processing group
+#	Department of Bioinformatics and Genomics
+#	Centre for Genomic Regulation (CRG)
+					   
+#	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+#	Documentation - https://chimpipe.readthedocs.org/
+
+#	Contact - chimpipe.pipeline@gmail.com
+	
+#	Licenced under the GNU General Public License 3.0 license.
+#******************************************************************************
+
+# Description
+###############
+
 # Takes as input a file containing staggered reads split-mapping in two exons from different genes and the 8-kmer on each side of the blocks. It uses this information to make the correct chimeric junctions joining the donnor and acceptor sides of the blocks, compute the number of staggered reads supporting the junctions, their maximum beginning and end coordinates and their consensus splice sites. 
 
 # input
@@ -17,6 +43,7 @@
 # chrX_63946962_+:chr10_102045932_+ 1 2 63946916 102045960 GT AG
 
 # Usage example:
+################
 # awk -v strandedness="1" -v CSS='GT+AG,GC+AG,ATATC+A.,GTATC+AT' -f $MAKE_JUNCTIONS $outdir/staggered_nb_dnt.txt
 
 
@@ -101,14 +128,11 @@ function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 	juncStr2="";
 	juncDonor="";
 	juncAcceptor="";
-	gsub(/\),/, ")+", CSS) # (GT,AG),(GC,AG),(ATATC,A.),(GTATC,AT)-> (GT,AG)+(GC,AG)+(ATATC,A.)+(GTATC,AT)
-	nbcss=split(CSS,b,"+"); # (GT,AG)+(GC,AG)+(ATATC,A.)+(GTATC,AT)-> (GT,AG) (GC,AG) (ATATC,A.) (GTATC,AT)
-
+	nbcss=split(CSS,b,","); # GT+AG,GC+AG,ATATC+A.,GTATC+AT --> GT+AG GC+AG ATATC+A. GTATC+AT
+	
 	for (i = 1; i <= nbcss; i++) # Iterate over the consensus splice sites given as input 
 	{
-		gsub(/\(/, "", b[i]); # (GT,AG) -> (GT,AG 
-		gsub(/\)/, "", b[i]); # (GT,AG -> GT,AG
-		split(b[i], c, ","); # GT,AG -> GT AG 
+		split(b[i], c, "+"); # GT+AG --> GT AG
 		donor=c[1];
 		acceptor=c[2];
 		revDonor=revComp(donor);

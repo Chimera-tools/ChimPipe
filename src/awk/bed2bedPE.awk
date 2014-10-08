@@ -1,5 +1,30 @@
 #!/usr/bin/env awk
 
+# *****************************************************************************
+	
+#	bed2bedPE.awk
+	
+#	This file is part of the ChimPipe pipeline 
+
+#	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+#					   Emilio Palumbo 
+#					   Sarah djebali 
+	
+#	Computational Biology of RNA Processing group
+#	Department of Bioinformatics and Genomics
+#	Centre for Genomic Regulation (CRG)
+					   
+#	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+#	Documentation - https://chimpipe.readthedocs.org/
+
+#	Contact - chimpipe.pipeline@gmail.com
+	
+#	Licenced under the GNU General Public License 3.0 license.
+#******************************************************************************
+
+# Description
+##############
 # Convert into BED paired-end format a bed12 file containing split-mapped reads in two blocks. If input variable rev set to different than 0, 
 # reverse the blocks when reads split-mapping in -/-
 
