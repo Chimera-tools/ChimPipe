@@ -67,6 +67,7 @@ General:
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.
 	-t|--threads			<PATH>		Number of threads to use. Default 1.
 	--log			<PATH>		Log level [error |warn | info | debug). Default info.
+	--no-cleanup	<FLAG>		Keep intermediate files. 		
 	--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
 	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
 	-f|--full-help			<FLAG>		Display full usage information. 
@@ -190,7 +191,7 @@ function copyToTmp {
 # Function 8. Parse user's input
 ###################################
 function getoptions {
-ARGS=`$getopt -o "i:g:a:q:l:e:o:t:hfsM:m:c:" -l "input:,genome-index:,annotation:,quality:,seq-library:,sample-id:,output-dir:,tmp-dir:,threads:,log:,dry,help,full-help,stranded,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats" \
+ARGS=`$getopt -o "i:g:a:q:l:e:o:t:hfsM:m:c:" -l "input:,genome-index:,annotation:,quality:,seq-library:,sample-id:,output-dir:,tmp-dir:,threads:,log:,dry,help,full-help,no-cleanup,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,max-read-length:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -347,8 +348,13 @@ do
       usage_long
       exit 1
       shift;;
-     
+      
+    --no-cleanup)
+      cleanup=0;
+      shift;;  
+    
     --)
+      usage
       shift
       break;;  
   esac
@@ -549,11 +555,18 @@ else
 	fi
 fi
 
+# Clean up
+if [[ "$cleanup" == "" ]]; 
+then 
+	cleanup='1'; 
+fi	
+
 # 4. Directories
 ################
 binDir=$rootDir/bin
 awkDir=$rootDir/src/awk
 bashDir=$rootDir/src/bash
+if [[ ! -d $outDir/FirstMapping ]]; then mkdir $outDir/FirstMapping; fi
 if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
@@ -609,7 +622,6 @@ printf "  %-34s %s\n" "Quality offset:" "$quality"
 printf "  %-34s %s\n\n" "Sample identifier:" "$lid"
 
 printf "  %-34s %s\n" "***** Reads information *****"
-printf "  %-34s %s\n" "Strandedness (1:stranded,0:unstranded):" "$stranded"
 printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
 printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
 
@@ -629,6 +641,7 @@ printf "  %-34s %s\n" "Output directory:" "$outDir"
 printf "  %-34s %s\n" "Temporary directory:" "$TMPDIR"
 printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
+printf "  %-34s %s\n\n" "Clean up (1:enabled, 0:disabled):" "$cleanup"
 
 
 ## START CHIMPIPE
@@ -1013,7 +1026,6 @@ if [  ! -e "$chimJunctionsSim" ]; then
 			log "Error adding similarity information\n" "ERROR" 
 	    	exit -1
 		fi
-		rm $chimJunctionsPE
 		endTime=$(date +%s)
 		printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 	else 
@@ -1034,13 +1046,13 @@ if [ ! -e "$chimJunctionsCandidates" ]; then
 	log "Adding a header to the matrix containing the chimeric junction candidates..." $step
 	if [ -e "$chimJunctionsSim" ]; then		
 		run "awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport", "maxSim", "maxLgal";}{print \$0;}' $chimJunctionsSim 1> $chimJunctionsCandidates" "$ECHO"
-		rm $chimJunctionsSim
+		
 		log "done\n"
 	else
 		if [ -s "$chimJunctionsPE" ]; then
 			run "awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport";}{print \$0;}' $chimJunctionsPE 1> $chimJunctionsCandidates" "$ECHO"
 			log "done\n" 
-			rm $chimJunctionsPE
+			
 		else
 			log "Error, intermediate file: $chimJunctionsSim or $chimJunctionsPE is missing\n" "ERROR" 
 	    	exit -1			
@@ -1062,18 +1074,35 @@ if [ ! -e "$chimJunctions" ]; then
 	log "Filtering out chimera candidates to produce a final set of chimeric junctions..." $step
 	awk -v filterConf=$filterConf -f $juncFilter $chimJunctionsCandidates 1> $chimJunctions
 	log "done\n" 
-	if [ ! -s $chimJunctionsSim ]; then
+	if [ ! -s $chimJunction ]; then
 		log "Error filtering chimeric junction candidates\n" "ERROR" 
     	exit -1
 	fi
-	rm $chimJunctionsCandidates
+	
 	endTime=$(date +%s)
 	printHeader "Filtering module step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else 
 	printHeader "Chimeric junction candidates already filtered... skipping step"
 fi
 
-# 11) END
+# 12) Clean up
+###############
+
+if [[ "$cleanup" == "1" ]]; then 
+	step="CLEAN-UP"
+	startTime=$(date +%s)
+	log "Removing intermediate files..." $step
+	rm -r  $outDir/FromFirstBam $outDir/FromSecondMapping $outDir/Chimsplice
+	rm $outDir/split_mapping_file_sample_$lid.txt $chimJunctionsSim $chimJunctionsCandidates $chimJunctionsPE
+	log "done\n" 
+	endTime=$(date +%s)
+	printHeader "Clean up step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else 
+	printHeader "No clean up mode... skipping step"
+fi	
+
+
+# 13) END
 #########
 pipelineEnd=$(date +%s)
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
