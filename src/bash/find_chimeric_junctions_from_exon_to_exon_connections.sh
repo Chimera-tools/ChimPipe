@@ -187,11 +187,3 @@ wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbeganden
 echo I am completing the chimeric junctions matrix with additional information: whether the two parts are on the same chrand strand, whether they are on the expected genomic order, their distance, the list of genes which exons overlap each part of the junction, the real names of those genes, the biotypes of those genes and the number of staggered reads supporting the junction.>&2
 bash $MATRIX $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt $annot $stranded $outdir > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-
-# Output the distinct chimeric junctions found by more than 10 staggered split-mappings
-#######################################################################################
-echo I am outputting the distinct chimeric junctions found by more than 10 staggered split-mappings >&2
-awk '$2>=10' $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt > $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
-wc -l $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt | awk '{print "number of distinct chimeric junctions seen by at least 10 staggered split-mappings:", $1}' 
-
-#rm $outdir/exoncoord_gnlist.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_ss1_ss2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt $outdir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt

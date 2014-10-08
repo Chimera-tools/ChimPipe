@@ -184,16 +184,7 @@ total=`echo $sm1 $sm2 | awk '{split($1,a,","); split($2,b,","); k=1; while(a[k]!
 echo $ea $eb $rl $sm1 $sm2 $staggered $total
 done > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt
 
-# 7) cleaning and zipping -> 6 seconds
-######################################
-echo I am cleaning intermediate files and zipping the ones that are not of immediate use >&2
-
-rm $outdir/$b $outdir/$btmp\_part1.gff $outdir/$btmp\_part2.gff $outdir/$btmp\_part1_coord_exlist_gnlist.txt $outdir/$btmp\_part2_coord_exlist_gnlist.txt $outdir/$btmp\_part1_withexlist_gnlist.gff $outdir/$btmp\_part2_withexlist_gnlist.gff $outdir/$btmp\_with_two_parts_overex_coord1_coord2_read_listex1_listex2.txt $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_$btmp.txt 
-gzip -f $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt 
-
-done
-
-# more cleaning
+## Cleaning
 rm $annotbase.exons.12flds.gff 
 
 echo I am finished >&2
