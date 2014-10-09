@@ -580,7 +580,6 @@ export TMPDIR=$TMPDIR
 # 5. Programs/Scripts
 #####################
 # Bash 
-pipeline=$bashDir/first_mapping_pipeline.sh
 chim1=$bashDir/find_exon_exon_connections_from_splitmappings.sh
 chim2=$bashDir/find_chimeric_junctions_from_exon_to_exon_connections.sh
 findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
