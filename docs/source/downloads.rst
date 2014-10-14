@@ -1,8 +1,8 @@
 .. _downloads:
 
-==========
+=========
 Downloads
-==========
+=========
 
 GEM indexed genomes
 ====================
@@ -43,7 +43,7 @@ GEM indexed transcriptomes and genome annotations
 .. _Gencode v19: http://public-docs.crg.es/rguigo/Data/brodriguez/annotations/h.sapiens/gencode/gencode19/gencode_annot_v19_long_GEM.tar.gz
 .. _Gencode v10: http://public-docs.crg.es/rguigo/Data/brodriguez/annotations/h.sapiens/gencode/gencode10/gencode_annot_v10_long_GEM.tar.gz
 
-.. note:: Long transcripts group excludes: ribosomal, micro, transfer, small cytoplasmic, small nucleolar and small nuclear RNAs. They were removed since they are not relevant for chimera detection and they could be a source of artefactual chimeras due to sequence similarity, specially the ribosomal RNAs. 
+.. note:: Long transcripts group excludes: ribosomal, micro, transfer, small cytoplasmic, small nucleolar and small nuclear RNAs. They were removed since they are not relevant for chimera detection and they could be a source of artefactual chimeras due to sequence similarity between them, specially in ribosomal RNAs. 
 
 *M. musculus*
 --------------

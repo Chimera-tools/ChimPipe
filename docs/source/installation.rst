@@ -4,14 +4,13 @@
 Installation
 ============
 
-System requirements 
-===================
+System's requirements 
+======================
 
 Hardware:
 
 * 64-bits CPU 
 * RAM: ~40G for 100 million human PE reads of 52 bases. 
-* Disk space:
 
 Software:
 
@@ -30,28 +29,28 @@ Download ChimPipe
 
 You can do it from the `ChimPipe GitHub repository`_ in two different ways: 
 
-.. _ChimPipe GitHub repository: https://github.com/CRG-Barcelona/ChimPipe
+.. _ChimPipe GitHub repository: https://github.com/Chimera-tools/ChimPipe.git
 
-1. Press the `Download ZIP` button which is located at the bottom right to download the most recent version of the code as a zip archive. 
-2. Clone the Git repository in case you want the code under the Git version control system (Currently, it is not allowed to contribute to the project, but it will be in the future):
+1. Press the `Download ZIP` button which is located at the bottom right of the page to download the most recent version of the code as a zip archive. 
+2. Clone the Git repository in case you want the code under the Git version control system (currently, it is not allowed to contribute to the project, but it will be in the future):
 
 .. code-block:: bash
 
-	# Move into the folder you want to clone the repositoy.
+	# Move into the folder in which you want to clone the repositoy.
 	$ cd /users/rg/brodriguez/bin
 	# Clone it.
-	$ git clone git@github.com:brguez/ChimPipe.git
+	$ git clone https://github.com/Chimera-tools/ChimPipe.git
 
 
 Set up ChimPipe's path
 ======================
-Finally, go to your newly created ChimPipe's directory and do make to set the path to ChimPipe in your system. 
+Finally, go to your newly created ChimPipe's directory and type make to set the path to ChimPipe in your system. 
 
 .. code-block:: bash
 
 	# Move into ChimPipe.
 	$ cd /users/rg/brodriguez/bin/ChimPipe
-	# Do make to set the path to ChimPipe in the system 
+	# Type make to set the path to ChimPipe in your system 
 	$ make
 	
 	
