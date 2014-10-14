@@ -24,8 +24,8 @@ Software:
 .. _Blast: http://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download
 
 
-Download ChimPipe
-=================
+Downloading ChimPipe
+====================
 
 You can do it from the `ChimPipe GitHub repository`_ in two different ways: 
 
@@ -42,15 +42,15 @@ You can do it from the `ChimPipe GitHub repository`_ in two different ways:
 	$ git clone https://github.com/Chimera-tools/ChimPipe.git
 
 
-Set up ChimPipe's path
-======================
-Finally, go to your newly created ChimPipe's directory and type make to set the path to ChimPipe in your system. 
+Setting up ChimPipe's path
+==========================
+Finally, go to your newly created ChimPipe's directory and type make to set up the path to ChimPipe in your system. 
 
 .. code-block:: bash
 
 	# Move into ChimPipe.
 	$ cd /users/rg/brodriguez/bin/ChimPipe
-	# Type make to set the path to ChimPipe in your system 
+	# Type make to set up the path to ChimPipe in your system 
 	$ make
 	
 	
