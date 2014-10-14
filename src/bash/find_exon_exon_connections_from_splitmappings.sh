@@ -184,6 +184,9 @@ total=`echo $sm1 $sm2 | awk '{split($1,a,","); split($2,b,","); k=1; while(a[k]!
 echo $ea $eb $rl $sm1 $sm2 $staggered $total
 done > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt
 
+# Close first while
+done 
+
 ## Cleaning
 rm $annotbase.exons.12flds.gff 
 
