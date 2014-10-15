@@ -34,9 +34,9 @@ authors
 # note that this script only asks the two parts of the split mapped read to (strandedly when data is stranded)
 # overlap an exon, not more.
 # Note: the annotation file should only have exons and the gene id must be in field no 10
-# !!! be careful: in fact I realize that I could sort the file1 of overlap beforehand
-# since the order will be retrieved afterwards, and then no need to specify and input 
-# in overlap a sorting directory ....
+# Note to self: I realize that I could sort file1 of overlap beforehand
+# since the order will be retrieved afterwards, and then no need to specify 
+# a sorting directory in overlap ....
 
 # usage
 #######
@@ -182,9 +182,12 @@ do
 staggered=`echo $sm1 $sm2 | awk '{split($1,a,","); split($2,b,","); k=1; while(a[k]!=""){split(a[k],a1,","); split(b[k],b1,","); l=1; while(a1[l]!=""){print a1[l]":"b1[l]; l++;} k++;}}' | sort -T $TMPDIR | uniq | awk '{s=(s)($1)(",")}END{print s}'`
 total=`echo $sm1 $sm2 | awk '{split($1,a,","); split($2,b,","); k=1; while(a[k]!=""){split(a[k],a1,","); split(b[k],b1,","); l=1; while(a1[l]!=""){print a1[l]":"b1[l]; l++;} k++;}}' | awk '{s=(s)($1)(",")}END{print s}'` 
 echo $ea $eb $rl $sm1 $sm2 $staggered $total
-done > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt
+done | gzip > $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt.gz
 
-# Close first while
+## Cleaning
+rm $outdir/$b $outdir/$btmp\_part1.gff $outdir/$btmp\_part2.gff $outdir/$btmp\_part1_coord_exlist_gnlist.txt $outdir/$btmp\_part2_coord_exlist_gnlist.txt $outdir/$btmp\_part1_withexlist_gnlist.gff $outdir/$btmp\_part2_withexlist_gnlist.gff $outdir/$btmp\_with_two_parts_overex_coord1_coord2_read_listex1_listex2.txt $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_$btmp.txt 
+
+## Close first while
 done 
 
 ## Cleaning
