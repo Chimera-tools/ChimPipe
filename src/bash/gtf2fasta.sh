@@ -1,10 +1,33 @@
 #!/bin/bash
 
-# ~sdjebali/bin/gtf2fasta.sh
+<<authors
+*****************************************************************************
+	
+	gtf2fasta.sh
+	
+	This file is part of the ChimPipe pipeline 
+
+	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+					   Emilio Palumbo 
+					   Sarah Djebali 
+	
+	Computational Biology of RNA Processing group
+	Department of Bioinformatics and Genomics
+	Centre for Genomic Regulation (CRG)
+					   
+	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+	Documentation - https://chimpipe.readthedocs.org/
+
+	Contact - chimpipe.pipeline@gmail.com
+	
+	Licenced under the GNU General Public License 3.0 license.
+******************************************************************************
+authors
+
 # Takes as input an annotation file in gtf format with gene id followed by transcript id in the 9th field
 # as well as a genome index file in gem format, and outputs a fasta file with the nucleotide sequences
 # of all the transcripts present in the annotation file
-# Note: bedtools getfasta could be able to do the same, need to test it and see what takes less time (since we use an index it might be the present one)
 
 # Usage
 # gtf2fasta.sh annot.gtf genome_index.gem
@@ -14,23 +37,49 @@
 # annot=/users/rg/projects/encode/scaling_up/whole_genome/Gencode/version10/gen10.gtf
 # genome=/users/rg/projects/references/Genome/gem2/Homo_sapiens.GRCh37.chromosomes.chr.M.fa.gem
 # time gtf2fasta.sh $annot $genome 2> gtf2fasta.err > gtf2fasta.out
-# real	3m18.403s  *** and checked using fastlength that the length is the same as when obtained with julien's perl script extract_spliced_transc_seqs.pl
+# real	3m18.403s 
 
-# In case the user does not provide any input file
-###################################################
-if [ ! -n "$1" ] || [ ! -n "$2" ]
-then
-    echo "" >&2
-    echo Usage: gtf2fasta.sh annot.gtf genome_index.gem >&2
-    echo This script taks as input an annotation file \in gtf format with gene id followed by transcript id \in the 9th field >&2
-    echo as well as a genome index file \in gem format, and outputs a fasta file with the nucleotide sequences of all the transcripts >&2
-    echo present \in the annotation file  >&2
-    echo "" >&2
-    exit 1
-else
+function usage
+{
+cat <<help
+	Usage:    gtf2fasta.sh annot.gtf genome_index.gem 
+    
+    Example:  gtf2fasta.sh gen10.long.exon.gtf hg19.gem
+    
+    Takes as input an annotation file in gtf format with gene id followed by transcript id in the 9th field
+    as well as a genome index file in gem format, and outputs a fasta file with the nucleotide sequences
+    of all the transcripts present in the annotation file
+    exit 0
+help
+}
+
+# GETTING INPUT ARGUMENTS 
+#########################
 annot=$1
-genome=$2
-fi
+index=$2
+
+# SETTING VARIABLES AND INPUT FILES
+###################################
+if [[ ! -e $annot ]]; then printf "\n\tERROR: Please specify a valid annotation file\n\n" >&2; usage; exit -1; fi
+if [[ ! -e $index ]]; then printf "\n\tERROR:Please specify a valid genome gem index file\n\n" >&2; usage; exit -1; fi
+
+# Directories 
+#############
+# Environmental variables 
+# rootDir - path to the root folder of ChimPipe pipeline. 
+# TMPDIR  - temporary directory
+# They are environmental variable defined and exported in the main script
+ 
+binDir=$rootDir/bin
+awkDir=$rootDir/src/awk
+bashDir=$rootDir/src/bash
+
+# Programs
+##########
+RETRIEVER=$binDir/gemtools-1.7.1-i3/gem-retriever 
+
+# START
+########
 
 # Variable from input
 #####################
@@ -38,10 +87,6 @@ b=`basename $annot`
 b2tmp=${b%.gtf}
 b2=${b2tmp%.gff}
 
-
-# Programs
-##########
-RETRIEVER=/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe/bin/gemtools-1.7.1-i3/gem-retriever 
 
 
 # Make the list of distinct exon coordinates (fast)

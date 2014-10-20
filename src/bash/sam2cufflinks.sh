@@ -9,7 +9,7 @@
 
 	Copyright (c) 2014 Bernardo Rodríguez-Martín 
 					   Emilio Palumbo 
-					   Sarah djebali 
+					   Sarah Djebali 
 	
 	Computational Biology of RNA Processing group
 	Department of Bioinformatics and Genomics

@@ -51,18 +51,15 @@ USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> -q <quality> -e <sam
 	
 	-a|--annotation			<GTF>		Reference genome annotation file in GTF format. The transcriptome
                                        			index has to be in the same directory as the annotation.
-	
-	-q|--quality			<NUMBER>	Quality offset of the FASTQ files [33 | 64 | ignore].
-		
-	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).    
-	
+
 ** [OPTIONS] can be:
 
 General:
-	-o|--output-dir			<PATH>		Output directory. Default current working directory.
+	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).   
+	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.
 	-t|--threads			<PATH>		Number of threads to use. Default 1.
-	--log			<PATH>		Log level [error |warn | info | debug). Default info.
+	--log			<PATH>		Log level [error |warn | info | debug]. Default info.
 	--no-cleanup	<FLAG>		Keep intermediate files. 		
 	--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
 	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
@@ -99,10 +96,10 @@ Chimeric junctions filter:
 								4rd: maximum length of the high similar region between the connected genes.
 	
 							All these conditions have to be fulfilled for a chimeric junction to pass the filter. It is also possible to make 
-							complex condifions by setting two different conditions where at least one of them has to be fulfilled. 
+							complex conditions by setting two different conditions where at least one of them has to be fulfilled. 
 							I.e "10,0,0:0;1,1,0:0;". Default "5,0,80:30;1,1,80:30;".	
 	--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
-							to discard junctions connecting highly similar genes. If not provided the junctions will not be filtered according to this criteria. 
+							to discard junctions connecting highly similar genes. If not provided it will be computed inside ChimPipe.
 													
 help
 }
@@ -142,6 +139,7 @@ function run {
     if [[ $2 ]];then
          ${2}${command[@]}
     else
+        echo -e "\n"" "${command[@]}
         eval ${command[@]}
     fi
 }
@@ -187,9 +185,9 @@ function copyToTmp {
 }
 
 # Function 8. Parse user's input
-###################################
+################################
 function getoptions {
-ARGS=`$getopt -o "i:g:a:q:e:l:o:t:hfsM:m:c:" -l "input:,genome-index:,annotation:,quality:,sample-id:,output-dir:,tmp-dir:,threads:,log:,dry,help,full-help,no-cleanup,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,max-read-length:,seq-library:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats" \
+ARGS=`$getopt -o "i:g:a:e:l:o:t:hfsM:m:c:" -l "input:,genome-index:,annotation:,sample-id:,output-dir:,tmp-dir:,threads:,log:,dry,help,full-help,no-cleanup,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,max-read-length:,seq-library:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -224,14 +222,7 @@ do
         annot=$2
       fi
       shift 2;;
-  
-     -q|--quality)
-      if [ -n $2 ];
-      then
-        quality=$2
-      fi
-      shift 2;;
-      
+        
     -e|--sample-id)
        if [ -n "$2" ];
        then
@@ -261,101 +252,102 @@ do
        shift 2;;
 	
 	-m|--mism-split-map)
-       if [ -n "$2" ];
-       then
-         mismSplit=$2
-       fi
-       shift 2;;
+	    if [ -n "$2" ];
+	    then
+		mismSplit=$2
+	    fi
+	    shift 2;;
        
-    --min-split-size)
-       if [ -n "$2" ];
-       then
-         splitSize=$2
-       fi
-       shift 2;;   
+	--min-split-size)
+	    if [ -n "$2" ];
+	    then
+			splitSize=$2
+	    fi
+	    shift 2;;   
 	
 	-c|--consensus-splice-sites)
-       if [ -n "$2" ];
-       then
-         spliceSites=$2
-       fi
-       shift 2;;
-
+	    if [ -n "$2" ];
+	    then
+			spliceSites=$2
+	    fi
+	    shift 2;;
+	
 	--stats)
-      mapStats="1"  
-      shift ;;
+	    mapStats="1"  
+	    shift ;;
 
-    --filter-chimeras)
-      if [ -n $2 ];
-      then
-       filterConf="$2"
-      fi
-      shift 2;;
-      
-    --similarity-gene-pairs)
-      if [ -n $2 ];
-      then
-        simGnPairs="$2"
-      fi
-      shift 2;;
+	--filter-chimeras)
+	    if [ -n $2 ];
+	    then
+			filterConf="$2"
+	    fi
+	    shift 2;;
+	
+	--similarity-gene-pairs)
+	    if [ -n $2 ];
+	    then
+			simGnPairs="$2"
+	    fi
+	    shift 2;;
 
 	-o|--output-dir)
-      if [ -n $2 ];
-      then
-        outDir=$2
-      fi
-      shift 2;;
+    	if [ -n $2 ];
+      	then
+        	outDir=$2
+      	fi
+      	shift 2;;
       
     --tmp-dir)
-      if [ -n $2 ];
-      then
-        TMPDIR=$2
-      fi
-      shift 2;;
+      	if [ -n $2 ];
+      	then
+        	TMPDIR=$2
+      	fi
+      	shift 2;;
  
     -t|--threads)
-      if [ -n $2 ];
-      then
-        threads=$2
-      fi
-      shift 2;;
+      	if [ -n $2 ];
+    	then
+       		threads=$2
+      	fi
+      	shift 2;;
  
     --log)
-      if [ -n $2 ];
-      then
-        logLevel=$2
-      fi
-      shift 2;;
- 
-    --dry)
-      ECHO="echo "
-      shift;;
+      	if [ -n $2 ];
+      	then
+        	logLevel=$2
+      	fi
+      	shift 2;;
+      	 
+	-t|--threads)
+	    if [ -n $2 ];
+	    then
+			threads=$2
+	    fi
+	    shift 2;;
+	
+	--dry)
+	    ECHO="echo "
+	    shift;;
+	
+	-h|--help)
+	    usage
+	    exit 1
+	    shift;;
     
-    -h|--help)
-      usage
-      exit 1
-      shift;;
-    
-    -h|--help)
-      usage
-      exit 1
-      shift;;
+	-f|--full-help)
+	    usage
+	    usage_long
+	    exit 1
+	    shift;;
       
-    -f|--full-help)
-      usage
-      usage_long
-      exit 1
-      shift;;
-      
-    --no-cleanup)
-      cleanup=0;
-      shift;;  
-    
-    --)
-      usage
-      shift
-      break;;  
-  esac
+	--no-cleanup)
+	    cleanup=0;
+	    shift;;  
+	
+	--)
+	    shift
+	    break;;  
+    esac
 done
 }
 
@@ -386,15 +378,19 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 ##########################
 
 # Mandatory arguments
+#####################
 if [[ ! -e $input ]]; then log "Your input file file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; usage; exit -1; fi
 if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 annName=`basename $annot`
-if [[ "$quality" != @(33|64|ignore) ]]; then log "Please specify a proper quality value [33|64|ignore]\n" "ERROR" >&2; usage; exit -1; fi
-if [[ "$lid" == "" ]]; then log "Please specify the sample identifier\n" "ERROR" >&2; usage; exit -1; fi
 
-# Maximum read legnth
+
+# Optional arguments
+#####################
+
+# Maximum read length
+
 if [[ "$maxReadLength" == "" ]]; 
 then 
 	maxReadLength='150'; 
@@ -491,11 +487,15 @@ else
 fi
 
 # Similarity between gene pairs file
-if [ ! -e $simGnPairs ] && [$simGnPairs != ""]; 
+
+if [[ $simGnPairs == "" ]]
+then
+	simGnPairs="NOT PROVIDED";
+elif [[ ! -s $simGnPairs ]]; 
 then 
 	log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; 
 	usage; 
-	exit -1; HEAD
+	exit -1; 
 fi
 
 # Output directory
@@ -509,6 +509,12 @@ else
 		usage; 
 		exit -1; 
 	fi	
+fi
+
+# Library id 
+if [ ! -n "$lid" ] 
+then 			
+    lid=myexp		# Default
 fi
 
 # Temporary directory
@@ -568,7 +574,6 @@ fi
 binDir=$rootDir/bin
 awkDir=$rootDir/src/awk
 bashDir=$rootDir/src/bash
-if [[ ! -d $outDir/FirstMapping ]]; then mkdir $outDir/FirstMapping; fi
 if [[ ! -d $outDir/SecondMapping ]]; then mkdir $outDir/SecondMapping; fi
 if [[ ! -d $outDir/FromFirstBam ]]; then mkdir $outDir/FromFirstBam; fi
 if [[ ! -d $outDir/FromSecondMapping ]]; then mkdir $outDir/FromSecondMapping; fi
@@ -582,8 +587,9 @@ export TMPDIR=$TMPDIR
 # 5. Programs/Scripts
 #####################
 # Bash 
-infer_library=$bashDir/infer_library_type.sh
+qual=$bashDir/detect.fq.qual.sh
 addXS=$bashDir/sam2cufflinks.sh
+infer_library=$bashDir/infer_library_type.sh
 chim1=$bashDir/find_exon_exon_connections_from_splitmappings.sh
 chim2=$bashDir/find_chimeric_junctions_from_exon_to_exon_connections.sh
 findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
@@ -608,6 +614,7 @@ addPEinfo=$awkDir/add_PE_info.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
 juncFilter=$awkDir/chimjunc_filter.awk
 
+
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 printf "\n"
@@ -619,13 +626,12 @@ printf "  %-34s %s\n\n" "ChimPipe Version $version"
 printf "  %-34s %s\n" "***** Mandatory *****"
 printf "  %-34s %s\n" "Input file:" "$input"
 printf "  %-34s %s\n" "Reference genome file:" "$index"
-printf "  %-34s %s\n" "Reference gene annotation file:" "$annot"
-printf "  %-34s %s\n" "Quality offset:" "$quality"
-printf "  %-34s %s\n\n" "Sample identifier:" "$lid"
+printf "  %-34s %s\n\n" "Reference gene annotation file:" "$annot"
 
 printf "  %-34s %s\n" "***** Reads information *****"
 printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
-printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
+printf "  %-34s %s\n" "Maximum read length:" "$maxReadLength"
+printf "  %-34s %s\n\n" "Sample identifier:" "$lid"
 
 printf "  %-34s %s\n" "***** Mapping *****"
 printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
@@ -654,7 +660,13 @@ eval "for i in {1..${#header}};do printf \"-\";done"
 printf "\n\n"
 pipelineStart=$(date +%s)
 
-
+# 0) Preliminary steps
+######################
+step="PRELIM"
+log "Determining the offset quality of the reads for ${lid}..." $step
+run "quality=\`$qual $input | awk '{print \$2}'\`" "$ECHO" 
+log "done\n"
+    	
 # 1) map all the reads to the genome, to the transcriptome and de-novo, using the gemtools RNA-Seq 
 #################################################################################################
 #   pipeline but with max intron size larger than the biggest chromosome, and with an edit
@@ -668,18 +680,18 @@ pipelineStart=$(date +%s)
 
 bamFirstMapping=$outDir/${lid}_filtered_cuff.bam
 
-if [ ! -e $bamFirstMapping ]; then
+if [ ! -s $bamFirstMapping ]; then
 	step="FIRST-MAP"
 	startTimeFirstMap=$(date +%s)
 	printHeader "Executing first mapping step"    
 
 	# 1.1) Mapping
 	################
-	if [ ! -e $lid.map.gz ];then
+	if [ ! -s $lid.map.gz ];then
 	    step="FIRST-MAP"
 	    startTime=$(date +%s)
     
-	    ## Copy needed files to TMPDIR
+	## Copy needed files to TMPDIR
     	copyToTmp "index,annotation,t-index,keys"
 
     	log "Running gemtools rna pipeline on ${lid}..." $step
@@ -703,7 +715,7 @@ if [ ! -e $bamFirstMapping ]; then
 	##############################
 	filteredGem=${lid}_unique_${mism}mism.map.gz
 
-	if [ ! -e $filteredGem ];then
+	if [ ! -s $filteredGem ];then
     	step="FIRST-MAP.FILTER"
     	startTime=$(date +%s)
     	printSubHeader "Executing filtering step"
@@ -756,7 +768,7 @@ if [ ! -e $bamFirstMapping ]; then
 	###############################################
 	filteredBam=${lid}_filtered_cuff.bam
 
-	if [ ! -e $filteredBam ];then
+	if [ ! -s $filteredBam ];then
 	    step="FIRST-MAP.CONVERT"
 	    startTime=$(date +%s)
 	    printSubHeader "Executing conversion step"
@@ -797,12 +809,11 @@ fi
 ##############
 # - variables $readDirectionality and $stranded
 
-if [[ "$readDirectionality" == "NO DEFINED" ]]; 
+if [[ "$readDirectionality" == "NOT DEFINED" ]]; 
 then 
 	step="INFER-LIBRARY"
 	startTimeLibrary=$(date +%s)
 	printHeader "Executing infer library type step" 
-	#echo $bamFirstMapping 
 	log "Infering the sequencing library protocol from a random subset with 1 percent of the mapped reads..." $step
 	read fraction1 fraction2 other <<<$(bash $infer_library $bamFirstMapping $annot)
 	log "done\n"
@@ -851,7 +862,8 @@ else
 	printHeader "Sequencing library type provided by the user...skipping library inference step"
 fi
 
-exit -1
+exit 1
+
 # 3) extract the reads that do not map with a number of mismatches lower than 6
 ###############################################################################
 #    from the gem file: outDirget a fastq file 
@@ -862,12 +874,12 @@ exit -1
 
 unmappedReads=$outDir/${lid}.unmapped.fastq
 
-if [ ! -e $unmappedReads ]; then
+if [ ! -s $unmappedReads ]; then
 	step="UNMAP"
 	startTime=$(date +%s)
 	printHeader "Executing unmapped reads step" 
 	log "Extracting the reads that do not map with a number of mismatches lower than 6..." $step
-	run "zcat $lid.map.gz | awk -f $unmapped | $gtfilter -t $threads --output-format 'FASTA' > $outDir/$lid.unmapped.fastq 2> $outDir/$lid.unmapped.err" "$ECHO" 	
+	run "zcat $lid.map.gz | awk -f $unmapped | $gtfilter -t $threads --output-format 'FASTA' > $outDir/$lid.unmapped.fastq" "$ECHO" 	
 	log "done\n" 
     if [ -s $unmappedReads ]; then
     	log "Computing md5sum for unmapped reads file..." $step
@@ -893,12 +905,12 @@ fi
 
 gemSecondMapping=$outDir/SecondMapping/${lid}.unmapped_rna-mapped.map
 
-if [ ! -e $gemSecondMapping ]; then
+if [ ! -s $gemSecondMapping ]; then
 	step="SECOND-MAP"
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
 	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads -c 'GT+AG' --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out 2> $outDir/SecondMapping/$lid.gem-rna-mapper.err" "$ECHO"
+	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads -c 'GT+AG' --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
 	log "done\n" 
 	if [ -s $gemSecondMapping ]; then
     	log "Computing md5sum for the gem file with the second mappings..." $step
@@ -922,7 +934,7 @@ fi
 
 gffFromBam=$outDir/FromFirstBam/${lid}_filtered_cuff_2blocks.gff.gz
 
-if [ ! -e $gffFromBam ]; then
+if [ ! -s $gffFromBam ]; then
 	step="FIRST-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the bam into gff step"
@@ -951,7 +963,7 @@ fi
 
 gffFromMap=$outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz
 
-if [ ! -e $gffFromMap ]; then
+if [ ! -s $gffFromMap ]; then
 	step="SECOND-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the gem into gff step"
@@ -989,11 +1001,11 @@ exonConnections1=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_par
 exonConnections2=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid.unmapped_rna-mapped.gff.txt.gz
 
 printHeader "Executing Chimsplice step"
-if [ ! -e $exonConnections1 ] || [ ! -e $exonConnections2 ]; then
+if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding exon to exon connections from the ".gff.gz" files containing the "normal" and "atypical" mappings..." $step
-	run "$chim1 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded 2> $outDir/Chimsplice/find_exon_exon_connections_from_splitmappings_better_$lid.err" "$ECHO"
+	run "$chim1 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded" "$ECHO"
 	log "done\n" 
 	if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; then
         log "Error running chimsplice\n" "ERROR" 
@@ -1006,7 +1018,7 @@ else
 fi
 
 chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-if [ ! -e $chimJunctions ]; then
+if [ ! -s $chimJunctions ]; then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
@@ -1035,11 +1047,11 @@ fi
 PEinfo=$outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
 
 printHeader "Executing find gene to gene connections from PE mappings step"
-if [ ! -e $PEinfo ];then
+if [ ! -s $PEinfo ];then
 	step="PAIRED-END"
 	startTime=$(date +%s)
 	log "Finding gene to gene connections supported by paired-end mappings from the ".bam" containing reads mapping in a unique and continuous way..." $step
-	run "$findGeneConnections $outDir/$lid\_filtered_cuff.bam $annot $outDir/PE $readDirectionality 2> $outDir/PE/find_gene_to_gene_connections_from_pe_rnaseq_fast_$lid.err" "$ECHO"
+	run "$findGeneConnections $outDir/$lid\_filtered_cuff.bam $annot $outDir/PE $readDirectionality" "$ECHO"
 	log "done\n" 
 	if [ ! -s $PEinfo ]; then
         log "Error finding gene to gene connections\n" "ERROR" 
@@ -1057,7 +1069,7 @@ fi
 
 chimJunctionsPE=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-if [ ! -e $chimJunctionsPE ];then
+if [ ! -s $chimJunctionsPE ];then
 	step="PAIRED-END"
 	startTime=$(date +%s)
 	log "Adding PE information to the matrix containing chimeric junction candidates..." $step
@@ -1080,8 +1092,8 @@ fi
 
 chimJunctionsSim=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-if [  ! -e "$chimJunctionsSim" ]; then		
-	if [ "$simGnPairs" != "" ];then
+if [  ! -s "$chimJunctionsSim" ]; then		
+	if [ "$simGnPairs" != "NOT PROVIDED" ];then
 		step="SIM"
 		startTime=$(date +%s)
 		log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
@@ -1106,18 +1118,18 @@ fi
 
 chimJunctionsCandidates=$outDir/chimeric_junctions_candidates.txt
 
-if [ ! -e "$chimJunctionsCandidates" ]; then		
+if [ ! -s "$chimJunctionsCandidates" ]; then		
 	step="HEADER"
 	log "Adding a header to the matrix containing the chimeric junction candidates..." $step
-	if [ -e "$chimJunctionsSim" ]; then		
-		run "awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport", "maxSim", "maxLgal";}{print \$0;}' $chimJunctionsSim 1> $chimJunctionsCandidates" "$ECHO"
+	if [ -s "$chimJunctionsSim" ]; then		
+		run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\", \"maxSim\", \"maxLgal\";}{print \$0;}' $chimJunctionsSim 1> $chimJunctionsCandidates" "$ECHO"
 		
 		log "done\n"
 	else
 		if [ -s "$chimJunctionsPE" ]; then
-			run "awk 'BEGIN{print "juncId", "nbstag", "nbtotal", "maxbeg", "maxEnd", "samechr", "samestr", "dist", "ss1", "ss2", "gnlist1", "gnlist2", "gnname1", "gnname2", "bt1", "bt2", "PEsupport";}{print \$0;}' $chimJunctionsPE 1> $chimJunctionsCandidates" "$ECHO"
-			log "done\n" 
+			run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\";}{print \$0;}' $chimJunctionsPE 1> $chimJunctionsCandidates" "$ECHO"
 			
+			log "done\n" 	
 		else
 			log "Error, intermediate file: $chimJunctionsSim or $chimJunctionsPE is missing\n" "ERROR" 
 	    	exit -1			
@@ -1133,7 +1145,7 @@ fi
 
 chimJunctions=$outDir/chimeric_junctions.txt
 
-if [ ! -e "$chimJunctions" ]; then
+if [ ! -s "$chimJunctions" ]; then
 	step="FILTERING MODULE"
 	startTime=$(date +%s)
 	log "Filtering out chimera candidates to produce a final set of chimeric junctions..." $step

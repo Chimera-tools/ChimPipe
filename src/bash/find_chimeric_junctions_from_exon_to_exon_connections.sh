@@ -9,7 +9,7 @@
 
 	Copyright (c) 2014 Bernardo Rodríguez-Martín 
 					   Emilio Palumbo 
-					   Sarah djebali 
+					   Sarah Djebali 
 	
 	Computational Biology of RNA Processing group
 	Department of Bioinformatics and Genomics
@@ -61,7 +61,7 @@ then
     echo the reference annotation, an output directory and the strandedness of the data, and produces a summary statistics file as output >&2
     echo with the number of chimeric junctions seen >&2
     echo "" >&2
-    exit 0
+    exit -1
 fi
 
 # In case the user does not provide any indexed genome, annotation 

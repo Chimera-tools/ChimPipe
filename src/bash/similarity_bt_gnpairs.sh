@@ -1,5 +1,30 @@
 #!/bin/bash
 
+<<authors
+*****************************************************************************
+	
+	similarity_bt_gnpairs.sh
+	
+	This file is part of the ChimPipe pipeline 
+
+	Copyright (c) 2014 Bernardo Rodríguez-Martín 
+					   Emilio Palumbo 
+					   Sarah djebali 
+	
+	Computational Biology of RNA Processing group
+	Department of Bioinformatics and Genomics
+	Centre for Genomic Regulation (CRG)
+					   
+	Github repository - https://github.com/Chimera-tools/ChimPipe
+	
+	Documentation - https://chimpipe.readthedocs.org/
+
+	Contact - chimpipe.pipeline@gmail.com
+	
+	Licenced under the GNU General Public License 3.0 license.
+******************************************************************************
+authors
+
 # Difference with previous version is the fact that exonic length of each transcript is not provided
 # and that final file is not gzipped (in order to be used by other programs)
 
@@ -16,34 +41,52 @@
 # - Made for using on a 64 bit linux architecture
 
 
+function usage
+{
+cat <<help
+	Usage:    similarity_bt_gnpairs.sh annot genome_GEM threads
+    
+    Example:  similarity_bt_gnpairs.sh gen10.long.exon.gtf hg19.gem 4
+    
+    Takes an annotation in gtf or gff2 format (with exons rows identified by gene_id and then transcript_id as first keys in 9th field),
+    the gem index of the corresponding genome and an optional number of threads and uses blastn to compute the similarity between each 
+    gene pair of the annotation, as the maximum similarity of their transcript pairs.      
+	exit 0
+help
+}
+
+# GETTING INPUT ARGUMENTS 
+#########################
+annot=$1
+index=$2
+threads=$3
+
+# SETTING VARIABLES AND INPUT FILES
+###################################
+if [[ ! -e $annot ]]; then printf "\n\tERROR: Please specify a valid annotation file\n\n" >&2; usage; exit -1; fi
+if [[ ! -e $index ]]; then printf "\n\tERROR:Please specify a valid genome gem index file\n\n" >&2; usage; exit -1; fi
+if [[ "$threads" == "" ]]; then threads=1; fi
+
+# Directories 
+#############
+# Environmental variables 
+# rootDir - path to the root folder of ChimPipe pipeline. 
+# TMPDIR  - temporary directory
+# They are environmental variable defined and exported in the main script
+ 
+binDir=$rootDir/bin
+awkDir=$rootDir/src/awk
+bashDir=$rootDir/src/bash
+
 # Programs
 ##########
-EXTRACT_TRANSC_SEQS=/users/rg/sdjebali/bin/gtf2fasta.sh
-MAKEDB=/users/rg/sdjebali/bin/ncbi-blast-2.2.29+/bin/makeblastdb
-BLAST=/users/rg/sdjebali/bin/ncbi-blast-2.2.29+/bin/blastn
+EXTRACT_TRANSC_SEQS=$bashDir/gtf2fasta.sh
+MAKEDB=$binDir/makeblastdb
+BLAST=$binDir/blastn
 
+# START
+########
 
-# In case the user does not provide the two necesary input files
-################################################################
-if [ ! -n "$1" ] || [ ! -n "$2" ]
-then
-    echo "" >&2
-    echo Usage: similarity_bt_gnpairs.sh annot genome_GEM threads >&2
-    echo "" >&2
-    echo Example: similarity_bt_gnpairs.sh gen10.long.exon.gtf hg19.gem 4 >&2
-    echo "" >&2
-    exit 1
-else
-	annot=$1
-	index=$2
-fi
-
-if [ ! -n "$3" ]
-then
-    threads=1;
-else
-    threads=$3;
-fi
 
 # Variable from input
 #####################

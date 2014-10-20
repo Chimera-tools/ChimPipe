@@ -9,7 +9,7 @@
 
 	Copyright (c) 2014 Bernardo Rodríguez-Martín 
 					   Emilio Palumbo 
-					   Sarah djebali 
+					   Sarah Djebali 
 	
 	Computational Biology of RNA Processing group
 	Department of Bioinformatics and Genomics
@@ -73,8 +73,8 @@ stranded=$4
 
 # SETTING VARIABLES AND INPUT FILES
 ###################################
-if [[ ! -e $input ]]; then printf "\n\tERROR: Please specify a valid input file\n\n" >&2; usage; fi
-if [[ ! -e $annot ]]; then printf "\n\tERROR:Please specify a valid annotation file\n\n" >&2; usage; fi
+if [[ ! -e $input ]]; then printf "\n\tERROR: Please specify a valid input file\n\n" >&2; usage; exit -1; fi
+if [[ ! -e $annot ]]; then printf "\n\tERROR:Please specify a valid annotation file\n\n" >&2; usage; exit -1; fi
 if [[ ! -d $outdir ]]; then outdir=.; fi
 if [[ "$stranded" == "" ]]; then stranded=0; fi
 
