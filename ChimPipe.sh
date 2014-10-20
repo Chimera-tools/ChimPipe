@@ -419,7 +419,7 @@ then
 		exit -1;	
 	fi
 else
-	readDirectionality="NO DEFINED"
+	readDirectionality="NOT DEFINED"
 fi 	
 
 # Number of mismatches contiguous mapping
