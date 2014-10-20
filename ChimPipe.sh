@@ -642,7 +642,12 @@ eval "for i in {1..${#header}};do printf \"-\";done"
 printf "\n\n"
 pipelineStart=$(date +%s)
 
-
+# 0) Preliminary steps
+######################
+step="PRELIM"
+log "Determining the offset quality of the reads for ${lid}..." $step
+run "quality=\`$qual $input | awk '{print \$2}'\`" "$ECHO" 
+    	
 # 1) map all the reads to the genome, to the transcriptome and de-novo, using the gemtools RNA-Seq 
 #################################################################################################
 #   pipeline but with max intron size larger than the biggest chromosome, and with an edit
@@ -669,9 +674,6 @@ if [ ! -e $bamFirstMapping ]; then
     
 	## Copy needed files to TMPDIR
     	copyToTmp "index,annotation,t-index,keys"
-
-    	log "Determining the offset quality of the reads for ${lid}..." $step
-	run "quality=\`$qual $input | awk '{print \$2}'\`" "$ECHO" 
 
     	log "Running gemtools rna pipeline on ${lid}..." $step
     	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --max-read-length $maxReadLength --max-intron-length 300000000 --junction-consensus $spliceSites -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
