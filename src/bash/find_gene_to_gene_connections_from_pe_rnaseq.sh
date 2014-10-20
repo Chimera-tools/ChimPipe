@@ -9,7 +9,7 @@
 
 	Copyright (c) 2014 Bernardo Rodríguez-Martín 
 					   Emilio Palumbo 
-					   Sarah djebali 
+					   Sarah Djebali 
 	
 	Computational Biology of RNA Processing group
 	Department of Bioinformatics and Genomics
@@ -77,7 +77,7 @@ then
     echo "mate is (strandedly if data is stranded) overlapping an exon of g1 and the second" >&2  
     echo "mate is (strandedly if data is stranded) overlapping an exon of g2." >&2
     echo "" >&2
-    exit 1
+    exit -1
 fi
 
 bamfile=$1

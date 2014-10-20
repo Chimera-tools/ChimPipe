@@ -9,7 +9,7 @@
 
 	Copyright (c) 2014 Bernardo Rodríguez-Martín 
 					   Emilio Palumbo 
-					   Sarah djebali 
+					   Sarah Djebali 
 	
 	Computational Biology of RNA Processing group
 	Department of Bioinformatics and Genomics
@@ -88,7 +88,7 @@ then
     echo 4\) Output directory. If not defined it will be the current working directory >&2
     echo and add to this matrix information about their position, distance and overlapping genes>&2 
     echo "" >&2
-    exit 1
+    exit -1
 else
 input=$1
 fi

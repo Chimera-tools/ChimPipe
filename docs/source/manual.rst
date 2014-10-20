@@ -180,7 +180,7 @@ All these files and parameters given as input to ChimPipe are **mandatory argume
 				UNSTRANDED for not strand-specific protocol (unstranded data) and the others for 
 				the different types of strand-specific protocols (stranded data).
 		          
-**Optional arguments.** Please do ``ChimPipe.sh -h or --help`` to see a short help with the most used. You can also do ``ChimPipe.sh --long-help`` to see the full usage information. 
+**Optional arguments.** Please do ``ChimPipe.sh -h or --help`` to see a short help with the most used. You can also do ``ChimPipe.sh --full-help`` to see the full usage information. 
 
 .. tip:: If your machine has more than one CPU it is recommended to run ChimPipe with multiple threads. It will speed up the mapping steps a lot. Use the option ``-t|--threads <threads>``, where **threads** is the number of CPUs available. 
 

@@ -36,14 +36,12 @@
 ## Input 
 ########
 
-# 1) raw chimeric junctions file
-################################
+# 1) raw chimeric junctions file with header
+############################################
 # Example:
-# chr10_64973501_.:chr20_62152688_- 1 1 64973482 62152656 0 NA NA NA CT JMJD1C, PPDPF, JMJD1C, PPDPF, . . . . .
-# chr20_4162515_+:chr6_32083374_. 1 1 4162478 32083360 0 NA NA GT NA SMOX, ATF6B, SMOX, ATF6B, . . . 100.00 17
-# chr16_67144142_+:chr16_67700168_. 1 2 67144118 67700141 0 NA NA GT NA C16orf70, ENKD1, C16orf70, ENKD1, . . 1-1:2, . .
-# chr16_67144142_+:chr16_67700168_. 1 2 67144118 67700141 0 NA NA GT NA C16orf70, PNLC1, GATC2, EALC, . . 1-2:24, 90.00 25 
- 
+# juncId nbstag nbtotal maxbeg maxEnd samechr samestr dist ss1 ss2 gnlist1 gnlist2 gnname1 gnname2 bt1 bt2 PEsupport maxSim maxLgal
+# chr11_60781486_+:chr11_120100337_+ 1 1 60781475 120100375 1 1 59318851 GT AG CD6, OAF, CD6, OAF, . . . . .
+
 # 2) string with the configuration for the filter
 #################################################
 #Example: 1,2,75,50;
@@ -66,7 +64,8 @@
 # encompassing the junction point. 
 
 
-NR>1{
+NR==1{print}
+(NR>=2)&&($0!~/chrM/){
 	n=split(filterConf,a,";"); 
 	split(a[1],conf1,","); 
 	split($17,PE,","); 

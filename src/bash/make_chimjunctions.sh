@@ -3,13 +3,13 @@
 <<authors
 *****************************************************************************
 	
-	make_chimeric_junctions.sh
+	make_chimjunctions.sh
 	
 	This file is part of the ChimPipe pipeline 
 
 	Copyright (c) 2014 Bernardo Rodríguez-Martín 
 					   Emilio Palumbo 
-					   Sarah djebali 
+					   Sarah Djebali 
 	
 	Computational Biology of RNA Processing group
 	Department of Bioinformatics and Genomics
@@ -65,7 +65,7 @@ then
     echo "" >&2
     echo Example:  make_chimjunctions.sh staggered.txt /users/rg/sdjebali/ENCODE_AWG/Analyses/Mouse_Human/Chimeras/Human/Homo_sapiens.GRCh37.chromosomes.chr.gem 0 'GT+AG' /users/rg/brodriguez/Projects/Chimeras/Results  >&2
     echo "" >&2
-    exit 0
+    exit -1
 fi
 input=$1
 genome=$2
