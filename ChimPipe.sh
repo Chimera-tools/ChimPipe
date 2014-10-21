@@ -169,7 +169,7 @@ function copyToTmp {
             "t-index")
                 if [[ ! -e $TMPDIR/$annName.gem ]];then
                     log "Copying annotated transcriptome index file to $TMPDIR..." $step
-                    run "cp $annot.gem $TMPDIR" "$ECHO"
+                    run "cp $annot.junctions.gem $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
