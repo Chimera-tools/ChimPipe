@@ -56,12 +56,12 @@ help
 # GETTING INPUT ARGUMENTS 
 #########################
 annot=$1
-index=$2
+genome=$2
 
 # SETTING VARIABLES AND INPUT FILES
 ###################################
 if [[ ! -e $annot ]]; then printf "\n\tERROR: Please specify a valid annotation file\n\n" >&2; usage; exit -1; fi
-if [[ ! -e $index ]]; then printf "\n\tERROR:Please specify a valid genome gem index file\n\n" >&2; usage; exit -1; fi
+if [[ ! -e $genome ]]; then printf "\n\tERROR:Please specify a valid genome gem genome index file\n\n" >&2; usage; exit -1; fi
 
 # Directories 
 #############

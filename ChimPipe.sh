@@ -9,7 +9,7 @@
 
 	Copyright (c) 2014 Bernardo Rodríguez-Martín 
 					   Emilio Palumbo 
-					   Sarah djebali 
+					   Sarah Djebali 
 	
 	Computational Biology of RNA Processing group
 	Department of Bioinformatics and Genomics
@@ -88,7 +88,7 @@ Mapping parameters:
 	--min-split-size		<NUMBER>	Minimum split size for the segmental mapping steps. Default 15.
 	--stats				<FLAG>		Enable mapping statistics. Default disabled.
 	
-Chimeric junctions filter:
+Chimeric junction filter:
 	--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
 							i.e. "1,2,75:50;", where:
 											
@@ -101,7 +101,7 @@ Chimeric junctions filter:
 							complex conditions by setting two different conditions where at least one of them has to be fulfilled. 
 							I.e "10,0,0:0;1,1,0:0;". Default "5,0,80:30;1,1,80:30;".	
 	--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
-							to discard junctions connecting highly similar genes. If not provided it will be computed inside ChimPipe.
+							to discard junctions connecting highly similar genes. If this file is not provided it will be computed by ChimPipe.
 													
 help
 }
@@ -473,14 +473,6 @@ else
 	fi
 fi
 
-# Similarity between gene pair file
-if [[ ! -e $simGnPairs ]]; 
-then 
-	log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; 
-	usage; 
-	exit -1; HEAD
-fi
-
 # Output directory
 if [[ "$outDir" == "" ]]; 
 then 
@@ -575,6 +567,7 @@ chim2=$bashDir/find_chimeric_junctions_from_exon_to_exon_connections.sh
 findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
 addXS=$bashDir/sam2cufflinks.sh
 qual=$bashDir/detect.fq.qual.sh
+sim=$bashDir/similarity_bt_gnpairs.sh
 
 # Bin 
 gemtools=$binDir/gemtools-1.7.1-i3/gemtools
@@ -647,6 +640,10 @@ pipelineStart=$(date +%s)
 step="PRELIM"
 log "Determining the offset quality of the reads for ${lid}..." $step
 run "quality=\`$qual $input | awk '{print \$2}'\`" "$ECHO" 
+b=`basename $annot`
+b2tmp=${b%.gtf}
+b2=${b2tmp%.gff}
+
     	
 # 1) map all the reads to the genome, to the transcriptome and de-novo, using the gemtools RNA-Seq 
 #################################################################################################
@@ -816,7 +813,7 @@ fi
 # 3) map the unmapped reads with the rna mapper binary (!!!parameters to think!!!): get a gem map file
 ######################################################################################################
 #   of "atypical" mappings
-########################
+##########################
 # output is: 
 ############
 # - $outDir/SecondMapping/$lid.unmapped_rna-mapped.map
@@ -1004,33 +1001,52 @@ else
 	printHeader "Chimeric junction matrix with PE information present... skipping step"
 fi
 
-# 9) Add information regarding the sequence similarity between connected genes
+# 9) Compute the gene similarity matrix in case the user does not provide it
+############################################################################
+simGnPairs=$outDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
+
+if [ ! -e "$simGnPairs" ]
+then
+    step="PRE-SIM"
+    startTime=$(date +%s)
+    log "Computing similarity between annotated genes..." $step
+    run "$sim $annot $index 4" "$ECHO"
+    rm $outDir/$b2\_tr.fasta*
+    log "done\n" 			
+    endTime=$(date +%s)
+    printHeader "Computing similarity between annotated gene step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+fi
+
+# 10) Add information regarding the sequence similarity between connected genes
 ##############################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
 chimJunctionsSim=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-if [  ! -e "$chimJunctionsSim" ]; then		
-	if [ "$simGnPairs" != "" ];then
-		step="SIM"
-		startTime=$(date +%s)
-		log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
-		run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJunctionsPE 1> $chimJunctionsSim" "$ECHO"
-		log "done\n" 
-		if [ ! -s $chimJunctionsSim ]; then
-			log "Error adding similarity information\n" "ERROR" 
-	    	exit -1
-		fi
-		endTime=$(date +%s)
-		printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-	else 
-		printHeader "Similarity information between the gene pairs in the annotation does not provided... skipping step"
+if [  ! -e "$chimJunctionsSim" ]
+then		
+    if [ -e "$simGnPairs" ]
+    then
+	step="SIM"
+	startTime=$(date +%s)
+	log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
+	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJunctionsPE > $chimJunctionsSim" "$ECHO"
+	log "done\n" 
+	if [ ! -s $chimJunctionsSim ]
+	then
+	    log "Error adding similarity information, file is empty\n" "ERROR" 
+	    exit -1
 	fi
+	endTime=$(date +%s)
+	printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+    else 
+	printHeader "Similarity information between the gene pairs in the annotation is not provided... skipping step"
+    fi
 else
 	printHeader "Chimeric junction matrix with similarity information present... skipping step"
 fi
 
-# 10) Produce a matrix containing chimeric junction candidates with a header in the first row
+# 11) Produce a matrix containing chimeric junction candidates with a header in the first row
 #############################################################################################
 # - $outDir/chimeric_junctions_candidates.txt
 
@@ -1040,12 +1056,12 @@ if [ ! -e "$chimJunctionsCandidates" ]; then
 	step="HEADER"
 	log "Adding a header to the matrix containing the chimeric junction candidates..." $step
 	if [ -e "$chimJunctionsSim" ]; then		
-		run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\", \"maxSim\", \"maxLgal\";}{print \$0;}' $chimJunctionsSim 1> $chimJunctionsCandidates" "$ECHO"
+		run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\", \"maxSim\", \"maxLgal\";}{print \$0;}' $chimJunctionsSim > $chimJunctionsCandidates" "$ECHO"
 		
 		log "done\n"
 	else
 		if [ -s "$chimJunctionsPE" ]; then
-			run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\";}{print \$0;}' $chimJunctionsPE 1> $chimJunctionsCandidates" "$ECHO"
+			run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\";}{print \$0;}' $chimJunctionsPE > $chimJunctionsCandidates" "$ECHO"
 			log "done\n" 
 			
 		else
@@ -1057,7 +1073,7 @@ else
 	printHeader "Header already added... skipping step"
 fi
 
-# 11) Filter out chimera candidates to produce a final set of chimeric junctions
+# 12) Filter out chimera candidates to produce a final set of chimeric junctions
 ################################################################################
 # - $outDir/chimeric_junctions.txt
 
@@ -1067,7 +1083,7 @@ if [ ! -e "$chimJunctions" ]; then
 	step="FILTERING MODULE"
 	startTime=$(date +%s)
 	log "Filtering out chimera candidates to produce a final set of chimeric junctions..." $step
-	awk -v filterConf=$filterConf -f $juncFilter $chimJunctionsCandidates 1> $chimJunctions
+	awk -v filterConf=$filterConf -f $juncFilter $chimJunctionsCandidates > $chimJunctions
 	log "done\n" 
 	if [ ! -s $chimJunction ]; then
 		log "Error filtering chimeric junction candidates\n" "ERROR" 
@@ -1080,7 +1096,7 @@ else
 	printHeader "Chimeric junction candidates already filtered... skipping step"
 fi
 
-# 12) Clean up
+# 13) Clean up
 ###############
 
 if [[ "$cleanup" == "1" ]]; then 
@@ -1097,7 +1113,7 @@ else
 fi	
 
 
-# 13) END
+# 14) END
 #########
 pipelineEnd=$(date +%s)
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
