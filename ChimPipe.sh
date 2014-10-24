@@ -355,7 +355,7 @@ done
 ############################
 
 # ChimPipe version 
-version=V0.8.3
+version=V0.8.4
 
 # Enable extended pattern matching 
 shopt -s extglob
@@ -364,7 +364,7 @@ shopt -s extglob
 ##############################
 # It will be exported as an environmental variable since it will be used by every ChimPipe's scripts 
 # to set the path to the bin, awk and bash directories. 
-root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
+root=/nfs/users/rg/sdjebali/Chimeras/ChimPipe
 
 export rootDir=$root 
 
@@ -379,7 +379,7 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 
 # Mandatory arguments
 #####################
-if [[ ! -e $input ]]; then log "Your input file file does not exist\n" "ERROR" >&2; usage; exit -1; fi
+if [[ ! -e $input ]]; then log "Your input file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; usage; exit -1; fi
 if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usage; exit -1; fi
@@ -814,58 +814,57 @@ fi
 
 if [[ "$readDirectionality" == "NOT DEFINED" ]]; 
 then 
-	step="INFER-LIBRARY"
-	startTimeLibrary=$(date +%s)
-	printHeader "Executing infer library type step" 
-	log "Infering the sequencing library protocol from a random subset with 1 percent of the mapped reads..." $step
-	read fraction1 fraction2 other <<<$(bash $infer_library $bamFirstMapping $annot)
-	log "done\n"
-	log "Fraction of reads explained by 1++,1--,2+-,2-+: $fraction1\n" $step
- 	log "Fraction of reads explained by 1+-,1-+,2++,2--: $fraction2\n" $step
-	log "Fraction of reads explained by other combinations: $other\n" $step 
-	
-	# Turn the percentages into integers
-	fraction1_int=${fraction1/\.*};
-	fraction2_int=${fraction2/\.*};
-	other_int=${other/\.*};
-
-	# Infer the sequencing library from the mapping distribution. 
-	if [ "$fraction1_int" -ge 80 ]; # MATE1_SENSE protocol
-	then 
-		readDirectionality="MATE1_SENSE";
-		stranded=1;
-		echo $readDirectionality;	
-	elif [ "$fraction2_int" -ge 80 ];
-	then	
-		readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
-		stranded=1;
-	elif [ "$fraction1_int" -ge 40 ] && [ "$fraction1_int" -le 60 ];
+    step="INFER-LIBRARY"
+    startTimeLibrary=$(date +%s)
+    printHeader "Executing infer library type step" 
+    log "Infering the sequencing library protocol from a random subset with 1 percent of the mapped reads..." $step
+    read fraction1 fraction2 other <<<$(bash $infer_library $bamFirstMapping $annot)
+    log "done\n"
+    log "Fraction of reads explained by 1++,1--,2+-,2-+: $fraction1\n" $step
+    log "Fraction of reads explained by 1+-,1-+,2++,2--: $fraction2\n" $step
+    log "Fraction of reads explained by other combinations: $other\n" $step 
+    
+    # Turn the percentages into integers
+    fraction1_int=${fraction1/\.*};
+    fraction2_int=${fraction2/\.*};
+    other_int=${other/\.*};
+    
+    # Infer the sequencing library from the mapping distribution. 
+    if [ "$fraction1_int" -ge 80 ]; # MATE1_SENSE protocol
+    then 
+	readDirectionality="MATE1_SENSE";
+	stranded=1;
+	echo $readDirectionality;	
+    elif [ "$fraction2_int" -ge 80 ];
+    then	
+	readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
+	stranded=1;
+    elif [ "$fraction1_int" -ge 40 ] && [ "$fraction1_int" -le 60 ];
+    then
+	if [ "$fraction2_int" -ge 40 ] && [ "$fraction2_int" -le 60 ]; # UNSTRANDED prototol
 	then
-		if [ "$fraction2_int" -ge 40 ] && [ "$fraction2_int" -le 60 ]; # UNSTRANDED prototol
-		then
-			readDirectionality="UNSTRANDED";
-			stranded=0;
-		else
-			log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-			usage
-    		usage_long
-			exit -1	
-		fi
+	    readDirectionality="UNSTRANDED";
+	    stranded=0;
 	else
-		log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-		usage
-    	usage_long
-		exit -1	
+	    log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
+	    usage
+    	    usage_long
+	    exit -1	
 	fi
-	log "Sequencing library type: $readDirectionality\n" $step 
-	log "Strand aware protocol (1: yes, 0: no): $stranded\n" $step 
-	endTimeLibrary=$(date +%s)
-	printHeader "Sequencing library inference for $lid completed in $(echo "($endTimeLibrary-$startTimeLibrary)/60" | bc -l | xargs printf "%.2f\n") min"
+    else
+	log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
+	usage
+    	usage_long
+	exit -1	
+    fi
+    log "Sequencing library type: $readDirectionality\n" $step 
+    log "Strand aware protocol (1: yes, 0: no): $stranded\n" $step 
+    endTimeLibrary=$(date +%s)
+    printHeader "Sequencing library inference for $lid completed in $(echo "($endTimeLibrary-$startTimeLibrary)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Sequencing library type provided by the user...skipping library inference step"
+    printHeader "Sequencing library type provided by the user...skipping library inference step"
 fi
 
-exit 1
 
 # 3) extract the reads that do not map with a number of mismatches lower than 6
 ###############################################################################
@@ -1091,17 +1090,15 @@ fi
 
 # 9) Compute the gene similarity matrix in case the user does not provide it
 ############################################################################
-simGnPairs=$outDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
-
 if [ ! -e "$simGnPairs" ]
 then
     step="PRE-SIM"
     startTime=$(date +%s)
     log "Computing similarity between annotated genes..." $step
     run "$sim $annot $index 4" "$ECHO"
-    rm $outDir/$b2\_tr.fasta*
     log "done\n" 			
     endTime=$(date +%s)
+    simGnPairs=$outDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
     printHeader "Computing similarity between annotated gene step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 fi
 
@@ -1192,7 +1189,8 @@ if [[ "$cleanup" == "1" ]]; then
 	step="CLEAN-UP"
 	startTime=$(date +%s)
 	log "Removing intermediate files..." $step
-	rm -r  $outDir/FromFirstBam $outDir/FromSecondMapping $outDir/Chimsplice
+	rm -r $outDir/FromFirstBam $outDir/FromSecondMapping $outDir/Chimsplice
+	rm $outDir/$b2\_tr.fasta*
 	rm $outDir/split_mapping_file_sample_$lid.txt $chimJunctionsSim $chimJunctionsCandidates $chimJunctionsPE
 	log "done\n" 
 	endTime=$(date +%s)
