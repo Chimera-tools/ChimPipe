@@ -635,7 +635,6 @@ printf "  %-34s %s\n\n" "Sample identifier:" "$lid"
 
 printf "  %-34s %s\n" "***** Mapping *****"
 printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
-printf "  %-34s %s\n" "Max number of allowed mismatches split mapping:" "$mismSplit"
 printf "  %-34s %s\n" "Consensus-splice-sites for the first mapping:" "$spliceSites"
 printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSize"
 printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
@@ -779,7 +778,7 @@ if [ ! -s $bamFirstMapping ]; then
 	    ## Copy needed files to TMPDIR
 	    copyToTmp "index"	
 	    log "Converting $lid to bam..." $step
-    	run "$pigz -p $hthreads -dc $filteredGem | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-$quality -l | sed 's/chrMT/chrM/g' | $addXS $readDirectionality | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - $TMPDIR/${filteredBam%.bam}" "$ECHO"
+    	run "$pigz -p $hthreads -dc $filteredGem | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - $TMPDIR/${filteredBam%.bam}" "$ECHO"
     	log "done\n"
     	if [ -s $TMPDIR/$filteredBam ]; then
         	log "Computing md5sum for bam file..." $step
