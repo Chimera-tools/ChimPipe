@@ -768,7 +768,7 @@ if [ ! -s $bamFirstMapping ]; then
 	fi
 
 	# 1.4) Convert to bam and adding the XS field
-	###############################################
+	#############################################
 	filteredBam=${lid}_filtered_cuff.bam
 
 	if [ ! -s $filteredBam ];then
@@ -869,7 +869,7 @@ fi
 # 3) extract the reads that do not map with a number of mismatches lower than 6
 ###############################################################################
 #    from the gem file: outDirget a fastq file 
-########################################
+##############################################
 # output is: 
 ############
 # - $outDir/$lid.unmapped.fastq
