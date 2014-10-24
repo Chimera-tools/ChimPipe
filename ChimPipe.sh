@@ -766,8 +766,8 @@ if [ ! -s $bamFirstMapping ]; then
     	fi 
 	fi
 
-	# 1.4) Convert to bam and adding the XS field
-	#############################################
+	# 1.4) Convert to bam
+	#####################
 	filteredBam=${lid}_filtered_cuff.bam
 
 	if [ ! -s $filteredBam ];then
