@@ -355,7 +355,7 @@ done
 ############################
 
 # ChimPipe version 
-version=V0.8.4
+version=V0.8.3
 
 # Enable extended pattern matching 
 shopt -s extglob
