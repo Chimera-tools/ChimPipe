@@ -380,11 +380,10 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 # Mandatory arguments
 #####################
 if [[ ! -e $input ]]; then log "Your input file does not exist\n" "ERROR" >&2; usage; exit -1; fi
-if [[ `basename ${input##*_}` != "1.fastq.gz" ]]; then log "Please check that the name of your FASTQ file ends with \"_1.fastq.gz\"\n" "ERROR" >&2; usage; exit -1; fi
+if [[ `basename ${input##*_}` != @(1.fastq|1.fq|1.txt|1.fastq.gz|1.fq.gz|1.txt.gz) ]]; then log "Please check the name of your FASTQ file follows the convention \"SampleId+_1+[.fastq|.fq|.txt] (+ .gz if compressed)\n" "ERROR" >&2; usage; exit -1; fi
 if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 annName=`basename $annot`
-
 
 # Optional arguments
 #####################
@@ -513,7 +512,7 @@ fi
 # Library id 
 if [ ! -n "$lid" ] 
 then 			
-    lid=myexp		# Default
+    lid=`basename ${input%_1.*}`;		# Default
 fi
 
 # Temporary directory
@@ -650,7 +649,7 @@ printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
 printf "  %-34s %s\n\n" "Clean up (1:enabled, 0:disabled):" "$cleanup"
 
-
+exit 1
 ## START CHIMPIPE
 #################
 header="Executing ChimPipe $version for $lid"
