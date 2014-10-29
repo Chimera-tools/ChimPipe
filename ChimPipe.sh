@@ -46,8 +46,8 @@ USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
                           				Please make sure the second mate file is in the same directory as
                            				the first one, and the files are named according to this convention:
 
-    									* Mate 1. “SampleId + _1 + [.fastq|.fq|.txt] (+ .gz if compressed)”
-    									* Mate 2. “SampleId + _2 + [.fastq|.fq|.txt] (+ .gz if compressed)”
+    							* Mate 1. “SampleId + _1 + [.fastq|.fq|.txt] (+ .gz if compressed)”
+    							* Mate 2. “SampleId + _2 + [.fastq|.fq|.txt] (+ .gz if compressed)”
     									
                            				E.g: sample1_1.fastq.gz and sample1_2.fastq.gz.
 	
@@ -58,14 +58,14 @@ USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
 
 ** [OPTIONS] can be:
 
-General:
+* General:
 	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).   
+	--log				<string>	Log level [error | warn | info | debug]. Default warn.
+	-t|--threads			<INTEGER>	Number of threads to use. Default 1.
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
-	--tmp-dir			<PATH>		Temporary directory. Default /tmp.
-	-t|--threads			<PATH>		Number of threads to use. Default 1.
-	--log			<PATH>		Log level [error | warn | info | debug]. Default warn.
-	--no-cleanup	<FLAG>		Keep intermediate files. 		
-	--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
+	--tmp-dir			<PATH>		Temporary directory. Default /tmp.	
+	--no-cleanup			<FLAG>		Keep intermediate files. 		
+	--dry				<FLAG>		Test the pipeline. Writes the commands to the standard output.
 	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
 	-f|--full-help			<FLAG>		Display full usage information. 
 		
@@ -77,20 +77,24 @@ help
 function usage_long
 {
 cat <<help
-Reads information:
-	--max-read-length		<NUMBER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
+* Reads information:
+	--max-read-length		<INTEGER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	-l|--seq-library 		<STRING> 	Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED].
                         				UNSTRANDED for not strand-specific protocol (unstranded data) and the others 
+* Mapping parameters
                         				for the different types of strand-specific protocols (stranded data).
-Mapping parameters:
-	-M|--mism-contiguous-map	<NUMBER>	Maximum number of mismatches for the contiguous mapping steps with the GEM mapper. Default 4?. Not working
-	-m|--mism-split-map		<NUMBER>	Maximum number of mismatches for the segmental mapping steps with the GEM rna-mapper. Default 4?.	Not working
-	-c|--consensus-splice-sites	<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
-                                 			(list of couples of donor/acceptor splice site consensus sequences, default='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
-	--min-split-size		<NUMBER>	Minimum split size for the segmental mapping steps. Default 15.
+  First mapping parameters:
+	-C|--consensus-ss-fm		<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
+                                 			List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
+	-S|--min-split-size-fm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--stats				<FLAG>		Enable mapping statistics. Default disabled.
+
+  Second Mapping parameters:
+	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
+                                 			List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
+	-s|--min-split-size-sm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	
-Chimeric junction filter:
+* Chimeric junction filter:
 	--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
 							i.e. "1,2,75:50;", where:
 											
@@ -191,7 +195,7 @@ function copyToTmp {
 # Function 8. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "i:g:a:e:l:o:t:hfsM:m:c:" -l "input:,genome-index:,annotation:,sample-id:,output-dir:,tmp-dir:,threads:,log:,dry,help,full-help,no-cleanup,mis-contiguous-map:,mism-split-map:,consensus-splice-sites,max-read-length:,seq-library:,max-read-length:,min-split-size:,filter-chimeras:,similarity-gene-pairs:,stats" \
+ARGS=`$getopt -o "i:g:a:e:t:o:hfl:C:S:c:s:" -l "input:,genome-index:,annotation:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,stats,consensus-ss-sm:,min-split-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -206,6 +210,8 @@ eval set -- "$ARGS"
 while true;
 do
   case "$1" in
+   	
+   	## MANDATORY ARGUMENTS
     -i|--input)
       if [ -n "$2" ];
       then
@@ -226,14 +232,65 @@ do
         annot=$2
       fi
       shift 2;;
-        
+    
+    ## OPTIONS
+    
+	# General:
     -e|--sample-id)
        if [ -n "$2" ];
        then
          lid=$2
        fi
        shift 2;;
-      
+    
+    --log)
+       if [ -n $2 ];
+       then
+         logLevel=$2
+       fi
+       shift 2;;
+	
+    -t|--threads)
+       if [ -n $2 ];
+       then
+      	 threads=$2
+       fi
+       shift 2;;
+       	 
+	-o|--output-dir)
+       if [ -n $2 ];
+       then
+       	 outDir=$2
+       fi
+       shift 2;;
+    
+    --tmp-dir)
+      	if [ -n $2 ];
+      	then
+        	TMPDIR=$2
+      	fi
+      	shift 2;;
+ 	
+	--no-cleanup)
+	    cleanup=0;
+	    shift;;   	
+ 
+	--dry)
+	    ECHO="echo "
+	    shift;;
+
+	-h|--help)
+	    usage
+	    exit 1
+	    shift;;
+    
+	-f|--full-help)
+	    usage
+	    usage_long
+	    exit 1
+	    shift;;	
+    
+    # Reads information:
     --max-read-length)
       if [ -n $2 ];
       then
@@ -247,39 +304,42 @@ do
         readDirectionality=$2
       fi
       shift 2;;
-
-	 -M|--mism-contiguous-map)
-       if [ -n "$2" ];
-       then
-         mism=$2
-       fi
-       shift 2;;
-	
-	-m|--mism-split-map)
+     
+    # First mapping parameters: 
+    -C|--consensus-ss-fm)
 	    if [ -n "$2" ];
 	    then
-		mismSplit=$2
+			spliceSitesFM=$2
 	    fi
 	    shift 2;;
-       
-	--min-split-size)
-	    if [ -n "$2" ];
+   
+    -S|--min-split-size-fm)
+    	if [ -n "$2" ];
 	    then
-			splitSize=$2
-	    fi
-	    shift 2;;   
-	
-	-c|--consensus-splice-sites)
-	    if [ -n "$2" ];
-	    then
-			spliceSites=$2
+			splitSizeFM=$2
 	    fi
 	    shift 2;;
 	
 	--stats)
 	    mapStats="1"  
 	    shift ;;
-
+  
+	# Second mapping parameters:    	
+	-c|--consensus-ss-sm)
+	    if [ -n "$2" ];
+	    then
+			spliceSitesSM=$2
+	    fi
+	    shift 2;;
+	
+	-s|--min-split-size-sm)
+    	if [ -n "$2" ];
+	    then
+			splitSizeSM=$2
+	    fi
+	    shift 2;;
+	
+	# Chimeric junction filters:
 	--filter-chimeras)
 	    if [ -n $2 ];
 	    then
@@ -293,61 +353,7 @@ do
 			simGnPairs="$2"
 	    fi
 	    shift 2;;
-
-	-o|--output-dir)
-    	if [ -n $2 ];
-      	then
-        	outDir=$2
-      	fi
-      	shift 2;;
       
-    --tmp-dir)
-      	if [ -n $2 ];
-      	then
-        	TMPDIR=$2
-      	fi
-      	shift 2;;
- 
-    -t|--threads)
-      	if [ -n $2 ];
-    	then
-       		threads=$2
-      	fi
-      	shift 2;;
- 
-    --log)
-      	if [ -n $2 ];
-      	then
-        	logLevel=$2
-      	fi
-      	shift 2;;
-      	 
-	-t|--threads)
-	    if [ -n $2 ];
-	    then
-			threads=$2
-	    fi
-	    shift 2;;
-	
-	--dry)
-	    ECHO="echo "
-	    shift;;
-	
-	-h|--help)
-	    usage
-	    exit 1
-	    shift;;
-    
-	-f|--full-help)
-	    usage
-	    usage_long
-	    exit 1
-	    shift;;
-      
-	--no-cleanup)
-	    cleanup=0;
-	    shift;;  
-	
 	--)
 	    shift
 	    break;;  
@@ -381,17 +387,92 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 # 3. Check input variables 
 ##########################
 
-# Mandatory arguments
-#####################
+## Mandatory arguments
+## ~~~~~~~~~~~~~~~~~~~
 if [[ ! -e $input ]]; then log "Your input file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 if [[ `basename ${input##*_}` != @(1.fastq|1.fq|1.txt|1.fastq.gz|1.fq.gz|1.txt.gz) ]]; then log "Please check the name of your FASTQ file follows the convention \"SampleId+_1+[.fastq|.fq|.txt] (+ .gz if compressed)\n" "ERROR" >&2; usage; exit -1; fi
 if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usage; exit -1; fi
 annName=`basename $annot`
 
-# Optional arguments
-#####################
+## Optional arguments
+## ~~~~~~~~~~~~~~~~~~
 
+# General
+# ~~~~~~~
+# Sample id
+if [ ! -n "$lid" ] 
+then 			
+    lid=`basename ${input%_1.*}`;		# Default
+fi
+
+# Log level
+if [[ "$logLevel" == "" ]]; 
+then 
+	logLevel='warn'; 
+else	
+	if [[ "$logLevel" != @(error|warn|info|debug) ]];
+	then
+		log "Please specify a proper log status [error |warn | info | debug]. Option -l|--log\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
+# Number of threads
+if [[ "$threads" == "" ]]; 
+then 
+	threads='1'; 
+else
+	if [[ ! "$threads" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper threading value. Option -t|--threads\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
+if [[ "$threads" == "1" ]]; 
+then 
+	hthreads='1'; 
+else 
+	hthreads=$((threads/2)); 
+fi	
+
+# Output directory
+if [[ "$outDir" == "" ]]; 
+then 
+	outDir=${SGE_O_WORKDIR-$PWD};
+else
+	if [[ ! -e "$outDir" ]]; 
+	then
+		log "Your output directory does not exist. Option -o|--output-dir\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi	
+fi
+
+# Temporary directory
+if [[ "$TMPDIR" == "" ]]; 
+then 
+	TMPDIR='/tmp'; 
+else	
+	if [[ ! -e "$TMPDIR" ]]; 
+	then
+		log "Your temporary directory does not exist. Option --tmp-dir\n" "ERROR" >&2;
+		usage; 
+		exit -1; 
+	fi
+fi
+
+# Clean up
+if [[ "$cleanup" == "" ]]; 
+then 
+	cleanup='1'; 
+fi	
+
+# Reads information:
+# ~~~~~~~~~~~~~~~~~~
 # Maximum read length
 
 if [[ "$maxReadLength" == "" ]]; 
@@ -425,6 +506,8 @@ else
 	readDirectionality="NOT DEFINED"
 fi 	
 
+# First mapping parameters:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~
 # Number of mismatches contiguous mapping
 if [[ "$mism" == "" ]]; 
 then 
@@ -439,21 +522,35 @@ else
 	fi
 fi
 
-# Consensus splice sites
-if [[ "$spliceSites" == "" ]]; 
+# Consensus splice sites for the segmental mapping
+if [[ "$spliceSitesFM" == "" ]]; 
 then 
-	spliceSites="GT+AG,GC+AG,ATATC+A.,GTATC+AT"; 
+	spliceSitesFM="GT+AG,GC+AG,ATATC+A.,GTATC+AT"; 
 else			
-	if [[ ! "$spliceSites" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
+	if [[ ! "$spliceSitesFM" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
 	then
-		log "Please specify a proper consensus splice site sequence for the first mapping. Option -c|--consensus-splice-sites\n" "ERROR" >&2;
+		log "Please specify a proper consensus splice site sequence for the first segmental mapping. Option -C|--consensus-ss-fm\n" "ERROR" >&2;
 		usage; 
 		usage_long;
 		exit -1; 
 	fi
 fi
 
-# Mapping statistics
+# Minimum split size for the segmental mapping
+if [[ "$splitSizeFM" == "" ]];
+then 
+	splitSizeFM='15'; 
+else
+	if [[ ! "$splitSizeFM" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper minimum split size for the first segmental mapping step. Option -S|--min-split-size-fm\n" "ERROR" >&2;
+		usage; 
+		usage_long;
+		exit -1; 
+	fi
+fi
+
+# First mapping statistics
 if [[ "$mapStats" != "1" ]]; 
 then 
 	mapStats=0;
@@ -461,20 +558,38 @@ then
 	count="--no-count"; 
 fi
 
-# Minimum split size for the segmental mappings
-if [[ "$splitSize" == "" ]];
+# Second mapping parameters:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Consensus splice sites for the segmental mapping
+if [[ "$spliceSitesSM" == "" ]]; 
 then 
-	splitSize='15'; 
-else
-	if [[ ! "$splitSize" =~ ^[0-9]+$ ]]; 
+	spliceSitesSM="GT+AG"; 
+else			
+	if [[ ! "$spliceSitesSM" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
 	then
-		log "Please specify a proper minimum split size for the segmental mapping steps. Option --min-split-size\n" "ERROR" >&2;
+		log "Please specify a proper consensus splice site sequence for the second segmental mapping. Option -c|--consensus-ss-sm\n" "ERROR" >&2;
 		usage; 
 		usage_long;
 		exit -1; 
 	fi
 fi
 
+# Minimum split size for the segmental mapping
+if [[ "$splitSizeSM" == "" ]];
+then 
+	splitSizeSM='15'; 
+else
+	if [[ ! "$splitSizeSM" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper minimum split size for the second segmental mapping step. Option -s|--min-split-size-sm\n" "ERROR" >&2;
+		usage; 
+		usage_long;
+		exit -1; 
+	fi
+fi
+
+# Chimeric junction filters:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Filtering module configuration	
 if [[ "$filterConf" == "" ]]; 
 then 			
@@ -500,76 +615,6 @@ then
 	exit -1; 
 fi
 
-# Output directory
-if [[ "$outDir" == "" ]]; 
-then 
-	outDir=${SGE_O_WORKDIR-$PWD};
-else
-	if [[ ! -e "$outDir" ]]; 
-	then
-		log "Your output directory does not exist. Option -o|--output-dir\n" "ERROR" >&2;
-		usage; 
-		exit -1; 
-	fi	
-fi
-
-# Library id 
-if [ ! -n "$lid" ] 
-then 			
-    lid=`basename ${input%_1.*}`;		# Default
-fi
-
-# Temporary directory
-if [[ "$TMPDIR" == "" ]]; 
-then 
-	TMPDIR='/tmp'; 
-else	
-	if [[ ! -e "$TMPDIR" ]]; 
-	then
-		log "Your temporary directory does not exist. Option --tmp-dir\n" "ERROR" >&2;
-		usage; 
-		exit -1; 
-	fi
-fi
-
-# Number of threads
-if [[ "$threads" == "" ]]; 
-then 
-	threads='1'; 
-else
-	if [[ ! "$threads" =~ ^[0-9]+$ ]]; 
-	then
-		log "Please specify a proper threading value. Option -t|--threads\n" "ERROR" >&2;
-		usage; 
-		exit -1; 
-	fi
-fi
-
-if [[ "$threads" == "1" ]]; 
-then 
-	hthreads='1'; 
-else 
-	hthreads=$((threads/2)); 
-fi	
-
-# Log level
-if [[ "$logLevel" == "" ]]; 
-then 
-	logLevel='warn'; 
-else	
-	if [[ "$logLevel" != @(error|warn|info|debug) ]];
-	then
-		log "Please specify a proper log status [error |warn | info | debug]. Option -l|--log\n" "ERROR" >&2;
-		usage; 
-		exit -1; 
-	fi
-fi
-
-# Clean up
-if [[ "$cleanup" == "" ]]; 
-then 
-	cleanup='1'; 
-fi	
 
 # 4. Directories
 ################
@@ -636,11 +681,15 @@ printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
 printf "  %-34s %s\n" "Maximum read length:" "$maxReadLength"
 printf "  %-34s %s\n\n" "Sample identifier:" "$lid"
 
-printf "  %-34s %s\n" "***** Mapping *****"
+printf "  %-34s %s\n" "***** First mapping *****"
 printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
-printf "  %-34s %s\n" "Consensus-splice-sites for the first mapping:" "$spliceSites"
-printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSize"
+printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesFM"
+printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeFM"
 printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
+
+printf "  %-34s %s\n" "***** Second mapping *****"
+printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesSM"
+printf "  %-34s %s\n\n" "Minimum split size for segmental mapping:" "$splitSizeSM"
 
 printf "  %-34s %s\n" "***** Filters *****"
 printf "  %-34s %s\n" "Chimeric junctions filtering module configuration:" "$filterConf"
@@ -699,7 +748,7 @@ if [ ! -s $bamFirstMapping ]; then
     	copyToTmp "index,annotation,t-index,keys"
 
     	log "Running gemtools rna pipeline on ${lid}..." $step
-    	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --max-read-length $maxReadLength --max-intron-length 300000000 --junction-consensus $spliceSites -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
+    	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --junction-consensus $spliceSitesFM -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
 		log "done\n"
     	if [ -s $lid.map.gz ]; then
         	log "Computing md5sum for map file..." $step
@@ -898,8 +947,8 @@ else
     printHeader "Unmapped reads file is present...skipping extracting unmapped reads step"
 fi
 
-# 4) map the unmapped reads with the rna mapper binary (!!!parameters to think!!!): get a gem map file
-######################################################################################################
+# 4) map the unmapped reads with the rna mapper binary: get a gem map file 
+###########################################################################
 #   of "atypical" mappings
 ##########################
 # output is: 
@@ -913,7 +962,7 @@ if [ ! -s $gemSecondMapping ]; then
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
 	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads -c 'GT+AG' --min-split-size $splitSize > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
+	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads --min-split-size $splitSizeSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
 	log "done\n" 
 	if [ -s $gemSecondMapping ]; then
     	log "Computing md5sum for the gem file with the second mappings..." $step
@@ -1025,7 +1074,7 @@ if [ ! -s $chimJunctions ]; then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
-	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $index $annot $outDir/Chimsplice $stranded $spliceSites > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $index $annot $outDir/Chimsplice $stranded $spliceSitesFM > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -s $chimJunctions ]; then
         log "Error running chimsplice\n" "ERROR" 
