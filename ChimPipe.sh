@@ -359,7 +359,7 @@ done
 ############################
 
 # ChimPipe version 
-version=V0.8.3
+version=V0.8.4
 
 # Enable extended pattern matching 
 shopt -s extglob
@@ -1136,7 +1136,7 @@ fi
 #############################################################################################
 # - $outDir/chimeric_junctions_candidates.txt
 
-chimJunctionsCandidates=$outDir/chimeric_junctions_candidates.txt
+chimJunctionsCandidates=$outDir/chimeric_junctions_candidates_${lid}.txt
 
 if [ ! -s "$chimJunctionsCandidates" ]
 then		
@@ -1164,7 +1164,7 @@ fi
 ################################################################################
 # - $outDir/chimeric_junctions.txt
 
-chimJunctions=$outDir/chimeric_junctions.txt
+chimJunctions=$outDir/chimeric_junctions_${lid}.txt
 
 if [ ! -s "$chimJunctions" ]; then
 	step="FILTERING MODULE"
