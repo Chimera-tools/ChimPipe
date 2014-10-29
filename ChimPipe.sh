@@ -36,16 +36,20 @@ cat <<help
 	
 *** ChimPipe version $version ***
 
-Execute ChimPipe (from paired-end RNA-Seq reads to chimeric junctions) on one RNA-Seq dataset (sample).
+Execute ChimPipe (from Illumina paired-end RNA-Seq reads to chimeric junctions) on one RNA-Seq dataset (sample).
 	
 USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
 
 ** Mandatory arguments:
 	
-	-i|--input			<INPUT_FILE>	First mate sequencing reads. ChimPipe deals with paired-end data.
+	-i|--input			<INPUT_FILE>	First mate sequencing reads. ChimPipe deals with paired-end RNA-seq data.
                           				Please make sure the second mate file is in the same directory as
-                           				the first one, and the files are named according to the same convention.
-                           				E.g: the second mate of "reads_1.fastq" should be "reads_2.fastq".
+                           				the first one, and the files are named according to this convention:
+
+    									* Mate 1. “SampleId + _1 + [.fastq|.fq|.txt] (+ .gz if compressed)”
+    									* Mate 2. “SampleId + _2 + [.fastq|.fq|.txt] (+ .gz if compressed)”
+    									
+                           				E.g: sample1_1.fastq.gz and sample1_2.fastq.gz.
 	
 	-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
 	
@@ -59,7 +63,7 @@ General:
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.
 	-t|--threads			<PATH>		Number of threads to use. Default 1.
-	--log			<PATH>		Log level [error |warn | info | debug]. Default info.
+	--log			<PATH>		Log level [error | warn | info | debug]. Default warn.
 	--no-cleanup	<FLAG>		Keep intermediate files. 		
 	--dry				<FLAG>		Test the pipeline. Writes the command to the standard output.
 	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
@@ -551,7 +555,7 @@ fi
 # Log level
 if [[ "$logLevel" == "" ]]; 
 then 
-	logLevel='info'; 
+	logLevel='warn'; 
 else	
 	if [[ "$logLevel" != @(error|warn|info|debug) ]];
 	then
@@ -649,7 +653,6 @@ printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
 printf "  %-34s %s\n\n" "Clean up (1:enabled, 0:disabled):" "$cleanup"
 
-exit 1
 ## START CHIMPIPE
 #################
 header="Executing ChimPipe $version for $lid"
