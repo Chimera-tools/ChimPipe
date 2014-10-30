@@ -15,7 +15,7 @@ Mandatory:
 * :ref:`Paired-end (PE) RNA-seq reads <input-reads>`
 * :ref:`Genome index <input-genome-index>` 
 * :ref:`Genome annotation <input-annot>`
-* :ref:`Transcriptome annotation index <input-annot-index>`
+* :ref:`Transcriptome index <input-annot-index>`
 
 Optional:
 
@@ -86,11 +86,11 @@ ChimPipe also takes as input a genome annotation file in `GTF`_ format (includin
 
 .. _input-annot-index:
 
-Transcriptome annotation index
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-An indexed transcriptome annotation in GEM format has to be provided as input to ChimPipe in order to find reads spanning annotated splice junctions. 
+transcriptome index
+~~~~~~~~~~~~~~~~~~~
+An indexed transcriptome in GEM format has to be provided as input to ChimPipe in the same directory as the genome annotation GTF file, in order to find reads spanning annotated splice junctions. 
 
-We provide some **pre-generated transcriptome indices** for human, mouse and drosophila annotations in the :ref:`Downloads` section, however if your annotation is different, you just need to to run the *GEMtools transcriptome indexer* ((at ``ChimPipe/bin/gemtools-1.7.1-i3/gemtools``)) on your previously generated GEM indexed genome and your annotation in GTF format, as indicated below. 
+We provide some **pre-generated transcriptome indices** for human, mouse and drosophila annotations in the :ref:`Downloads` section, however if your genome annotation or your genome is different, you will need to to run the *GEMtools transcriptome indexer* ((at ``ChimPipe/bin/gemtools-1.7.1-i3/gemtools``)) on your previously generated GEM indexed genome and your annotation in GTF format, as indicated below. 
 
 .. code-block:: bash
 
@@ -106,59 +106,27 @@ It will produce 5 files in your current working directory:
 
 .. tip:: If your machine has more than one CPU it is recommended to run the indexer with multiple threads. Use the option ``-t <threads>``, where **threads** is the number of available CPUs. 
 
-.. warning:: The indexed transcriptome annotation index has to be placed in the same folder as the genome annotation to be used by ChimPipe.
+.. warning:: The transcriptome index has to be placed in the same folder as the genome annotation to be used by ChimPipe.
 
 .. _input-similarity:
 
-Gene pair similarity file (Optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-One of ChimPipe's steps to discard actefactual chimeras is to filter out those chimeric junctions connecting genes that encode transcripts with a high sequence homology. Although it is an optional filter, it is **strongly recommended**, since according to our benchmark it improves a lot the specificity with a minimal decrease on the sensitivity.  
-
-To enable this homology-based filtering, you only need to run ChimPipe with the option ``--similarity-gene-pairs <TEXT FILE>``, where **TEXT FILE** is a file containing the matrix with information about the sequence similarity between gene pairs. 
-
-You can download our **pre-generated matrices** por human, mouse and drosophila annotations from :ref:`Downloads` section or you can produce your own matrix with the script ``ChimPipe/src/bash/tools/similarity_bt_gnpairs.sh`` as follows:
-
-	$ bash similarity_bt_gnpairs.sh annot.gtf genome.gem
-
-Please check out our :ref:`FAQ <faq-similarity>` section for more information about how the script works. 
-	
-.. warning:: Make sure you run ChimPipe with a similarity matrix generated from the annotation and genome you are using.  
 
 Executing ChimPipe
 ==================
 
 1. Setting up the environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-As explained in the :ref:`installation` section, you need to have BEDtools and SAMtools installed on your system to execute ChimPipe, as well as blastn in case you want to produce your own gene pair similarity file (See **Gene pair similarity**). In case you do not have them, you can download and install them from their web pages. Once they are installed, you have to export the path to their binaries. 
+As explained in the :ref:`installation` section, you need to have BEDtools, SAMtools and Blast installed on your system to execute ChimPipe. In case you do not have them, you can download and install them from their web pages. Once they are installed, you have to export the path to their binaries. 
 
 Please check out our :ref:`FAQ <faq-dependencies>` section in case you have any problem.  
-
-2. Determining the quality offset of your dataset   
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The quality score (Q) measures the probability that a base is called incorrectly by the sequencing machine. Within your FASTQ files, they are represented in the fourth line of each read as an ASCII character string (each character corresponds to the Q score of a certain base in the sequencing read). The correspondence between each ASCII character and the Q score is based on some offset. This offset varies depending on the sequencing platform (Illumina machines from CASAVA v1.8 uses 33, while older ones use 64). 
-
-.. tip:: ChimPipe needs to know the offset of your RNA-seq data in order to run the mapping steps. If you do not have this information, a short script is provided to easily test it (see :ref:`FAQ <faq-offset>` section). 
-
-3. Determining the RNA-seq library type of your dataset 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Different protocols can be used to generate a RNA-seq library. There are also important differences between them that have to be taken into account in several steps of the chimera detection pipeline. However, ChimPipe can not determine the protocol used to produce your reads, so you need to supply this information with the option ``--read-directionality <library>``. Where **library** has to be one of those:
-
-* **NONE**. The protocol is not strand-specific (unstranded data). The information about from which strand the transcript is transcribed is not available. Default configuration.
-
-Strand-specific protocols (stranded data):
- 
-* **MATE1_SENSE**. Mates 1 are sequenced from the transcript sequence (they will map on the same strand as the transcript), and mates 2 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand). 
-* **MATE2_SENSE**. Mates 1 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand), and mates 2 are sequenced from the transcript sequence (they will map on the same strand as the transcript). 
 	
-.. tip:: In case you do not know the type of library, use the bash script provided with ChimPipe (see :ref:`FAQ <faq-library>` section) or ask your RNA-seq data provider.
-	
-4. Running ChimPipe
+2. Running ChimPipe
 ~~~~~~~~~~~~~~~~~~~
 Once you have generated the genome and the transcriptome indices, you know the quality offset and the library type of your PE RNA-seq reads, you can run ChimPipe as follows:
 
 .. code-block:: bash
 	
-	bash ChimPipe.sh -i reads_1.fastq -g genome.gem -a annotation.gtf -q 33 -l UNSTRANDED 
+	bash ChimPipe.sh -i reads_1.fastq -g genome.gem -a annotation.gtf 
 
 All these files and parameters given as input to ChimPipe are **mandatory arguments**. Please see bellow their descripion: 
 
@@ -174,30 +142,22 @@ All these files and parameters given as input to ChimPipe are **mandatory argume
 	-a|--annotation annotation.gtf – Reference genome annotation file in GTF format. The transcriptome 
 						index has to be in the same directory as the annotation. 
 								 
-	-q|--quality 33 – Quality offset of the FASTQ files [33 | 64 | ignore].
-
-	-l|--seq-library UNSTRANDED – Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED]. 
-				UNSTRANDED for not strand-specific protocol (unstranded data) and the others for 
-				the different types of strand-specific protocols (stranded data).
-		          
 **Optional arguments.** Please do ``ChimPipe.sh -h or --help`` to see a short help with the most used. You can also do ``ChimPipe.sh --full-help`` to see the full usage information. 
 
-.. tip:: If your machine has more than one CPU it is recommended to run ChimPipe with multiple threads. It will speed up the mapping steps a lot. Use the option ``-t|--threads <threads>``, where **threads** is the number of CPUs available. 
-
-.. tip:: It is strongly advisable to use the option ``--similarity-gene-pairs <TEXT FILE>`` to discard junctions connecting genes which encode transcripts with a high sequence homology, which are likely sequencing or mapping artefacts. Please check :ref:`Gene pair similarity file <input-similarity>` section above to learn how to produce the text file needed. 
+.. tip:: If your machine has more than one CPU it is recommended to run ChimPipe with multiple threads (at least 4). It will speed up the mapping steps a lot. Use the option ``-t|--threads <threads>``, where **threads** is the number of CPUs available. 
 
 .. note:: The pipeline is restartable. That means if ChimPipe fails at some point and you run it again, it will skip the already completed steps. You just need to make sure you remove the files generated in the step the pipeline failed. 
 
 Output
 ======
 
-By default, ChimPipe produces 3 files as output:
+By default, ChimPipe produces 3 output files:
 
 * :ref:`First mapping BAM file <output-bam>` 
 * :ref:`Second mapping MAP file <output-map>` 
 * :ref:`Chimeric junctions file <output-chimeras>` 
 
-.. tip:: If you want to keep intermediate files in your output run ChimPipe with the flag ``--no-cleanup``. 
+.. tip:: If you want to keep intermediate output files, run ChimPipe with the ``--no-cleanup`` option. 
 
 .. _output-bam:
 

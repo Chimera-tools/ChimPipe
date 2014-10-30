@@ -69,8 +69,8 @@ I case your FASTQ files do not meet this format you should modify the identifier
 
 .. _faq-similarity:
 
-How the script to compute gene pair similarity works?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+How does the script to compute gene pair similarity work?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This script will produce a matrix containing gene pair similarity information through 4 steps:
 
@@ -111,8 +111,9 @@ To export the path of bedtools, samtools and blast (if needed) binaries you just
 	
 .. _faq-offset:
 
+
 How can I know the quality offset of my RNA-seq reads?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We provide a bash script to detect the offset of your RNA-seq data. You can find it at ``ChimPipe/tools/detect.fq.qual.sh``.
 
@@ -122,6 +123,7 @@ We provide a bash script to detect the offset of your RNA-seq data. You can find
 	$ Offset 33
 
 .. _faq-library:
+
 	
 How can I know the RNA-seq library type?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -181,3 +183,23 @@ Strand-specific protocols (stranded data):
 .. _GEMtools RNA Pipeline Quickstart: http://gemtools.github.io/docs/rna_pipeline.html
 
 
+
+
+2. Determining the quality offset of your dataset   
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The quality score (Q) measures the probability that a base is called incorrectly by the sequencing machine. Within your FASTQ files, they are represented in the fourth line of each read as an ASCII character string (each character corresponds to the Q score of a certain base in the sequencing read). The correspondence between each ASCII character and the Q score is based on some offset. This offset varies depending on the sequencing platform (Illumina machines from CASAVA v1.8 uses 33, while older ones use 64). 
+
+.. tip:: ChimPipe needs to know the offset of your RNA-seq data in order to run the mapping steps. If you do not have this information, a short script is provided to easily test it (see :ref:`FAQ <faq-offset>` section). 
+
+3. Determining the RNA-seq library type of your dataset 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Different protocols can be used to generate a RNA-seq library. There are also important differences between them that have to be taken into account in several steps of the chimera detection pipeline. However, ChimPipe can not determine the protocol used to produce your reads, so you need to supply this information with the option ``--read-directionality <library>``. Where **library** has to be one of those:
+
+* **NONE**. The protocol is not strand-specific (unstranded data). The information about from which strand the transcript is transcribed is not available. Default configuration.
+
+Strand-specific protocols (stranded data):
+ 
+* **MATE1_SENSE**. Mates 1 are sequenced from the transcript sequence (they will map on the same strand as the transcript), and mates 2 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand). 
+* **MATE2_SENSE**. Mates 1 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand), and mates 2 are sequenced from the transcript sequence (they will map on the same strand as the transcript). 
+	
+.. tip:: In case you do not know the type of library, use the bash script provided with ChimPipe (see :ref:`FAQ <faq-library>` section) or ask your RNA-seq data provider.
