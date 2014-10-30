@@ -68,8 +68,22 @@ USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
 	--dry				<FLAG>		Test the pipeline. Writes the commands to the standard output.
 	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
 	-f|--full-help			<FLAG>		Display full usage information. 
-		
+
 help
+}
+
+
+function doc
+{
+cat <<help
+A complete documentation can also be found at: http://chimpipe.readthedocs.org/en/latest/index.html		
+help
+}
+
+function usagedoc
+{
+usage
+doc
 }
 
 # Function 2. Print stdout all the other options
@@ -77,7 +91,7 @@ help
 function usage_long
 {
 cat <<help
-* Reads information:
+* Read information:
 	--max-read-length		<INTEGER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	-l|--seq-library 		<STRING> 	Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED].
                         				UNSTRANDED for not strand-specific protocol (unstranded data) and the others 
@@ -111,6 +125,14 @@ cat <<help
 													
 help
 }
+
+function usagelongdoc
+{
+usage
+usage_long
+doc
+}
+
 
 # Function 3. Print stdout a section header for the string variable
 #####################################################################
@@ -280,13 +302,12 @@ do
 	    shift;;
 
 	-h|--help)
-	    usage
+	    usagedoc;
 	    exit 1
 	    shift;;
     
 	-f|--full-help)
-	    usage
-	    usage_long
+	    usagelongdoc;
 	    exit 1
 	    shift;;	
     
@@ -389,10 +410,10 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 
 ## Mandatory arguments
 ## ~~~~~~~~~~~~~~~~~~~
-if [[ ! -e $input ]]; then log "Your input file does not exist\n" "ERROR" >&2; usage; exit -1; fi
-if [[ `basename ${input##*_}` != @(1.fastq|1.fq|1.txt|1.fastq.gz|1.fq.gz|1.txt.gz) ]]; then log "Please check the name of your FASTQ file follows the convention \"SampleId+_1+[.fastq|.fq|.txt] (+ .gz if compressed)\n" "ERROR" >&2; usage; exit -1; fi
-if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usage; exit -1; fi
-if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usage; exit -1; fi
+if [[ ! -e $input ]]; then log "Your input file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
+if [[ `basename ${input##*_}` != @(1.fastq|1.fq|1.txt|1.fastq.gz|1.fq.gz|1.txt.gz) ]]; then log "Please check the name of your FASTQ file follows the convention \"SampleId+_1+[.fastq|.fq|.txt] (+ .gz if compressed)\n" "ERROR" >&2; usagedoc; exit -1; fi
+if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
+if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
 annName=`basename $annot`
 
 ## Optional arguments
@@ -414,7 +435,7 @@ else
 	if [[ "$logLevel" != @(error|warn|info|debug) ]];
 	then
 		log "Please specify a proper log status [error |warn | info | debug]. Option -l|--log\n" "ERROR" >&2;
-		usage; 
+		usagedoc;
 		exit -1; 
 	fi
 fi
@@ -427,7 +448,7 @@ else
 	if [[ ! "$threads" =~ ^[0-9]+$ ]]; 
 	then
 		log "Please specify a proper threading value. Option -t|--threads\n" "ERROR" >&2;
-		usage; 
+		usagedoc;
 		exit -1; 
 	fi
 fi
@@ -447,7 +468,7 @@ else
 	if [[ ! -e "$outDir" ]]; 
 	then
 		log "Your output directory does not exist. Option -o|--output-dir\n" "ERROR" >&2;
-		usage; 
+		usagedoc; 
 		exit -1; 
 	fi	
 fi
@@ -460,7 +481,7 @@ else
 	if [[ ! -e "$TMPDIR" ]]; 
 	then
 		log "Your temporary directory does not exist. Option --tmp-dir\n" "ERROR" >&2;
-		usage; 
+		usagedoc; 
 		exit -1; 
 	fi
 fi
@@ -482,8 +503,7 @@ else
 	if [[ ! "$maxReadLength" =~ ^[0-9]+$ ]]; 
 	then
 		log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
-		usage;
-		usage_long; 
+		usagelongdoc;
 		exit -1; 
 	fi
 fi
@@ -499,7 +519,7 @@ then
 		stranded=0;
 	else
 		log "Please specify a proper sequencing library [UNSTRANDED|MATE1_SENSE|MATE2_SENSE]\n" "ERROR" >&2;
-		usage; 
+		usagedoc; 
 		exit -1;	
 	fi
 else
@@ -516,8 +536,7 @@ else
 	if [[ ! "$mism" =~ ^[0-9]+$ ]]; 
 	then
 		log "Please specify a proper number of mismatches for contiguous mapping steps. Option -M|--mism-contiguous-map\n" "ERROR" >&2;
-		usage; 
-		usage_long;
+		usagelongdoc; 
 		exit -1; 
 	fi
 fi
@@ -530,8 +549,7 @@ else
 	if [[ ! "$spliceSitesFM" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
 	then
 		log "Please specify a proper consensus splice site sequence for the first segmental mapping. Option -C|--consensus-ss-fm\n" "ERROR" >&2;
-		usage; 
-		usage_long;
+		usagelongdoc;
 		exit -1; 
 	fi
 fi
@@ -544,8 +562,7 @@ else
 	if [[ ! "$splitSizeFM" =~ ^[0-9]+$ ]]; 
 	then
 		log "Please specify a proper minimum split size for the first segmental mapping step. Option -S|--min-split-size-fm\n" "ERROR" >&2;
-		usage; 
-		usage_long;
+		usagelongdoc; 
 		exit -1; 
 	fi
 fi
@@ -568,8 +585,7 @@ else
 	if [[ ! "$spliceSitesSM" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
 	then
 		log "Please specify a proper consensus splice site sequence for the second segmental mapping. Option -c|--consensus-ss-sm\n" "ERROR" >&2;
-		usage; 
-		usage_long;
+		usagelongdoc; 
 		exit -1; 
 	fi
 fi
@@ -582,8 +598,7 @@ else
 	if [[ ! "$splitSizeSM" =~ ^[0-9]+$ ]]; 
 	then
 		log "Please specify a proper minimum split size for the second segmental mapping step. Option -s|--min-split-size-sm\n" "ERROR" >&2;
-		usage; 
-		usage_long;
+		usagelongdoc; 
 		exit -1; 
 	fi
 fi
@@ -598,8 +613,7 @@ else
 	if [[ ! "$filterConf" =~ ^([0-9]+,[0-9]+,[0-9]{,3},[0-9]+;){1,2}$ ]]; 
 	then
 		log "Please check your filtering module configuration. Option --filter-chimeras\n" "ERROR" >&2; 
-		usage; 
-		usage_long;
+		usagelongdoc; 
 		exit -1;
 	fi
 fi
@@ -611,7 +625,7 @@ then
 elif [[ ! -s $simGnPairs ]]; 
 then 
 	log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; 
-	usage; 
+	usagelongdoc; 
 	exit -1; 
 fi
 
@@ -897,14 +911,12 @@ then
 	    stranded=0;
 	else
 	    log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-	    usage
-    	    usage_long
+	    usagelongdoc
 	    exit -1	
 	fi
     else
 	log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-	usage
-    	usage_long
+	usagelongdoc
 	exit -1	
     fi
     log "Sequencing library type: $readDirectionality\n" $step 
