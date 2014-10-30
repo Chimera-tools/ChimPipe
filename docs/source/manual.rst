@@ -86,9 +86,9 @@ ChimPipe also takes as input a genome annotation file in `GTF`_ format (includin
 
 .. _input-annot-index:
 
-transcriptome index
+Transcriptome index
 ~~~~~~~~~~~~~~~~~~~
-An indexed transcriptome in GEM format has to be provided as input to ChimPipe in the same directory as the genome annotation GTF file, in order to find reads spanning annotated splice junctions. 
+An transcriptome index in GEM format has to be provided as input to ChimPipe in the same directory as the genome annotation GTF file, in order to find reads spanning annotated splice junctions. 
 
 We provide some **pre-generated transcriptome indices** for human, mouse and drosophila annotations in the :ref:`Downloads` section, however if your genome annotation or your genome is different, you will need to to run the *GEMtools transcriptome indexer* ((at ``ChimPipe/bin/gemtools-1.7.1-i3/gemtools``)) on your previously generated GEM indexed genome and your annotation in GTF format, as indicated below. 
 
