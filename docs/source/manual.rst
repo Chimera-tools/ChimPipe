@@ -142,11 +142,11 @@ All these files and parameters given as input to ChimPipe are **mandatory argume
 	-a|--annotation annotation.gtf – Reference genome annotation file in GTF format. The transcriptome 
 						index has to be in the same directory as the annotation. 
 								 
-**Optional arguments.** Please do ``ChimPipe.sh -h or --help`` to see a short help with the most used. You can also do ``ChimPipe.sh --full-help`` to see the full usage information. 
+**Optional arguments.** Please do ``ChimPipe.sh -h or --help`` to see a short help with the main options. You can also do ``ChimPipe.sh --full-help`` to see the all the possible options. 
 
 .. tip:: If your machine has more than one CPU it is recommended to run ChimPipe with multiple threads (at least 4). It will speed up the mapping steps a lot. Use the option ``-t|--threads <threads>``, where **threads** is the number of CPUs available. 
 
-.. note:: The pipeline is restartable. That means if ChimPipe fails at some point and you run it again, it will skip the already completed steps. You just need to make sure you remove the files generated in the step the pipeline failed. 
+.. note:: The pipeline is restartable: this means that if ChimPipe fails and you run it again, it will skip the steps that have been already completed. You just need to make sure that you removed the files generated in the step where the pipeline failed. 
 
 Output
 ======
@@ -165,7 +165,7 @@ First mapping BAM file
 ~~~~~~~~~~~~~~~~~~~~~~
 `BAM`_ file containing the reads mapped in the genome, transcriptome and *de novo* transcriptome with the `GEMtools RNA-seq pipeline`_. 
 
-Many next-generation sequencing analysis tools work with this format, so it can be used to do very different analyses such as gene and transcript quantification or differential gene expression analysis.
+This is the standard format for next-generation sequencing, meaning that most analysis tools work with this format. The bam file produced can therefore be used to do other downstream analyses such as gene and transcript quantification or differential gene expression analysis.
 
 .. _BAM: http://samtools.github.io/hts-specs/SAMv1.pdf
 .. _GEMtools RNA-seq pipeline: http://gemtools.github.io/
