@@ -60,7 +60,7 @@ USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
 
 * General:
 	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).   
-	--log				<string>	Log level [error | warn | info | debug]. Default warn.
+	--log				<STRING>	Log level [error | warn | info | debug]. Default warn.
 	-t|--threads			<INTEGER>	Number of threads to use. Default 1.
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.	
@@ -94,20 +94,24 @@ cat <<help
 * Read information:
 	--max-read-length		<INTEGER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	-l|--seq-library 		<STRING> 	Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED].
-                        				UNSTRANDED for not strand-specific protocol (unstranded data) and the others 
+                        				UNSTRANDED for not strand-specific protocol (unstranded data) and the others for the different types 
+							of strand-specific protocols (stranded data).
 * Mapping parameters
-                        				for the different types of strand-specific protocols (stranded data).
+                        				
   First mapping parameters:
 	-C|--consensus-ss-fm		<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
                                  			List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
 	-S|--min-split-size-fm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
+	--refinement-step-size-fm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
+							A value of 0 disables it. Default 2. 
 	--stats				<FLAG>		Enable mapping statistics. Default disabled.
 
   Second Mapping parameters:
-	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
-                                 			List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
+	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
 	-s|--min-split-size-sm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
-	
+	--refinement-step-size-sm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
+							A value of 0 disables it. Default 2. 
+    
 * Chimeric junction filter:
 	--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
 							i.e. "1,2,75:50;", where:
@@ -217,7 +221,7 @@ function copyToTmp {
 # Function 8. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "i:g:a:e:t:o:hfl:C:S:c:s:" -l "input:,genome-index:,annotation:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,stats,consensus-ss-sm:,min-split-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "i:g:a:e:t:o:hfl:C:S:c:s:" -l "input:,genome-index:,annotation:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -341,9 +345,16 @@ do
 	    fi
 	    shift 2;;
 	
+	--refinement-step-size-fm)
+		if [ -n "$2" ];
+	    then
+			refinementFM=$2
+	    fi
+	    shift 2;;
+	
 	--stats)
 	    mapStats="1"  
-	    shift ;;
+	    shift;;
   
 	# Second mapping parameters:    	
 	-c|--consensus-ss-sm)
@@ -360,6 +371,13 @@ do
 	    fi
 	    shift 2;;
 	
+	--refinement-step-size-sm)
+		if [ -n "$2" ];
+	    then
+			refinementSM=$2
+	    fi
+	    shift 2;;
+	
 	# Chimeric junction filters:
 	--filter-chimeras)
 	    if [ -n $2 ];
@@ -373,7 +391,7 @@ do
 	    then
 			simGnPairs="$2"
 	    fi
-	    shift 2;;
+	    shift;;
       
 	--)
 	    shift
@@ -567,6 +585,19 @@ else
 	fi
 fi
 
+# Refinement size for the segmental mapping
+if [[ "$refinementFM" == "" ]];
+then 
+	refinementFM='2'; 
+else
+	if [[ ! "$refinementFM" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper refinement size for the first segmental mapping step. Option --refinement-step-size-fm\n" "ERROR" >&2;
+		usagelongdoc; 
+		exit -1; 
+	fi
+fi
+
 # First mapping statistics
 if [[ "$mapStats" != "1" ]]; 
 then 
@@ -598,6 +629,20 @@ else
 	if [[ ! "$splitSizeSM" =~ ^[0-9]+$ ]]; 
 	then
 		log "Please specify a proper minimum split size for the second segmental mapping step. Option -s|--min-split-size-sm\n" "ERROR" >&2;
+		usagelongdoc; 
+		exit -1; 
+	fi
+fi
+
+
+# Refinement size for the segmental mapping
+if [[ "$refinementSM" == "" ]];
+then 
+	refinementSM='2'; 
+else
+	if [[ ! "$refinementSM" =~ ^[0-9]+$ ]]; 
+	then
+		log "Please specify a proper refinement size for the second segmental mapping step. Option --refinement-step-size-sm\n" "ERROR" >&2;
 		usagelongdoc; 
 		exit -1; 
 	fi
@@ -699,11 +744,13 @@ printf "  %-34s %s\n" "***** First mapping *****"
 printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
 printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesFM"
 printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeFM"
+printf "  %-34s %s\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementFM"
 printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
 
 printf "  %-34s %s\n" "***** Second mapping *****"
 printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesSM"
-printf "  %-34s %s\n\n" "Minimum split size for segmental mapping:" "$splitSizeSM"
+printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeSM"
+printf "  %-34s %s\n\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementSM"
 
 printf "  %-34s %s\n" "***** Filters *****"
 printf "  %-34s %s\n" "Chimeric junctions filtering module configuration:" "$filterConf"
@@ -715,6 +762,8 @@ printf "  %-34s %s\n" "Temporary directory:" "$TMPDIR"
 printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
 printf "  %-34s %s\n\n" "Clean up (1:enabled, 0:disabled):" "$cleanup"
+
+exit 1
 
 ## START CHIMPIPE
 #################
@@ -762,7 +811,10 @@ if [ ! -s $bamFirstMapping ]; then
     	copyToTmp "index,annotation,t-index,keys"
 
     	log "Running gemtools rna pipeline on ${lid}..." $step
-    	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --junction-consensus $spliceSitesFM -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
+    	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
+		
+		
+		
 		log "done\n"
     	if [ -s $lid.map.gz ]; then
         	log "Computing md5sum for map file..." $step
@@ -974,7 +1026,7 @@ if [ ! -s $gemSecondMapping ]; then
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
 	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads --min-split-size $splitSizeSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
+	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
 	log "done\n" 
 	if [ -s $gemSecondMapping ]; then
     	log "Computing md5sum for the gem file with the second mappings..." $step
