@@ -404,7 +404,7 @@ done
 ############################
 
 # ChimPipe version 
-version=V0.8.4
+version=V0.8.5
 
 # Enable extended pattern matching 
 shopt -s extglob
@@ -763,7 +763,6 @@ printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
 printf "  %-34s %s\n\n" "Clean up (1:enabled, 0:disabled):" "$cleanup"
 
-exit 1
 
 ## START CHIMPIPE
 #################
