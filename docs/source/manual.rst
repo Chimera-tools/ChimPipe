@@ -19,6 +19,7 @@ Mandatory:
 
 Optional:
 
+
 * :ref:`Gene pair similarity file <input-similarity>`
 
 .. _input-reads:
@@ -109,6 +110,18 @@ It will produce 5 files in your current working directory:
 .. warning:: The transcriptome index has to be placed in the same folder as the genome annotation to be used by ChimPipe.
 
 .. _input-similarity:
+
+Gene pair similarity file (Optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+One of ChimPipe's filtering steps to discard actefactual chimeras is to filter out those chimeric junctions connecting genes that encode transcripts with a high sequence homology. To do this ChimPipe produces a matrix with information about the sequence similarity between annotated gene pairs. This step is done internally and takes around 1:30h. So, in case you want to run many samples with the same annotation, it is recommended to provide the matrix with the option ``--similarity-gene-pairs <MATRIX TEXT FILE>``, to avoid recomputing it for every sample. 
+
+You can download our **pre-generated matrices** por human, mouse and drosophila annotations from :ref:`Downloads` section or you can produce your own matrix with the script ``ChimPipe/src/bash/similarity_bt_gnpairs.sh`` as follows:
+
+        $ bash similarity_bt_gnpairs.sh annot.gtf genome.gem
+
+Please check out our :ref:`FAQ <faq-similarity>` section for more information about how the script works. 
+
+.. warning:: Make sure you run ChimPipe with a similarity matrix generated from the annotation and genome you are using.  
 
 
 Executing ChimPipe

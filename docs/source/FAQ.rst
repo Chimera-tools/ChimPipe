@@ -4,6 +4,30 @@
 FAQ 
 ====
 
+.. _faq-offset:
+
+Does ChimPipe considers the reads quality for the mapping step? 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The quality score (Q) measures the probability that a base is called incorrectly by the sequencing machine. Within your FASTQ files, they are represented in the fourth line of each read as an ASCII character string (each character corresponds to the Q score of a certain base in the sequencing read). The correspondence between each ASCII character and the Q score is based on some offset. This offset varies depending on the sequencing platform (Illumina machines from CASAVA v1.8 uses 33, while older ones use 64). 
+
+Yes, ChimPipe **deals with both 33 and 64** quality encodings. It will automatically detect it from your reads, so you do not need to specify it as a parameter. 
+
+
+.. _faq-library:
+
+Which sequencing library protocols are supported?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Different protocols can be used to generate a RNA-seq library. Currently, ChimPipe can handle data generated with the following protocols:
+
+* Non strand-specific protocols. (unstranded data). The information about from which strand the transcript is transcribed is not available. 
+
+* Strand-specific protocols (stranded data):
+ 
+	* **MATE1_SENSE**. Mates 1 are sequenced from the transcript sequence (they will map on the same strand as the transcript), and mates 2 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand). 
+	* **MATE2_SENSE**. Mates 1 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand), and mates 2 are sequenced from the transcript sequence (they will map on the same strand as the transcript). 
+	
+ChimPipe is able to infer the protocol used to produce your data. To do it, it takes a subset of 1M of mapped reads and compares the mapping strand with the strand of the annotated gene where they map. OptionaLly, you can supply this information and skip this step with the option ``-l|--seq-library <library>``.
+
 .. _faq-reads:
 
 Read identifier format
@@ -67,8 +91,22 @@ I case your FASTQ files do not meet this format you should modify the identifier
 
 	$ # Finally, I apply the same procedure for the mate 2..
 
-.. _faq-similarity:
+.. _faq-dependencies:
 
+How can I export the path to the dependencies?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To export the path of bedtools, samtools and blast (if needed) binaries you just need to type:
+
+.. code-block:: bash
+
+	
+	$ export PATH=<BEDTOOLS_BINARIES_PATH>:<SAMTOOLS_BINARIES_PATH><BLAST_BINARIES_PATH>:$PATH
+	$ # E.g. export bedtools and samtools on my system
+	$ export PATH=/users/rg/brodriguez/bin/bedtools2-2.20.1/bin:/users/rg/brodriguez/bin/samtools-0.1.19:$PATH
+		
+
+.. _faq-similarity:
 How does the script to compute gene pair similarity work?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -91,115 +129,10 @@ This script will produce a matrix containing gene pair similarity information th
 	7. Trancript A exonic length
 	8. Transcript B exonic length
 
+Note that is expect BLAST binaries to be in your PATH.  
+
 **Example** 
 
 ENSG00000000003.10 ENSG00000003402.15 91.43 70 ENST00000373020.4 ENST00000309955.3 2206 14672
 
-.. _faq-dependencies:
 
-How can I export the path to the dependencies?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To export the path of bedtools, samtools and blast (if needed) binaries you just need to type:
-
-.. code-block:: bash
-
-	
-	$ export PATH=<BEDTOOLS_BINARIES_PATH>:<SAMTOOLS_BINARIES_PATH><BLAST_BINARIES_PATH>:$PATH
-	$ # E.g. export bedtools and samtools on my system
-	$ export PATH=/users/rg/brodriguez/bin/bedtools2-2.20.1/bin:/users/rg/brodriguez/bin/samtools-0.1.19:$PATH
-	
-.. _faq-offset:
-
-
-How can I know the quality offset of my RNA-seq reads?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We provide a bash script to detect the offset of your RNA-seq data. You can find it at ``ChimPipe/tools/detect.fq.qual.sh``.
-
-.. code-block:: bash
-
-	$ bash detect.fq.qual.sh reads_1.fastq
-	$ Offset 33
-
-.. _faq-library:
-
-	
-How can I know the RNA-seq library type?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We supply a bash script to infer the protocol used to produce the sequencing library from a subset of mapped read in BAM format. It is at ``ChimPipe/tools/infer_exp.sh``. You can proceed as follow:
-
-.. code-block:: bash
-
-	$ # 1) First you need to extract and map a subset of read pairs (E.g 1000 pairs)
-	$ head -4000 reads_1.fastq > reads.subset_1.fastq
-	$ head -4000 reads_2.fastq > reads.subset_2.fastq
-	$ # 2) Map the reads with the gemtools rna-pipeline (at `ChimPipe/bin/gemtools-1.7.1-i3/gemtools`)	
-	$ gemtools rna-pipeline -f reads.subset_1.fastq reads.subset_2.fastq -i genome.gem -a annotation.gtf -q 33 
-	$ # Note: you also need your transcriptome index in the same directory as the annotation  
-	$ # 3) Run our script with the BAM file generated and the annotation used for the mapping step.
-	$ bash infer_exp.sh annotation.gtf reads_subset.bam
-	$ bash infer_exp.sh annotation.gtf reads_subset.bam
-
-This script will produce an output like this:
-
-.. code-block:: bash
-
-	Creating the reference gene model in bed format
-
-	Inferring experiment
-	Reading reference gene model gen10.long.bed ... Done
-	Loading SAM/BAM file ...  Total 200000 usable reads were sampled
-
-	This is PairEnd Data
-	Fraction of reads explained by "1++,1--,2+-,2-+": 0.0135 
-	Fraction of reads explained by "1+-,1-+,2++,2--": 0.9866  
-	Fraction of reads explained by other combinations: 0.0000
-	Removing temporary files
-	DONE
-
-The three rows starting with "Fraction of reads explained by.." are the ones giving information regarding the library. They contain several strings of three characters, i.e. 1+-, where:
-
-* Character 1. 1 and 2 are mate1 and mate2 respectively. 
-* Character 2. + and - is the strand where the read maps. 
-* Character 3. + and - is the strand where the gene in which the read overlaps is annotated. 
-
-You can apply the following rules to infer the used library from this information:
-
-* **NONE**. Not strand-specific protocol (unstranded data). Fraction of reads explained by "1++,1--,2+-,2-+" and "1+-,1-+,2++,2--" close to 0.5000 in both cases. 
-
-Strand-specific protocols (stranded data):
- 
-* **MATE1_SENSE**. Fraction of reads explained by "1++,1--,2+-,2-+" close to 1.0000. 
-* **MATE2_SENSE**. Fraction of reads explained by "1+-,1-+,2++,2--" close to 1.0000.
-
-.. note:: This script makes use of a tool from the `RSeQC package`_. So, you should have RSeQC installed in your system to run the script. We plan to recode it soon to use BEDtools instead of RSeQC and to avoid having an additional dependency.  
-
-.. _RSeQC package: http://rseqc.sourceforge.net/.
-
-.. tip:: In case you have any problem to map the subset of reads you can check the `GEMtools RNA Pipeline Quickstart`_ for more details. 
-
-.. _GEMtools RNA Pipeline Quickstart: http://gemtools.github.io/docs/rna_pipeline.html
-
-
-
-
-2. Determining the quality offset of your dataset   
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The quality score (Q) measures the probability that a base is called incorrectly by the sequencing machine. Within your FASTQ files, they are represented in the fourth line of each read as an ASCII character string (each character corresponds to the Q score of a certain base in the sequencing read). The correspondence between each ASCII character and the Q score is based on some offset. This offset varies depending on the sequencing platform (Illumina machines from CASAVA v1.8 uses 33, while older ones use 64). 
-
-.. tip:: ChimPipe needs to know the offset of your RNA-seq data in order to run the mapping steps. If you do not have this information, a short script is provided to easily test it (see :ref:`FAQ <faq-offset>` section). 
-
-3. Determining the RNA-seq library type of your dataset 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Different protocols can be used to generate a RNA-seq library. There are also important differences between them that have to be taken into account in several steps of the chimera detection pipeline. However, ChimPipe can not determine the protocol used to produce your reads, so you need to supply this information with the option ``--read-directionality <library>``. Where **library** has to be one of those:
-
-* **NONE**. The protocol is not strand-specific (unstranded data). The information about from which strand the transcript is transcribed is not available. Default configuration.
-
-Strand-specific protocols (stranded data):
- 
-* **MATE1_SENSE**. Mates 1 are sequenced from the transcript sequence (they will map on the same strand as the transcript), and mates 2 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand). 
-* **MATE2_SENSE**. Mates 1 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand), and mates 2 are sequenced from the transcript sequence (they will map on the same strand as the transcript). 
-	
-.. tip:: In case you do not know the type of library, use the bash script provided with ChimPipe (see :ref:`FAQ <faq-library>` section) or ask your RNA-seq data provider.
