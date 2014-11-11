@@ -36,7 +36,7 @@ cat <<help
 	
 *** ChimPipe version $version ***
 
-Execute ChimPipe (from Illumina paired-end RNA-Seq reads to chimeric junctions) on one RNA-Seq dataset (sample).
+Execute ChimPipe (from Illumina paired-end RNA-Seq reads to chimeric junctions) on one RNA-seq dataset (sample).
 	
 USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
 
@@ -67,7 +67,7 @@ USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
 	--no-cleanup			<FLAG>		Keep intermediate files. 		
 	--dry				<FLAG>		Test the pipeline. Writes the commands to the standard output.
 	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
-	-f|--full-help			<FLAG>		Display full usage information. 
+	-f|--full-help			<FLAG>		Display full usage information with additional options. 
 
 help
 }
@@ -76,7 +76,7 @@ help
 function doc
 {
 cat <<help
-A complete documentation can also be found at: http://chimpipe.readthedocs.org/en/latest/index.html		
+A complete documentation for ChimPipe can be found at: http://chimpipe.readthedocs.org/en/latest/index.html		
 help
 }
 
@@ -334,28 +334,28 @@ do
     -C|--consensus-ss-fm)
 	    if [ -n "$2" ];
 	    then
-			spliceSitesFM=$2
+		spliceSitesFM=$2
 	    fi
 	    shift 2;;
    
     -S|--min-split-size-fm)
     	if [ -n "$2" ];
 	    then
-			splitSizeFM=$2
+	    splitSizeFM=$2
 	    fi
 	    shift 2;;
 	
 	--refinement-step-size-fm)
-		if [ -n "$2" ];
-	    then
-			refinementFM=$2
-	    fi
-	    shift 2;;
-	
-	--stats)
-	    mapStats="1"  
-	    shift;;
-  
+	  if [ -n "$2" ];
+	  then
+	      refinementFM=$2
+	  fi
+	  shift 2;;
+      
+      --stats)
+	  mapStats="1"  
+	  shift;;
+      
 	# Second mapping parameters:    	
 	-c|--consensus-ss-sm)
 	    if [ -n "$2" ];
@@ -367,14 +367,14 @@ do
 	-s|--min-split-size-sm)
     	if [ -n "$2" ];
 	    then
-			splitSizeSM=$2
-	    fi
+	    splitSizeSM=$2
+	fi
 	    shift 2;;
 	
 	--refinement-step-size-sm)
 		if [ -n "$2" ];
 	    then
-			refinementSM=$2
+		    refinementSM=$2
 	    fi
 	    shift 2;;
 	
@@ -382,16 +382,16 @@ do
 	--filter-chimeras)
 	    if [ -n $2 ];
 	    then
-			filterConf="$2"
+		filterConf="$2"
 	    fi
 	    shift 2;;
 	
 	--similarity-gene-pairs)
 	    if [ -n $2 ];
 	    then
-			simGnPairs="$2"
+		simGnPairs="$2"
 	    fi
-	    shift;;
+	    shift 2;;
       
 	--)
 	    shift
@@ -450,7 +450,7 @@ if [[ "$logLevel" == "" ]];
 then 
 	logLevel='warn'; 
 else	
-	if [[ "$logLevel" != @(error|warn|info|debug) ]];
+	if [[" $logLevel" != @(error|warn|info|debug) ]];
 	then
 		log "Please specify a proper log status [error |warn | info | debug]. Option -l|--log\n" "ERROR" >&2;
 		usagedoc;
@@ -507,7 +507,7 @@ fi
 # Clean up
 if [[ "$cleanup" == "" ]]; 
 then 
-	cleanup='1'; 
+    cleanup='1'; 
 fi	
 
 # Reads information:
@@ -516,32 +516,32 @@ fi
 
 if [[ "$maxReadLength" == "" ]]; 
 then 
-	maxReadLength='150'; 
+    maxReadLength='150'; 
 else
-	if [[ ! "$maxReadLength" =~ ^[0-9]+$ ]]; 
-	then
-		log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
-		usagelongdoc;
-		exit -1; 
-	fi
+    if [[ ! "$maxReadLength" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
+	usagelongdoc;
+	exit -1; 
+    fi
 fi
 
 # Sequencing library type
 if [[ "$readDirectionality" != "" ]];
 then
-	if [[ "$readDirectionality" == @(MATE1_SENSE|MATE2_SENSE) ]];
-	then
-		stranded=1;
-	elif [[ "$readDirectionality" == "UNSTRANDED" ]];
-	then
-		stranded=0;
-	else
-		log "Please specify a proper sequencing library [UNSTRANDED|MATE1_SENSE|MATE2_SENSE]\n" "ERROR" >&2;
-		usagedoc; 
-		exit -1;	
-	fi
+    if [[ "$readDirectionality" == @(MATE1_SENSE|MATE2_SENSE) ]];
+    then
+	stranded=1;
+    elif [[ "$readDirectionality" == "UNSTRANDED" ]];
+    then
+	stranded=0;
+    else
+	log "Please specify a proper sequencing library [UNSTRANDED|MATE1_SENSE|MATE2_SENSE]\n" "ERROR" >&2;
+	usagedoc; 
+	exit -1;	
+    fi
 else
-	readDirectionality="NOT DEFINED"
+    readDirectionality="NOT DEFINED"
 fi 	
 
 # First mapping parameters:
@@ -549,61 +549,61 @@ fi
 # Number of mismatches contiguous mapping
 if [[ "$mism" == "" ]]; 
 then 
-	mism='4'; 
+    mism='4'; 
 else 
-	if [[ ! "$mism" =~ ^[0-9]+$ ]]; 
-	then
-		log "Please specify a proper number of mismatches for contiguous mapping steps. Option -M|--mism-contiguous-map\n" "ERROR" >&2;
-		usagelongdoc; 
-		exit -1; 
-	fi
+    if [[ ! "$mism" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper number of mismatches for contiguous mapping steps. Option -M|--mism-contiguous-map\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
 fi
 
 # Consensus splice sites for the segmental mapping
 if [[ "$spliceSitesFM" == "" ]]; 
 then 
-	spliceSitesFM="GT+AG,GC+AG,ATATC+A.,GTATC+AT"; 
+    spliceSitesFM="GT+AG,GC+AG,ATATC+A.,GTATC+AT"; 
 else			
-	if [[ ! "$spliceSitesFM" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
-	then
-		log "Please specify a proper consensus splice site sequence for the first segmental mapping. Option -C|--consensus-ss-fm\n" "ERROR" >&2;
-		usagelongdoc;
-		exit -1; 
-	fi
+    if [[ ! "$spliceSitesFM" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
+    then
+	log "Please specify a proper consensus splice site sequence for the first segmental mapping. Option -C|--consensus-ss-fm\n" "ERROR" >&2;
+	usagelongdoc;
+	exit -1; 
+    fi
 fi
 
 # Minimum split size for the segmental mapping
 if [[ "$splitSizeFM" == "" ]];
 then 
-	splitSizeFM='15'; 
+    splitSizeFM='15'; 
 else
-	if [[ ! "$splitSizeFM" =~ ^[0-9]+$ ]]; 
-	then
-		log "Please specify a proper minimum split size for the first segmental mapping step. Option -S|--min-split-size-fm\n" "ERROR" >&2;
-		usagelongdoc; 
-		exit -1; 
-	fi
+    if [[ ! "$splitSizeFM" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper minimum split size for the first segmental mapping step. Option -S|--min-split-size-fm\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
 fi
 
 # Refinement size for the segmental mapping
 if [[ "$refinementFM" == "" ]];
 then 
-	refinementFM='2'; 
+    refinementFM='2'; 
 else
-	if [[ ! "$refinementFM" =~ ^[0-9]+$ ]]; 
-	then
-		log "Please specify a proper refinement size for the first segmental mapping step. Option --refinement-step-size-fm\n" "ERROR" >&2;
-		usagelongdoc; 
-		exit -1; 
-	fi
+    if [[ ! "$refinementFM" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper refinement size for the first segmental mapping step. Option --refinement-step-size-fm\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
 fi
 
 # First mapping statistics
 if [[ "$mapStats" != "1" ]]; 
 then 
-	mapStats=0;
-	stats="--no-stats"; 
-	count="--no-count"; 
+    mapStats=0;
+    stats="--no-stats"; 
+    count="--no-count"; 
 fi
 
 # Second mapping parameters:
@@ -611,41 +611,41 @@ fi
 # Consensus splice sites for the segmental mapping
 if [[ "$spliceSitesSM" == "" ]]; 
 then 
-	spliceSitesSM="GT+AG"; 
+    spliceSitesSM="GT+AG"; 
 else			
-	if [[ ! "$spliceSitesSM" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
-	then
-		log "Please specify a proper consensus splice site sequence for the second segmental mapping. Option -c|--consensus-ss-sm\n" "ERROR" >&2;
-		usagelongdoc; 
-		exit -1; 
-	fi
+    if [[ ! "$spliceSitesSM" =~ ^([ACGT.]+\+[ACGT.]+,)*([ACGT.]+\+[ACGT.]+)$ ]];
+    then
+	log "Please specify a proper consensus splice site sequence for the second segmental mapping. Option -c|--consensus-ss-sm\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
 fi
 
 # Minimum split size for the segmental mapping
 if [[ "$splitSizeSM" == "" ]];
 then 
-	splitSizeSM='15'; 
+    splitSizeSM='15'; 
 else
-	if [[ ! "$splitSizeSM" =~ ^[0-9]+$ ]]; 
-	then
-		log "Please specify a proper minimum split size for the second segmental mapping step. Option -s|--min-split-size-sm\n" "ERROR" >&2;
-		usagelongdoc; 
-		exit -1; 
-	fi
+    if [[ ! "$splitSizeSM" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper minimum split size for the second segmental mapping step. Option -s|--min-split-size-sm\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
 fi
 
 
 # Refinement size for the segmental mapping
 if [[ "$refinementSM" == "" ]];
 then 
-	refinementSM='2'; 
+    refinementSM='2'; 
 else
-	if [[ ! "$refinementSM" =~ ^[0-9]+$ ]]; 
-	then
-		log "Please specify a proper refinement size for the second segmental mapping step. Option --refinement-step-size-sm\n" "ERROR" >&2;
-		usagelongdoc; 
-		exit -1; 
-	fi
+    if [[ ! "$refinementSM" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper refinement size for the second segmental mapping step. Option --refinement-step-size-sm\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
 fi
 
 # Chimeric junction filters:
@@ -653,25 +653,25 @@ fi
 # Filtering module configuration	
 if [[ "$filterConf" == "" ]]; 
 then 			
-	filterConf="5,0,80,30;1,1,80,30;";		# Default
+    filterConf="5,0,80,30;1,1,80,30;";		# Default
 else
-	if [[ ! "$filterConf" =~ ^([0-9]+,[0-9]+,[0-9]{,3},[0-9]+;){1,2}$ ]]; 
-	then
-		log "Please check your filtering module configuration. Option --filter-chimeras\n" "ERROR" >&2; 
-		usagelongdoc; 
-		exit -1;
-	fi
+    if [[ ! "$filterConf" =~ ^([0-9]+,[0-9]+,[0-9]{,3},[0-9]+;){1,2}$ ]]; 
+    then
+	log "Please check your filtering module configuration. Option --filter-chimeras\n" "ERROR" >&2; 
+	usagelongdoc; 
+	exit -1;
+    fi
 fi
 
 # Similarity between gene pairs file
-if [[ $simGnPairs == "" ]]
+if [[ "$simGnPairs" == "" ]]
 then
-	simGnPairs="NOT PROVIDED";
-elif [[ ! -s $simGnPairs ]]; 
+    simGnPairs="NOT PROVIDED";
+elif [ ! -s "$simGnPairs" ]
 then 
-	log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; 
-	usagelongdoc; 
-	exit -1; 
+    log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; 
+    usagelongdoc; 
+    exit -1; 
 fi
 
 
@@ -777,6 +777,7 @@ pipelineStart=$(date +%s)
 step="PRELIM"
 log "Determining the offset quality of the reads for ${lid}..." $step
 run "quality=\`$qual $input | awk '{print \$2}'\`" "$ECHO" 
+log " The read quality is $quality\n"
 log "done\n"
 b=`basename $annot`
 b2tmp=${b%.gtf}
