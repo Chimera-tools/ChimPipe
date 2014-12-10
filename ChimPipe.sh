@@ -413,7 +413,7 @@ shopt -s extglob
 ##############################
 # It will be exported as an environmental variable since it will be used by every ChimPipe's scripts 
 # to set the path to the bin, awk and bash directories. 
-root=/nfs/users/rg/sdjebali/Chimeras/ChimPipe
+root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
 
 export rootDir=$root 
 
@@ -450,7 +450,7 @@ if [[ "$logLevel" == "" ]];
 then 
 	logLevel='warn'; 
 else	
-	if [[" $logLevel" != @(error|warn|info|debug) ]];
+	if [[ "$logLevel" != @(error|warn|info|debug) ]];
 	then
 		log "Please specify a proper log status [error |warn | info | debug]. Option -l|--log\n" "ERROR" >&2;
 		usagedoc;
@@ -795,6 +795,7 @@ b2=${b2tmp%.gff}
 # - $outDir/$lid\_filtered_cuff.bam
 
 bamFirstMapping=$outDir/${lid}_filtered_cuff.bam
+gemFirstMapping=$outDir/$lid.map.gz
 
 if [ ! -s $bamFirstMapping ]; then
 	step="FIRST-MAP"
@@ -803,7 +804,8 @@ if [ ! -s $bamFirstMapping ]; then
 
 	# 1.1) Mapping
 	################
-	if [ ! -s $lid.map.gz ];then
+	
+	if [ ! -s $gemFirstMapping ];then
 	    step="FIRST-MAP"
 	    startTime=$(date +%s)
     
@@ -811,14 +813,12 @@ if [ ! -s $bamFirstMapping ]; then
     	copyToTmp "index,annotation,t-index,keys"
 
     	log "Running gemtools rna pipeline on ${lid}..." $step
-    	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
-		
-		
+    	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --output-dir $outDir --compress-all --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
 		
 		log "done\n"
-    	if [ -s $lid.map.gz ]; then
+    	if [ -s $gemFirstMapping ]; then
         	log "Computing md5sum for map file..." $step
-        	run "md5sum $lid.map.gz > $lid.map.gz.md5" "$ECHO"
+        	run "md5sum $gemFirstMapping > $gemFirstMapping.md5" "$ECHO"
         	log "done\n"
     	else
         	log "Error producing map file\n" "ERROR"
@@ -832,7 +832,7 @@ if [ ! -s $bamFirstMapping ]; then
 
 	# 1.2) Filtering the map file
 	##############################
-	filteredGem=${lid}_unique_${mism}mism.map.gz
+	filteredGem=$outDir/${lid}_unique_${mism}mism.map.gz
 
 	if [ ! -s $filteredGem ];then
     	step="FIRST-MAP.FILTER"
@@ -840,7 +840,7 @@ if [ ! -s $bamFirstMapping ]; then
     	printSubHeader "Executing filtering step"
 	
     	log "Filtering map file..." $step
-    	run "$gt_filter -i $lid.map.gz --max-matches 2 --max-levenshtein-error $mism -t $threads | $pigz -p $threads -c > $filteredGem" "$ECHO"
+    	run "$gt_filter -i $gemFirstMapping --max-matches 2 --max-levenshtein-error $mism -t $threads | $pigz -p $threads -c > $filteredGem" "$ECHO"
     	log "done\n" 
     	if [ -s $filteredGem ]; then
     	    log "Computing md5sum for filtered file..." $step
@@ -858,7 +858,7 @@ if [ ! -s $bamFirstMapping ]; then
 
 	# 1.3) Stats from the filtered file
 	####################################
-	filteredGemStats=${filteredGem%.map.gz}.stats
+	filteredGemStats=$outDir/${filteredGem%.map.gz}.stats
 
 	if [ $filteredGemStats -ot $filteredGem ] && [ "$mapStats" == "1" ] ;then
     	step="FIRST-MAP.STATS"
@@ -886,8 +886,8 @@ if [ ! -s $bamFirstMapping ]; then
 	# 1.4) Convert to bam
 	#####################
 	filteredBam=${lid}_filtered_cuff.bam
-
-	if [ ! -s $filteredBam ];then
+	
+	if [ ! -s $bamFirstMapping ];then
 	    step="FIRST-MAP.CONVERT"
 	    startTime=$(date +%s)
 	    printSubHeader "Executing conversion step"
@@ -900,10 +900,10 @@ if [ ! -s $bamFirstMapping ]; then
     	if [ -s $TMPDIR/$filteredBam ]; then
         	log "Computing md5sum for bam file..." $step
         	run "md5sum $TMPDIR/$filteredBam > $TMPDIR/$filteredBam.md5" "$ECHO"
-        	run "cp $TMPDIR/$filteredBam.md5 ." "$ECHO"
+        	run "cp $TMPDIR/$filteredBam.md5 $outDir" "$ECHO"
         	log "done\n"
-        	log "Copying filtered bam file to mapping dir..." $step
-        	run "cp $TMPDIR/$filteredBam ." "$ECHO"
+        	log "Copying filtered bam file to output dir..." $step
+        	run "cp $TMPDIR/$filteredBam $outDir" "$ECHO"
         	log "done\n"
     	else
         	log "Error producing the filtered bam file\n" "ERROR" 
@@ -995,7 +995,7 @@ if [ ! -s $unmappedReads ]; then
 	startTime=$(date +%s)
 	printHeader "Executing unmapped reads step" 
 	log "Extracting the reads that do not map with a number of mismatches lower than 6..." $step
-	run "zcat $lid.map.gz | awk -f $unmapped | $gtfilter -t $threads --output-format 'FASTA' > $outDir/$lid.unmapped.fastq" "$ECHO" 	
+	run "zcat $gemFirstMapping | awk -f $unmapped | $gtfilter -t $threads --output-format 'FASTA' > $unmappedReads" "$ECHO" 	
 	log "done\n" 
     if [ -s $unmappedReads ]; then
     	log "Computing md5sum for unmapped reads file..." $step
@@ -1026,7 +1026,7 @@ if [ ! -s $gemSecondMapping ]; then
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
 	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
+	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/${lid}.unmapped_rna-mapped -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
 	log "done\n" 
 	if [ -s $gemSecondMapping ]; then
     	log "Computing md5sum for the gem file with the second mappings..." $step
@@ -1055,7 +1055,7 @@ if [ ! -s $gffFromBam ]; then
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the bam into gff step"
 	log "Generating a ".gff.gz" file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
-	bedtools bamtobed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
+	bedtools bamtobed -i $outDir/${lid}_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $gffFromBam 
 	log "done\n"
 	if [ -s $gffFromBam ]; then
     	log "Computing md5sum for the gff file from the ".bam" containing the reads mapping both uniquely and in 2 blocks..." $step
@@ -1084,7 +1084,7 @@ if [ ! -s $gffFromMap ]; then
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the gem into gff step"
 	log "Generating a ".gff.gz" file from the atypical mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step	
-	run "awk -v readDirectionality=$readDirectionality -f $gemCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz" "$ECHO"
+	run "awk -v readDirectionality=$readDirectionality -f $gemCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $gffFromMap" "$ECHO"
 	log "done\n" 
 	if [ -s $gffFromMap ]; then
     	log "Computing md5sum for the gff file from the atypical mappings containing the reads mapping both uniquely and in 2 blocks..." $step
@@ -1103,9 +1103,10 @@ fi
 
 # 7) put the path to the "normal" and "atypical" gff.gz files in a same txt file for chimsplice 
 #############################################################################################
+paths2chimsplice=$outDir/split_mapping_file_sample_$lid.txt
 
-run "echo $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz > $outDir/split_mapping_file_sample_$lid.txt" "$ECHO"
-run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/split_mapping_file_sample_$lid.txt" "$ECHO"
+run "echo $gffFromBam > $paths2chimsplice" "$ECHO"
+run "echo $gffFromMap >> $paths2chimsplice" "$ECHO"
 
 # 8) run chimsplice on 4) and 5)
 ###############################
@@ -1113,15 +1114,15 @@ run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/s
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 
-exonConnections1=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid\_filtered_cuff_2blocks.gff.txt.gz 
-exonConnections2=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid.unmapped_rna-mapped.gff.txt.gz
+exonConnections1=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_filtered_cuff_2blocks.gff.txt.gz 
+exonConnections2=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}.unmapped_rna-mapped.gff.txt.gz
 
 printHeader "Executing Chimsplice step"
 if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding exon to exon connections from the ".gff.gz" files containing the "normal" and "atypical" mappings..." $step
-	run "$chim1 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded" "$ECHO"
+	run "$chim1 $paths2chimsplice $annot $outDir/Chimsplice $stranded" "$ECHO"
 	log "done\n" 
 	if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; then
         log "Error running chimsplice\n" "ERROR" 
@@ -1138,7 +1139,7 @@ if [ ! -s $chimJunctions ]; then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
-	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $index $annot $outDir/Chimsplice $stranded $spliceSitesFM > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+	run "$chim2 $paths2chimsplice $index $annot $outDir/Chimsplice $stranded $spliceSitesFM > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -s $chimJunctions ]; then
         log "Error running chimsplice\n" "ERROR" 
@@ -1303,9 +1304,9 @@ if [[ "$cleanup" == "1" ]]; then
 	step="CLEAN-UP"
 	startTime=$(date +%s)
 	log "Removing intermediate files..." $step
-	rm -r $outDir/FromFirstBam $outDir/FromSecondMapping $outDir/Chimsplice
+	rm -r $outDir/FromFirstBam $outDir/FromSecondMapping $outDir/Chimsplice $outDir/PE
 	rm $outDir/$b2\_tr.fasta*
-	rm $outDir/split_mapping_file_sample_$lid.txt $chimJunctionsSim $chimJunctionsCandidates $chimJunctionsPE
+	rm $outDir/${lid}.junctions $outDir/${lid}_denovo-index.junctions $outDir/${lid}_denovo-index.junctions.keys $outDir/${lid}_gtf.junctions $gemFirstMapping $gemFirstMapping.md5 $filteredGem $filteredGem.md5 $unmappedReads $unmappedReads.md5 $paths2chimsplice $chimJunctionsSim $chimJunctionsCandidates $chimJunctionsPE
 	log "done\n" 
 	endTime=$(date +%s)
 	printHeader "Clean up step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
