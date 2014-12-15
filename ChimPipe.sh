@@ -946,12 +946,12 @@ then
     other_int=${other/\.*};
     
     # Infer the sequencing library from the mapping distribution. 
-    if [ "$fraction1_int" -ge 80 ]; # MATE1_SENSE protocol
+    if [ "$fraction1_int" -ge 70 ]; # MATE1_SENSE protocol
     then 
 	readDirectionality="MATE1_SENSE";
 	stranded=1;
 	echo $readDirectionality;	
-    elif [ "$fraction2_int" -ge 80 ];
+    elif [ "$fraction2_int" -ge 70 ];
     then	
 	readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
 	stranded=1;
