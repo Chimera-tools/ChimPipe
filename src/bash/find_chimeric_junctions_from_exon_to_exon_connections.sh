@@ -136,7 +136,7 @@ echo I am computing the total number of exon A to exon B connections >&2
 cat $1 | while read f
 do
 b=`basename ${f%.gz}`
-btmp=${b%.gtf}
+btmp=${b%.gff}
 zcat $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$btmp.txt.gz | awk '{print $1, $2}' | sort -T $TMPDIR
 done | sort -T $TMPDIR | uniq | wc -l | awk '{print "total exonA to exonB connections:", $1}' 
 

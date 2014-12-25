@@ -109,7 +109,7 @@ awk '$3=="exon"' $annot | awk -v to=12 -f $CUTGFF > $outdir/$annotbase.exons.12f
 cat $input | while read f
 do
 b=`basename ${f%.gz}`
-btmp=${b%.gtf}
+btmp=${b%.gff}
 
 echo == For input file $b == >&2
 
