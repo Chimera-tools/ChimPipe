@@ -34,34 +34,44 @@ function usage
 {
 cat <<help
 	
-*** ChimPipe version $version ***
+**** ChimPipe version $version ****
 
-Execute ChimPipe (from Illumina paired-end RNA-Seq reads to chimeric junctions) on one RNA-seq dataset (sample).
+Execute ChimPipe on one paired-end RNA-seq dataset (sample).
 	
-USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
+*** USAGE
 
-** Mandatory arguments:
-	
-	-i|--input			<INPUT_FILE>	First mate sequencing reads. ChimPipe deals with paired-end RNA-seq data.
-                          				Please make sure the second mate file is in the same directory as
-                           				the first one, and the files are named according to this convention:
+* FASTQ:
 
-    							* Mate 1. “SampleId + _1 + [.fastq|.fq|.txt] (+ .gz if compressed)”
-    							* Mate 2. “SampleId + _2 + [.fastq|.fq|.txt] (+ .gz if compressed)”
-    									
-                           				E.g: sample1_1.fastq.gz and sample1_2.fastq.gz.
-	
+$0 --fastq_1 <mate1_fastq_file> --fastq_2 <mate2_fastq_file> -g <genome_index> -a <annotation> -t <transcriptome_index> -k <transcriptome_keys> [OPTIONS]
+
+* BAM:	
+
+$0 --bam <BAM_file> -g <genome_index> -a <annotation> [OPTIONS]
+
+*** MANDATORY ARGUMENTS
+		
+* FASTQ:
+
+	--fastq_1	<INPUT_MATE1_FASTQ>
+	--fastq_2	<INPUT_MATE2_FASTQ>
 	-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
+	-a|--annotation			<GTF>		Reference genome annotation file in GTF format.                                			
+	-t|--transcriptome-index	<GEM>	
+	-k|--transcriptome-keys <FILE>
+	--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).  
 	
-	-a|--annotation			<GTF>		Reference genome annotation file in GTF format. The transcriptome
-                                       			index has to be in the same directory as the annotation.
+* BAM:	
 
-** [OPTIONS] can be:
+	--bam	<INPUT_BAM>
+	-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
+	-a|--annotation			<GTF>		Reference genome annotation file in GTF format. 
+	--sample-id		<STRING>	Sample identifier (the output files will be named according to this id).  
+	
+*** [OPTIONS] can be:
 
-* General:
-	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).   
+** General: 
 	--log				<STRING>	Log level [error | warn | info | debug]. Default warn.
-	-t|--threads			<INTEGER>	Number of threads to use. Default 1.
+	--threads			<INTEGER>	Number of threads to use. Default 1.
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.	
 	--no-cleanup			<FLAG>		Keep intermediate files. 		
@@ -72,19 +82,6 @@ USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
 help
 }
 
-
-function doc
-{
-cat <<help
-A complete documentation for ChimPipe can be found at: http://chimpipe.readthedocs.org/en/latest/index.html		
-help
-}
-
-function usagedoc
-{
-usage
-doc
-}
 
 # Function 2. Print stdout all the other options
 #################################################
@@ -130,6 +127,20 @@ cat <<help
 help
 }
 
+
+function doc
+{
+cat <<help
+A complete documentation for ChimPipe can be found at: http://chimpipe.readthedocs.org/en/latest/index.html		
+help
+}
+
+function usagedoc
+{
+usage
+doc
+}
+
 function usagelongdoc
 {
 usage
@@ -166,6 +177,23 @@ function log {
     fi
 }
 
+function fastqConf {
+	printf "  %-34s %s\n" "fastq_1:" "$fastq1"
+	printf "  %-34s %s\n" "fastq_2:" "$fastq2"
+	printf "  %-34s %s\n" "genome-index:" "$genomeIndex"
+	printf "  %-34s %s\n" "annotation:" "$annot"
+	printf "  %-34s %s\n" "transcriptome-index:" "$transcriptomeIndex"
+	printf "  %-34s %s\n" "transcriptome-keys:" "$transcriptomeKeys"
+	printf "  %-34s %s\n\n" "sample-id:" "$lid"
+}
+
+function bamConf {
+	printf "  %-34s %s\n" "bam:" "$bam"
+	printf "  %-34s %s\n" "genome-index:" "$genomeIndex"
+	printf "  %-34s %s\n" "annotation:" "$annot"
+	printf "  %-34s %s\n\n" "sample-id:" "$lid"
+}
+
 # Function 6. Print stdout a header for the string variable
 ############################################################
 function run {
@@ -187,30 +215,30 @@ function copyToTmp {
     for i in ${files[@]};do
         case $i in
             "annotation")
-                if [[ ! -e $TMPDIR/$annName ]];then
+                if [[ ! -e $TMPDIR/`basename $annot` ]];then
                     log "Copying annotation file to $TMPDIR..." $step
                     run "cp $annot $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "index")
-                if [[ ! -e $TMPDIR/`basename $index` ]];then
+                if [[ ! -e $TMPDIR/`basename $genomeIndex` ]];then
                     log "Copying genome index file to $TMPDIR..." $step
-                    run "cp $index $TMPDIR" "$ECHO"
+                    run "cp $genomeIndex $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "t-index")
-                if [[ ! -e $TMPDIR/$annName.gem ]];then
+                if [[ ! -e $TMPDIR/`basename $transcriptomeIndex` ]];then
                     log "Copying annotated transcriptome index file to $TMPDIR..." $step
-                    run "cp $annot.junctions.gem $TMPDIR" "$ECHO"
+                    run "cp $transcriptomeIndex $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "keys")
-                if [[ ! -e $TMPDIR/$annName.junctions.keys ]];then
+                if [[ ! -e $TMPDIR/`basename $transcriptomeKeys` ]];then
                     log "Copying annotated transcriptome keys file to $TMPDIR..." $step
-                    run "cp $annot.junctions.keys $TMPDIR" "$ECHO"
+                    run "cp $transcriptomeKeys $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
@@ -221,7 +249,7 @@ function copyToTmp {
 # Function 8. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "i:g:a:e:t:o:hfl:C:S:c:s:" -l "input:,genome-index:,annotation:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -238,17 +266,32 @@ do
   case "$1" in
    	
    	## MANDATORY ARGUMENTS
-    -i|--input)
+    --fastq_1)
       if [ -n "$2" ];
       then
-        input=$2
+        fastq1=$2
       fi
       shift 2;;
 
+	--fastq_2)
+      if [ -n "$2" ];
+      then
+        fastq2=$2
+      fi
+      shift 2;;
+      
+    --bam)
+      if [ -n "$2" ];
+      then
+        bam=$2
+        bamAsInput="true"
+      fi
+      shift 2;;
+        
     -g|--genome-index)
       if [ -n "$2" ];
       then
-        index=$2
+        genomeIndex=$2
       fi
       shift 2;;
 
@@ -258,16 +301,31 @@ do
         annot=$2
       fi
       shift 2;;
+          
+    -t|--transcriptome-index)
+      if [ -n "$2" ];
+      then
+        transcriptomeIndex=$2
+      fi
+      shift 2;;
     
-    ## OPTIONS
-    
-	# General:
-    -e|--sample-id)
+    -k|--transcriptome-keys)
+      if [ -n "$2" ];
+      then
+        transcriptomeKeys=$2
+      fi
+      shift 2;;    
+	
+	--sample-id)
        if [ -n "$2" ];
        then
          lid=$2
        fi
        shift 2;;
+       
+    ## OPTIONS
+    
+	# General:
     
     --log)
        if [ -n $2 ];
@@ -276,7 +334,7 @@ do
        fi
        shift 2;;
 	
-    -t|--threads)
+    --threads)
        if [ -n $2 ];
        then
       	 threads=$2
@@ -298,7 +356,7 @@ do
       	shift 2;;
  	
 	--no-cleanup)
-	    cleanup=0;
+	    cleanup="false";
 	    shift;;   	
  
 	--dry)
@@ -353,7 +411,7 @@ do
 	  shift 2;;
       
       --stats)
-	  mapStats="1"  
+	  	mapStats="true"  
 	  shift;;
       
 	# Second mapping parameters:    	
@@ -428,22 +486,31 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 
 ## Mandatory arguments
 ## ~~~~~~~~~~~~~~~~~~~
-if [[ ! -e $input ]]; then log "Your input file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
-if [[ `basename ${input##*_}` != @(1.fastq|1.fq|1.txt|1.fastq.gz|1.fq.gz|1.txt.gz) ]]; then log "Please check the name of your FASTQ file follows the convention \"SampleId+_1+[.fastq|.fq|.txt] (+ .gz if compressed)\n" "ERROR" >&2; usagedoc; exit -1; fi
-if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
-if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
-annName=`basename $annot`
+
+if [[ "$bamAsInput" != "true" ]];
+then
+	## A) FASTQ as input
+	bamAsInput="false";
+	if [[ ! -e $fastq1 ]]; then log "The mate 1 FASTQ provided does not exist. Mandatory argument --fastq_1\n" "ERROR" >&2; usagedoc; exit -1; fi
+	if [[ ! -e $fastq2 ]]; then log "The mate 2 FASTQ provided does not exist. Mandatory argument --fastq_2\n" "ERROR" >&2; usagedoc; exit -1; fi
+	if [[ ! -e $transcriptomeIndex ]]; then log "The transcriptome index provided does not exist. Mandatory argument -t|--transcriptome-index\n" "ERROR" >&2; usagedoc; exit -1; fi
+	if [[ ! -e $transcriptomeKeys ]]; then log "The transcriptome keys provided do not exist. Mandatory argument -k|--transcriptome-keys\n" "ERROR" >&2; usagedoc; exit -1; fi
+else
+	## B) BAM as input
+	if [[ ! -e $bam ]]; then log "The BAM provided do not exist. Mandatory argument --bam\n" "ERROR" >&2; usagedoc; exit -1; fi
+fi
+	
+## Common
+if [[ ! -e $genomeIndex ]]; then log "The genome index provided does not exist. Mandatory argument -g|--genome-index\n" "ERROR" >&2; usagedoc; exit -1; fi
+if [[ ! -e $annot ]]; then log "The annotation provided does not exist. Mandatory argument -a|--annotation\n" "ERROR" >&2; usagedoc; exit -1; fi
+if [[ "$lid" == "" ]]; then log "Please provide a sample identifier. Mandatory argument --sample-id\n" "ERROR" >&2; usagedoc; exit -1; fi
+
 
 ## Optional arguments
 ## ~~~~~~~~~~~~~~~~~~
 
 # General
 # ~~~~~~~
-# Sample id
-if [ ! -n "$lid" ] 
-then 			
-    lid=`basename ${input%_1.*}`;		# Default
-fi
 
 # Log level
 if [[ "$logLevel" == "" ]]; 
@@ -452,7 +519,7 @@ then
 else	
 	if [[ "$logLevel" != @(error|warn|info|debug) ]];
 	then
-		log "Please specify a proper log status [error |warn | info | debug]. Option -l|--log\n" "ERROR" >&2;
+		log "Please specify a proper log status [error||warn||info||debug]. Option -l|--log\n" "ERROR" >&2;
 		usagedoc;
 		exit -1; 
 	fi
@@ -505,9 +572,9 @@ else
 fi
 
 # Clean up
-if [[ "$cleanup" == "" ]]; 
+if [[ "$cleanup" != "false" ]]; 
 then 
-    cleanup='1'; 
+    cleanup='true'; 
 fi	
 
 # Reads information:
@@ -520,8 +587,8 @@ then
 else
     if [[ ! "$maxReadLength" =~ ^[0-9]+$ ]]; 
     then
-	log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
-	usagelongdoc;
+		log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
+		usagelongdoc;
 	exit -1; 
     fi
 fi
@@ -531,13 +598,13 @@ if [[ "$readDirectionality" != "" ]];
 then
     if [[ "$readDirectionality" == @(MATE1_SENSE|MATE2_SENSE) ]];
     then
-	stranded=1;
+		stranded=1;
     elif [[ "$readDirectionality" == "UNSTRANDED" ]];
     then
-	stranded=0;
+		stranded=0;
     else
-	log "Please specify a proper sequencing library [UNSTRANDED|MATE1_SENSE|MATE2_SENSE]\n" "ERROR" >&2;
-	usagedoc; 
+		log "Please specify a proper sequencing library [UNSTRANDED|MATE1_SENSE|MATE2_SENSE]\n" "ERROR" >&2;
+		usagedoc; 
 	exit -1;	
     fi
 else
@@ -599,9 +666,9 @@ else
 fi
 
 # First mapping statistics
-if [[ "$mapStats" != "1" ]]; 
+if [[ "$mapStats" != "true" ]]; 
 then 
-    mapStats=0;
+    mapStats="false";
     stats="--no-stats"; 
     count="--no-count"; 
 fi
@@ -727,20 +794,25 @@ juncFilter=$awkDir/chimjunc_filter.awk
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 printf "\n"
-header="Pipeline configuration for $lid"
+header="PIPELINE CONFIGURATION FOR $lid"
 echo $header
 eval "for i in {1..${#header}};do printf \"-\";done"
 printf "\n\n"
 printf "  %-34s %s\n\n" "ChimPipe Version $version"
-printf "  %-34s %s\n" "***** Mandatory *****"
-printf "  %-34s %s\n" "Input file:" "$input"
-printf "  %-34s %s\n" "Reference genome file:" "$index"
-printf "  %-34s %s\n\n" "Reference gene annotation file:" "$annot"
+printf "  %-34s %s\n" "***** MANDATORY ARGUMENTS *****"
+
+if [[ "$bamAsInput" == "false" ]];
+then
+	## A) FASTQ as input
+	fastqConf	
+	else
+	## B) BAM as input
+	bamConf
+fi
 
 printf "  %-34s %s\n" "***** Reads information *****"
 printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
-printf "  %-34s %s\n" "Maximum read length:" "$maxReadLength"
-printf "  %-34s %s\n\n" "Sample identifier:" "$lid"
+printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
 
 printf "  %-34s %s\n" "***** First mapping *****"
 printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
@@ -778,7 +850,7 @@ pipelineStart=$(date +%s)
 ######################
 step="PRELIM"
 log "Determining the offset quality of the reads for ${lid}..." $step
-run "quality=\`$qual $input | awk '{print \$2}'\`" "$ECHO" 
+run "quality=\`$qual $fastq1 | awk '{print \$2}'\`" "$ECHO" 
 log " The read quality is $quality\n"
 log "done\n"
 b=`basename $annot`
@@ -817,7 +889,7 @@ then
     	copyToTmp "index,annotation,t-index,keys"
 
     	log "Running gemtools rna pipeline on ${lid}..." $step
-    	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --output-dir $outDir --compress-all --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
+    	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality -n $lid --output-dir $outDir --compress-all --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
 		
 		log "done\n"
     	if [ -s $gemFirstMapping ]; 
@@ -839,7 +911,7 @@ then
 	####################################
 	gemStats=$outDir/${gemFirstMapping%.map.gz}.stats
 
-	if [ $gemStats -ot $gemFirstMapping ] && [ "$mapStats" == "1" ] ;
+	if [ $gemStats -ot $gemFirstMapping ] && [ "$mapStats" == "true" ] ;
 	then
     	step="FIRST-MAP.STATS"
     	startTime=$(date +%s)
@@ -859,7 +931,7 @@ then
     	endTime=$(date +%s)
     	printSubHeader "GEM stats step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 	else
-    	if [ "$mapStats" == "1" ]; 
+    	if [ "$mapStats" == "true" ]; 
     	then 
     		printSubHeader "GEM stats file already exists... skipping GEM stats step"; 
     	fi 
@@ -878,7 +950,7 @@ then
 	    ## Copy needed files to TMPDIR
 	    copyToTmp "index"	
 	    log "Converting $lid to bam..." $step
-    	run "$pigz -p $hthreads -dc $gemFirstMapping | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | samtools sort -@ $threads -m 4G - $TMPDIR/${rawBam%.bam}" "$ECHO"
+    	run "$pigz -p $hthreads -dc $gemFirstMapping | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | samtools sort -@ $threads -m 4G - $TMPDIR/${rawBam%.bam}" "$ECHO"
     	log "done\n"
     	if [ -s $TMPDIR/$rawBam ]; 
     	then
@@ -999,7 +1071,7 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing second mapping step"
 	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $index -i $reads2remap -q 'offset-$quality' -o ${gemSecondMapping%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
+	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-$quality' -o ${gemSecondMapping%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
 	log "done\n" 
 	if [ -s $gemSecondMapping ]; 
 	then
@@ -1045,24 +1117,24 @@ then
     # Infer the sequencing library from the mapping distribution. 
     if [ "$fraction1_int" -ge 70 ]; # MATE1_SENSE protocol
     then 
-	readDirectionality="MATE1_SENSE";
-	stranded=1;
-	echo $readDirectionality;	
+		readDirectionality="MATE1_SENSE";
+		stranded=1;
+		echo $readDirectionality;	
     elif [ "$fraction2_int" -ge 70 ];
     then	
-	readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
-	stranded=1;
+		readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
+		stranded=1;
     elif [ "$fraction1_int" -ge 40 ] && [ "$fraction1_int" -le 60 ];
     then
-	if [ "$fraction2_int" -ge 40 ] && [ "$fraction2_int" -le 60 ]; # UNSTRANDED prototol
-	then
-	    readDirectionality="UNSTRANDED";
-	    stranded=0;
-	else
-	    log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-	    usagelongdoc
-	    exit -1	
-	fi
+		if [ "$fraction2_int" -ge 40 ] && [ "$fraction2_int" -le 60 ]; # UNSTRANDED prototol
+		then
+	    	readDirectionality="UNSTRANDED";
+	    	stranded=0;
+		else
+	    	log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
+	    	usagelongdoc
+	    	exit -1	
+		fi
     else
 		log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
 		usagelongdoc
@@ -1180,7 +1252,7 @@ then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
-	run "$chim2 $paths2chimsplice $index $annot $outDir/Chimsplice $stranded $spliceSitesFM > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+	run "$chim2 $paths2chimsplice $genomeIndex $annot $outDir/Chimsplice $stranded $spliceSitesFM > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
 	if [ ! -s $chimJunctions ]; 
 	then
@@ -1255,7 +1327,7 @@ then
     step="PRE-SIM"
     startTime=$(date +%s)
     log "Computing similarity between annotated genes..." $step
-    run "$sim $annot $index 4" "$ECHO"
+    run "$sim $annot $genomeIndex 4" "$ECHO"
     log "done\n" 			
     endTime=$(date +%s)
     simGnPairs=$outDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
@@ -1349,7 +1421,7 @@ fi
 # 14) Clean up
 ###############
 
-if [[ "$cleanup" == "1" ]]; 
+if [[ "$cleanup" == "true" ]]; 
 then 
 	step="CLEAN-UP"
 	startTime=$(date +%s)
