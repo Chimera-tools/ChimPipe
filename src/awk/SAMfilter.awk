@@ -69,7 +69,7 @@
 	{
 		print $0;
 	}	
-	else if ((multimapped=="1")&&(NH[3]>1)) # Print the alignment if multimappind and the multimapped read flag is enabled 
+	else if ((multimapped=="1")&&(NH[3]>1)) # Print the alignment if multimappin and the multimapped read flag is enabled 
 	{
 		print $0;
 	}
