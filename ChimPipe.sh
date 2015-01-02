@@ -74,10 +74,10 @@ $0 --bam <BAM_file> -g <genome_index> -a <annotation> [OPTIONS]
 	--threads			<INTEGER>	Number of threads to use. Default 1.
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.	
-	--no-cleanup			<FLAG>		Keep intermediate files. 		
-	--dry				<FLAG>		Test the pipeline. Writes the commands to the standard output.
-	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
-	-f|--full-help			<FLAG>		Display full usage information with additional options. 
+	--no-cleanup					Keep intermediate files. 		
+	--dry						Test the pipeline. Writes the commands to the standard output.
+	-h|--help					Display partial usage information, only mandatory plus general arguments.
+	-f|--full-help					Display full usage information with additional options. 
 
 help
 }
@@ -104,6 +104,9 @@ cat <<help
 	--no-stats				<FLAG>		Disable mapping statistics. Default enabled.
 
   Second Mapping parameters:
+	--no-remap-unmapped
+	--remap-multimapped	<INTEGER> 5 
+	--remap-unique <INTEGER>
 	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
 	-s|--min-split-size-sm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--refinement-step-size-sm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
@@ -277,7 +280,7 @@ function runGemtoolsRnaPipeline {
 # Function 8. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,no-remap-unmapped,remap-multimapped:,remap-unique:,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -420,14 +423,14 @@ do
     -C|--consensus-ss-fm)
 	    if [ -n "$2" ];
 	    then
-		spliceSitesFM=$2
+			spliceSitesFM=$2
 	    fi
 	    shift 2;;
    
     -S|--min-split-size-fm)
     	if [ -n "$2" ];
 	    then
-	    splitSizeFM=$2
+		    splitSizeFM=$2
 	    fi
 	    shift 2;;
 	
@@ -438,11 +441,37 @@ do
 	  fi
 	  shift 2;;
       
-      --no-stats)
-	  	mapStats="false"  
-	  shift;;
+    --no-stats)
+    	if [ -n "$2" ];
+	 	then
+	  		mapStats="false"  
+	  	fi
+	  	shift;;
       
-	# Second mapping parameters:    	
+	# Second mapping parameters:
+	--no-remap-unmapped)
+		if [ -n "$2" ];
+	  	then
+	    	remapUnmapped="false"
+	  	fi
+	  	shift;;
+	 
+	--remap-multimapped)
+		if [ -n "$2" ];
+	  	then
+	    	remapMultimapped="true"
+	    	nbMatches=$2
+	  	fi
+	  	shift 2;;
+	
+	--remap-unique)
+	    if [ -n "$2" ];
+	  	then
+	    	remapUnique="true"
+	    	nbMism=$2
+	  	fi
+	  	shift 2;;
+	  		
 	-c|--consensus-ss-sm)
 	    if [ -n "$2" ];
 	    then
@@ -703,6 +732,40 @@ fi
 
 # Second mapping parameters:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Remap the unmapped reads from the first mappping step
+if [[ "$remapUnmapped" == "false" ]]; 
+then 
+	extractUnmappedFM="1";
+	extractUnmappedSM="0";	
+else			
+	remapUnmapped="true"; 
+    extractUnmappedFM="0";
+	extractUnmappedSM="1";
+fi
+
+# Remap multimapped reads with more than X matches from the first mappping step
+if [[ "$remapMultimapped" == "true" ]]; 
+then 
+	extractMultimappedFM="1";
+	extractMultimappedSM="1";
+else
+	remapMultimapped="false";
+	extractMultimappedFM="1";
+	extractMultimappedSM="0";
+fi
+	    	
+# Remap uniquely mapped reads with more than X mismatches from the first mappping step
+if [[ "$remapUnique" == "true" ]]; 
+then 
+	extractUniqueFM="1";
+	extractUniqueSM="1";
+else
+	remapUnique="false";
+	extractUniqueFM="1";
+	extractUniqueSM="0";
+fi
+
 # Consensus splice sites for the segmental mapping
 if [[ "$spliceSitesSM" == "" ]]; 
 then 
@@ -859,6 +922,18 @@ printf "  %-34s %s\n" "Refinement step size for segmental mapping (0:disabled):"
 printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
 
 printf "  %-34s %s\n" "***** Second mapping *****"
+printf "  %-34s %s\n" "remap-unmapped:" "$remapUnmapped"
+printf "  %-34s %s\n" "remap-multimapped:" "$remapMultimapped"
+if [[ "$remapMultimapped" == "true" ]]; 
+then 
+	printf "  %-34s %s\n" "(remap multimapped reads with more than $nbMatches matches)"
+fi 
+
+printf "  %-34s %s\n" "remap-unique:" "$remapUnique"
+if [[ "$remapUnique" == "true" ]]; 
+then 
+	printf "  %-34s %s\n" "(remap unique mapping with more than $nbMism mismatches. Mismatches in bad-quality bases also considered)"
+fi 
 printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesSM"
 printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeSM"
 printf "  %-34s %s\n\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementSM"
@@ -874,7 +949,6 @@ printf "  %-34s %s\n" "Number of threads:" "$threads"
 printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
 printf "  %-34s %s\n\n" "Clean up (1:enabled, 0:disabled):" "$cleanup"
 
-exit 1
 
 ## START CHIMPIPE
 #################
@@ -945,14 +1019,14 @@ NMfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(
 ## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments) 
 
 filteredBam=$outDir/${lid}_filtered_firstMap.bam
-
+		
 if [ ! -s $filteredBam ];
 then
 	step="BAM-FILTERING"
     startTime=$(date +%s)
     printHeader "Executing bam filtering step"
-	log "Produce a filtered BAM file with the non remapped reads..." $step
-	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v unmapped="0" -v multimapped="0" -v unique="1" -v higherThan="0" -v nbMism="4" -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam}" "$ECHO"
+	log "Produce a filtered BAM file with the mappings of the reads which will not be remapped..." $step
+	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="0" -v unmapped=$extractUnmappedFM -v multimapped=$extractMultimappedFM -v nbMatches=$nbMatches -v unique=$extractUniqueFM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam}" "$ECHO"
 	log "done\n"
 	if [ -s $filteredBam ]; 
    	then
@@ -982,14 +1056,14 @@ fi
 ## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments)
 
 reads2remap=$outDir/${lid}_reads2remap.fastq
-
+		
 if [ ! -s $reads2remap ]; 
 then
 	step="READS2REMAP"
 	startTime=$(date +%s)
-	printHeader "Executing extracting reads to remap step" 
+	printHeader "Executing extract reads to remap step" 
 	log "Extracting reads from the raw BAM for a second split-mapping step..." $step
-	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v unmapped="1" -v multimapped="1" -v unique="1" -v higherThan="1" -v nbMism="4" -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap" "$ECHO"
+	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v multimapped=$extractMultimappedSM -v nbMatches=$nbMatches -v unique=$extractUniqueSM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap" "$ECHO"
 	log "done\n" 
     if [ -s $reads2remap ]; 
     then
