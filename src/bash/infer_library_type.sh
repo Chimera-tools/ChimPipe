@@ -90,7 +90,9 @@ cutgff=$awkDir/cutgff.awk
 
 # START
 ########
-awk -v elt='exon' '$3==elt' $annot | awk -v to=8 -f $cutgff | sort -k1,1 -k4,4 -k5,5 | uniq | bedtools intersect -abam <(samtools view -b -s 1.001 $bamfile) -b stdin -split -bed -wo | awk '{print $4, $6, $19;}' | uniq | awk '{split($1,a,"/"); readCount["total"]++; readCount[a[2]":"$2":"$3]++;}END{fraction1=(readCount["1:+:+"]+readCount["1:-:-"]+readCount["2:+:-"]+readCount["2:-:+"]); fraction2=(readCount["1:+:-"]+readCount["1:-:+"]+readCount["2:+:+"]+readCount["2:-:-"]); other=(readCount["total"]-(fraction1+fraction2)); print (fraction1/readCount["total"]*100), (fraction2/readCount["total"]*100), other;}' 
+## Comment: samtools view -F 260 ** filter out unmapped reads (4) + secondary alignments (254) = 260
+
+awk -v elt='exon' '$3==elt' $annot | awk -v to=8 -f $cutgff | sort -k1,1 -k4,4 -k5,5 | uniq | bedtools intersect -abam <(samtools view -b -s 1.001 -F 260 $bamfile) -b stdin -split -bed -wo | awk '{print $4, $6, $19;}' | uniq | awk '{split($1,a,"/"); readCount["total"]++; readCount[a[2]":"$2":"$3]++;}END{fraction1=(readCount["1:+:+"]+readCount["1:-:-"]+readCount["2:+:-"]+readCount["2:-:+"]); fraction2=(readCount["1:+:-"]+readCount["1:-:+"]+readCount["2:+:+"]+readCount["2:-:-"]); other=(readCount["total"]-(fraction1+fraction2)); print (fraction1/readCount["total"]*100), (fraction2/readCount["total"]*100), other;}' 
 
 
 

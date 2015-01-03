@@ -902,24 +902,28 @@ then
 	printf "  %-34s %s\n" "transcriptome-index:" "$transcriptomeIndex"
 	printf "  %-34s %s\n" "transcriptome-keys:" "$transcriptomeKeys"
 	printf "  %-34s %s\n\n" "sample-id:" "$lid"
+
+	printf "  %-34s %s\n" "***** Reads information *****"
+	printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
+	printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
+
+	printf "  %-34s %s\n" "***** First mapping *****"
+	printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
+	printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesFM"
+	printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeFM"
+	printf "  %-34s %s\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementFM"
+	printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
 else
 	## B) BAM as input
 	printf "  %-34s %s\n" "bam:" "$bam"
 	printf "  %-34s %s\n" "genome-index:" "$genomeIndex"
 	printf "  %-34s %s\n" "annotation:" "$annot"
 	printf "  %-34s %s\n\n" "sample-id:" "$lid"
+
+	printf "  %-34s %s\n" "***** Reads information *****"
+	printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
+	printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
 fi
-
-printf "  %-34s %s\n" "***** Reads information *****"
-printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
-printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
-
-printf "  %-34s %s\n" "***** First mapping *****"
-printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
-printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesFM"
-printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeFM"
-printf "  %-34s %s\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementFM"
-printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
 
 printf "  %-34s %s\n" "***** Second mapping *****"
 printf "  %-34s %s\n" "remap-unmapped:" "$remapUnmapped"
@@ -1010,111 +1014,7 @@ NHfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(
 NMfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NM:i:"){print field;} field++}}'`
 
 
-# 2) Produce a filtered BAM file with the alignments of the non remapped reads. 
-################################################################################
-# Output is: 
-############
-# - $outDir/${lid}_filtered_chrSorted.bam
-
-## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments) 
-
-filteredBam=$outDir/${lid}_filtered_firstMap.bam
-		
-if [ ! -s $filteredBam ];
-then
-	step="BAM-FILTERING"
-    startTime=$(date +%s)
-    printHeader "Executing bam filtering step"
-	log "Produce a filtered BAM file with the mappings of the reads which will not be remapped..." $step
-	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="0" -v unmapped=$extractUnmappedFM -v multimapped=$extractMultimappedFM -v nbMatches=$nbMatches -v unique=$extractUniqueFM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam}" "$ECHO"
-	log "done\n"
-	if [ -s $filteredBam ]; 
-   	then
-       	log "Computing md5sum for bam file..." $step
-       	run "md5sum $filteredBam > $filteredBam.md5" "$ECHO"
-       	log "done\n"
-   	else
-       	log "Error filtering the bam file\n" "ERROR" 
-       	exit -1
-   	fi
-   	endTime=$(date +%s)
-   	printHeader "Bam filtering step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-   	printHeader "Filtered bam file already exists...skipping conversion step"
-fi
-
-# 3) Extract reads from the raw BAM produced in the first mapping for a second 
-###############################################################################
-# split-mapping attemp allowing split-mappings in different chromosomes, strands 
-#################################################################################
-# and non genomic order. Produce a FASTQ file with them. 
-########################################################
-# output is: 
-############
-# - $outDir/${lid}_reads2remap.fastq
-
-## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments)
-
-reads2remap=$outDir/${lid}_reads2remap.fastq
-		
-if [ ! -s $reads2remap ]; 
-then
-	step="READS2REMAP"
-	startTime=$(date +%s)
-	printHeader "Executing extract reads to remap step" 
-	log "Extracting reads from the raw BAM for a second split-mapping step..." $step
-	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v multimapped=$extractMultimappedSM -v nbMatches=$nbMatches -v unique=$extractUniqueSM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap" "$ECHO"
-	log "done\n" 
-    if [ -s $reads2remap ]; 
-    then
-    	log "Computing md5sum for the fastq file..." $step
-    	run "md5sum $reads2remap > $reads2remap.md5" "$ECHO"
-        log "done\n"
-    else
-        log "Error extracting the reads\n" "ERROR" 
-        exit -1
-    fi
-    endTime=$(date +%s)
-	printHeader "Extracting reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-    printHeader "FASTQ file with reads to remap already exists... skipping extracting reads to remap step"
-fi
-
-# 4) Second split-mapping attemp. Remmap the extracted reads allowing reads 
-###########################################################################
-# to split in different chromosomes, strands and non genomic order.
-###################################################################
-# output is: 
-############
-# - $outDir/SecondMapping/${lid}.remapped.map
-
-gemSecondMap=$outDir/SecondMapping/${lid}_secondMap.map
-
-if [ ! -s $gemSecondMap ];
-then
-	step="SECOND-MAP"
-	startTime=$(date +%s)
-	printHeader "Executing second mapping step"
-	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-$quality' -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
-	log "done\n" 
-	if [ -s $gemSecondMap ]; 
-	then
-    	log "Computing md5sum for the gem file with the second mappings..." $step
-    	run "md5sum $gemSecondMap > $gemSecondMap.md5" "$ECHO"
-        log "done\n"
-    else
-        log "Error in the second mapping\n" "ERROR" 
-        exit -1
-    fi
-    endTime=$(date +%s)
-	printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-	printHeader "Second mapping GEM file already exists... skipping extracting second mapping step"
-fi
-	
-
-# 5) Infer the sequencing library protocol used (UNSTRANDED, MATE2_SENSE OR MATE1_SENSE) 
+# 2) Infer the sequencing library protocol used (UNSTRANDED, MATE2_SENSE OR MATE1_SENSE) 
 ########################################################################################
 # from a subset with the 1% of the mapped reads. 
 #################################################
@@ -1128,7 +1028,7 @@ then
     startTimeLibrary=$(date +%s)
     printHeader "Executing infer library type step" 
     log "Infering the sequencing library protocol from a random subset with 1 percent of the mapped reads..." $step
-    read fraction1 fraction2 other <<<$(bash $infer_library $filteredBam $annot)
+    read fraction1 fraction2 other <<<$(bash $infer_library $bamFirstMap $annot)
     log "done\n"
     log "Fraction of reads explained by 1++,1--,2+-,2-+: $fraction1\n" $step
     log "Fraction of reads explained by 1+-,1-+,2++,2--: $fraction2\n" $step
@@ -1173,6 +1073,111 @@ else
     printHeader "Sequencing library type provided by the user...skipping library inference step"
 fi
 
+# 3) Produce a filtered BAM file with the alignments of the reads which will not be remapped. 
+#############################################################################################
+# Add the XS optional field to specify the read directionality for cufflinks
+##############################################################################
+# Output is: 
+############
+# - $outDir/${lid}_filtered_chrSorted.bam
+
+## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments) 
+
+filteredBam=$outDir/${lid}_filtered_firstMap.bam
+		
+if [ ! -s $filteredBam ];
+then
+	step="BAM-FILTERING"
+    startTime=$(date +%s)
+    printHeader "Executing bam filtering step"
+	log "Produce a filtered BAM file with the mappings of the reads which will not be remapped..." $step
+	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="0" -v unmapped=$extractUnmappedFM -v multimapped=$extractMultimappedFM -v nbMatches=$nbMatches -v unique=$extractUniqueFM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | $addXS $readDirectionality | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam}" "$ECHO"
+	log "done\n"
+	if [ -s $filteredBam ]; 
+   	then
+       	log "Computing md5sum for bam file..." $step
+       	run "md5sum $filteredBam > $filteredBam.md5" "$ECHO"
+       	log "done\n"
+   	else
+       	log "Error filtering the bam file\n" "ERROR" 
+       	exit -1
+   	fi
+   	endTime=$(date +%s)
+   	printHeader "Bam filtering step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+   	printHeader "Filtered bam file already exists...skipping conversion step"
+fi
+
+# 4) Extract reads from the raw BAM produced in the first mapping for a second 
+###############################################################################
+# split-mapping attemp allowing split-mappings in different chromosomes, strands 
+#################################################################################
+# and non genomic order. Produce a FASTQ file with them. 
+########################################################
+# output is: 
+############
+# - $outDir/${lid}_reads2remap.fastq
+
+## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments)
+
+reads2remap=$outDir/${lid}_reads2remap.fastq
+		
+if [ ! -s $reads2remap ]; 
+then
+	step="READS2REMAP"
+	startTime=$(date +%s)
+	printHeader "Executing extract reads to remap step" 
+	log "Extracting reads from the raw BAM for a second split-mapping step..." $step
+	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v multimapped=$extractMultimappedSM -v nbMatches=$nbMatches -v unique=$extractUniqueSM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap" "$ECHO"
+	log "done\n" 
+    if [ -s $reads2remap ]; 
+    then
+    	log "Computing md5sum for the fastq file..." $step
+    	run "md5sum $reads2remap > $reads2remap.md5" "$ECHO"
+        log "done\n"
+    else
+        log "Error extracting the reads\n" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
+	printHeader "Extracting reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+    printHeader "FASTQ file with reads to remap already exists... skipping extracting reads to remap step"
+fi
+
+# 5) Second split-mapping attemp. Remap the extracted reads allowing reads 
+###########################################################################
+# to split in different chromosomes, strands and non genomic order.
+###################################################################
+# output is: 
+############
+# - $outDir/SecondMapping/${lid}.remapped.map
+
+gemSecondMap=$outDir/SecondMapping/${lid}_secondMap.map
+
+if [ ! -s $gemSecondMap ];
+then
+	step="SECOND-MAP"
+	startTime=$(date +%s)
+	printHeader "Executing second split-mapping step"
+	log "Remapping reads allowing them to split-map in different chromosomes, strand and non genomic order..." $step	
+	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-$quality' -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
+	log "done\n" 
+	if [ -s $gemSecondMap ]; 
+	then
+    	log "Computing md5sum for the gem file with the second mappings..." $step
+    	run "md5sum $gemSecondMap > $gemSecondMap.md5" "$ECHO"
+        log "done\n"
+    else
+        log "Error in the second mapping\n" "ERROR" 
+        exit -1
+    fi
+    endTime=$(date +%s)
+	printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Second mapping GEM file already exists... skipping extracting second mapping step"
+fi
+	
 # 6) extract the reads mapping both uniquely and in 2 blocks from the bam file of "normal" mappings and convert in gff.gz
 #########################################################################################################################
 # output is: 
