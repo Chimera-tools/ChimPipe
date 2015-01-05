@@ -93,9 +93,9 @@ cat <<help
 	-l|--seq-library 		<STRING> 	Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED].
                         				UNSTRANDED for not strand-specific protocol (unstranded data) and the others for the different types 
 							of strand-specific protocols (stranded data).
-* Mapping parameters
+* Mapping phase parameters
                         				
-  First mapping parameters:
+  First mapping:
 	-C|--consensus-ss-fm		<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
                                  			List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
 	-S|--min-split-size-fm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
@@ -103,7 +103,7 @@ cat <<help
 							A value of 0 disables it. Default 2. 
 	--no-stats				<FLAG>		Disable mapping statistics. Default enabled.
 
-  Second Mapping parameters:
+  Second Mapping:
 	--no-remap-unmapped
 	--remap-multimapped	<INTEGER> 5 
 	--remap-unique <INTEGER>
@@ -112,7 +112,9 @@ cat <<help
 	--refinement-step-size-sm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
 							A value of 0 disables it. Default 2. 
     
-* Chimeric junction filter:
+* Chimera detection phase parameters:
+
+	--consider-multimapped 	<INTEGER>
 	--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
 							i.e. "1,2,75:50;", where:
 											
@@ -280,7 +282,7 @@ function runGemtoolsRnaPipeline {
 # Function 8. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,no-remap-unmapped,remap-multimapped:,remap-unique:,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,no-remap-unmapped,remap-multimapped:,remap-unique:,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,consider-multimapped:,filter-chimeras:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -460,7 +462,7 @@ do
 		if [ -n "$2" ];
 	  	then
 	    	remapMultimapped="true"
-	    	nbMatches=$2
+	    	nbMultimaps2Remap=$2
 	  	fi
 	  	shift 2;;
 	
@@ -493,7 +495,15 @@ do
 	    fi
 	    shift 2;;
 	
-	# Chimeric junction filters:
+	# Chimera detection phase parameters:
+	--consider-multimapped)
+		if [ -n "$2" ];
+	  	then
+	    	multimapped2ChimDetection="true"
+	  		nbMultimaps2ChimDetect=$2
+	  	fi
+	  	shift 2;;
+	  	
 	--filter-chimeras)
 	    if [ -n $2 ];
 	    then
@@ -670,18 +680,6 @@ fi
 
 # First mapping parameters:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~
-# Number of mismatches contiguous mapping
-if [[ "$mism" == "" ]]; 
-then 
-    mism='4'; 
-else 
-    if [[ ! "$mism" =~ ^[0-9]+$ ]]; 
-    then
-	log "Please specify a proper number of mismatches for contiguous mapping steps. Option -M|--mism-contiguous-map\n" "ERROR" >&2;
-	usagelongdoc; 
-	exit -1; 
-    fi
-fi
 
 # Consensus splice sites for the segmental mapping
 if [[ "$spliceSitesFM" == "" ]]; 
@@ -736,22 +734,22 @@ fi
 # Remap the unmapped reads from the first mappping step
 if [[ "$remapUnmapped" == "false" ]]; 
 then 
-	extractUnmappedFM="1";
 	extractUnmappedSM="0";	
 else			
 	remapUnmapped="true"; 
-    extractUnmappedFM="0";
 	extractUnmappedSM="1";
 fi
 
 # Remap multimapped reads with more than X matches from the first mappping step
 if [[ "$remapMultimapped" == "true" ]]; 
 then 
-	extractMultimappedFM="1";
 	extractMultimappedSM="1";
+	if [[ "$nbMultimaps2Remap" == "all" ]];
+	then
+		nbMultimaps2Remap="";	
+	fi
 else
 	remapMultimapped="false";
-	extractMultimappedFM="1";
 	extractMultimappedSM="0";
 fi
 	    	
@@ -792,7 +790,6 @@ else
     fi
 fi
 
-
 # Refinement size for the segmental mapping
 if [[ "$refinementSM" == "" ]];
 then 
@@ -806,8 +803,24 @@ else
     fi
 fi
 
-# Chimeric junction filters:
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Chimera detection phase parameters:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Consider multimapped reads for chimera detection:
+
+if [[ $multimapped2ChimDetection == "true" ]]
+then
+	extractMultimappedFM="1";
+	
+	if [[ "$nbMultimaps2ChimDetect" == "all" ]];
+	then
+		nbMultimaps2ChimDetect="";	
+	fi
+else
+	multimapped2ChimDetection="false";
+	extractMultimappedFM="0";
+fi	
+	
 # Filtering module configuration	
 if [[ "$filterConf" == "" ]]; 
 then 			
@@ -903,16 +916,16 @@ then
 	printf "  %-34s %s\n" "transcriptome-keys:" "$transcriptomeKeys"
 	printf "  %-34s %s\n\n" "sample-id:" "$lid"
 
-	printf "  %-34s %s\n" "***** Reads information *****"
-	printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
-	printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
+	printf "  %-34s %s\n" "** Reads information **"
+	printf "  %-34s %s\n" "seq-library:" "$readDirectionality"
+	printf "  %-34s %s\n\n" "max-read-length:" "$maxReadLength"
 
-	printf "  %-34s %s\n" "***** First mapping *****"
-	printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
-	printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesFM"
-	printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeFM"
-	printf "  %-34s %s\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementFM"
-	printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
+	printf "  %-34s %s\n" "***** MAPPING PHASE *****"
+	printf "  %-34s %s\n" "** 1st mapping **"
+	printf "  %-34s %s\n" "consensus-ss-fm:" "$spliceSitesFM"
+	printf "  %-34s %s\n" "min-split-size-fm:" "$splitSizeFM"
+	printf "  %-34s %s\n" "refinement-step-size-fm (0:disabled):" "$refinementFM"
+	printf "  %-34s %s\n\n" "stats:" "$mapStats"
 else
 	## B) BAM as input
 	printf "  %-34s %s\n" "bam:" "$bam"
@@ -920,17 +933,24 @@ else
 	printf "  %-34s %s\n" "annotation:" "$annot"
 	printf "  %-34s %s\n\n" "sample-id:" "$lid"
 
-	printf "  %-34s %s\n" "***** Reads information *****"
-	printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
-	printf "  %-34s %s\n\n" "Maximum read length:" "$maxReadLength"
+	printf "  %-34s %s\n" "** Reads information **"
+	printf "  %-34s %s\n" "seq-library:" "$readDirectionality"
+	printf "  %-34s %s\n\n" "max-read-length:" "$maxReadLength"
+	
+	printf "  %-34s %s\n" "***** MAPPING PHASE *****"
 fi
 
-printf "  %-34s %s\n" "***** Second mapping *****"
+printf "  %-34s %s\n" "** 2nd mapping **"
 printf "  %-34s %s\n" "remap-unmapped:" "$remapUnmapped"
 printf "  %-34s %s\n" "remap-multimapped:" "$remapMultimapped"
 if [[ "$remapMultimapped" == "true" ]]; 
 then 
-	printf "  %-34s %s\n" "(remap multimapped reads with more than $nbMatches matches)"
+	if [[ "$nbMultimaps2Remap" == "" ]]; 
+	then
+		printf "  %-34s %s\n" "(remap all the multimapped reads)"
+	else
+		printf "  %-34s %s\n" "(remap multimapped reads with more than $nbMultimaps2Remap matches)"
+	fi
 fi 
 
 printf "  %-34s %s\n" "remap-unique:" "$remapUnique"
@@ -938,22 +958,33 @@ if [[ "$remapUnique" == "true" ]];
 then 
 	printf "  %-34s %s\n" "(remap unique mapping with more than $nbMism mismatches. Mismatches in bad-quality bases also considered)"
 fi 
-printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesSM"
-printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeSM"
-printf "  %-34s %s\n\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementSM"
+printf "  %-34s %s\n" "consensus-ss-fm:" "$spliceSitesSM"
+printf "  %-34s %s\n" "min-split-size-fm:" "$splitSizeSM"
+printf "  %-34s %s\n\n" "refinement-step-size-fm (0:disabled):" "$refinementSM"
 
-printf "  %-34s %s\n" "***** Filters *****"
-printf "  %-34s %s\n" "Chimeric junctions filtering module configuration:" "$filterConf"
-printf "  %-34s %s\n\n" "Similarity information between gene pairs:" "$simGnPairs"
+printf "  %-34s %s\n" "***** CHIMERA DETECTION PHASE *****"
+printf "  %-34s %s\n" "consider-multimapped:" "$multimapped2ChimDetection"
+if [[ "$multimapped2ChimDetection" == "true" ]]; 
+then 
+	if [[ "$nbMultimaps2ChimDetect" == "" ]]; 
+	then
+		printf "  %-34s %s\n" "(consider all the multimapped reads for chimera detection)"
+	else
+		printf "  %-34s %s\n" "(Consider multimapped reads with $nbMultimaps2ChimDetect or less matches for chimera detection)"
+	fi
+fi 
 
-printf "  %-34s %s\n" "***** General *****"
-printf "  %-34s %s\n" "Output directory:" "$outDir"
-printf "  %-34s %s\n" "Temporary directory:" "$TMPDIR"
-printf "  %-34s %s\n" "Number of threads:" "$threads"
-printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
-printf "  %-34s %s\n\n" "Clean up (1:enabled, 0:disabled):" "$cleanup"
+printf "  %-34s %s\n" "filter-chimeras:" "$filterConf"
+printf "  %-34s %s\n\n" "similarity-gene-pairs:" "$simGnPairs"
 
+printf "  %-34s %s\n" "***** GENERAL *****"
+printf "  %-34s %s\n" "output-dir:" "$outDir"
+printf "  %-34s %s\n" "tmp-dir:" "$TMPDIR"
+printf "  %-34s %s\n" "threads:" "$threads"
+printf "  %-34s %s\n\n" "log:" "$logLevel"
+printf "  %-34s %s\n\n" "no-cleanup:" "$cleanup"
 
+	
 ## START CHIMPIPE
 #################
 header="Executing ChimPipe $version for $lid"
@@ -1091,7 +1122,7 @@ then
     startTime=$(date +%s)
     printHeader "Executing bam filtering step"
 	log "Produce a filtered BAM file with the mappings of the reads which will not be remapped..." $step
-	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="0" -v unmapped=$extractUnmappedFM -v multimapped=$extractMultimappedFM -v nbMatches=$nbMatches -v unique=$extractUniqueFM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | $addXS $readDirectionality | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam}" "$ECHO"
+	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="0" -v unmapped="0" -v multimapped=$extractMultimappedFM -v nbMatches=$nbMultimaps2ChimDetect -v unique=$extractUniqueFM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | $addXS $readDirectionality | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam}" "$ECHO"
 	log "done\n"
 	if [ -s $filteredBam ]; 
    	then
@@ -1107,6 +1138,8 @@ then
 else
    	printHeader "Filtered bam file already exists...skipping conversion step"
 fi
+
+exit 1
 
 # 4) Extract reads from the raw BAM produced in the first mapping for a second 
 ###############################################################################
@@ -1128,7 +1161,7 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing extract reads to remap step" 
 	log "Extracting reads from the raw BAM for a second split-mapping step..." $step
-	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v multimapped=$extractMultimappedSM -v nbMatches=$nbMatches -v unique=$extractUniqueSM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap" "$ECHO"
+	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v multimapped=$extractMultimappedSM -v nbMatches=$nbMultimaps2Remap -v unique=$extractUniqueSM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap" "$ECHO"
 	log "done\n" 
     if [ -s $reads2remap ]; 
     then
