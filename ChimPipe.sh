@@ -28,48 +28,48 @@ authors
 # FUNCTIONS
 ############
 
-# Function 1. Print stdout basic usage information
-###################################################
+# Function 1. Print basic usage information
+############################################
 function usage
 {
 cat <<help
 	
 **** ChimPipe version $version ****
 
-Execute ChimPipe on one paired-end RNA-seq dataset (sample).
+Execute ChimPipe on one Illumina paired-end RNA-seq dataset (sample).
 	
 *** USAGE
 
-* FASTQ:
+FASTQ:
 
-$0 --fastq_1 <mate1_fastq_file> --fastq_2 <mate2_fastq_file> -g <genome_index> -a <annotation> -t <transcriptome_index> -k <transcriptome_keys> [OPTIONS]
+	$0 --fastq_1 <mate1_fastq> --fastq_2 <mate2_fastq> -g <genome_index> -a <annotation> -t <transcriptome_index> -k <transcriptome_keys> [OPTIONS]
 
-* BAM:	
+BAM:	
 
-$0 --bam <BAM_file> -g <genome_index> -a <annotation> [OPTIONS]
+	$0 --bam <bam> -g <genome_index> -a <annotation> [OPTIONS]
 
 *** MANDATORY ARGUMENTS
 		
 * FASTQ:
 
-	--fastq_1	<INPUT_MATE1_FASTQ>
-	--fastq_2	<INPUT_MATE2_FASTQ>
-	-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
+	--fastq_1			<FASTQ>		First mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
+	--fastq_2			<FASTQ>		Second mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
+	-g|--genome-index		<GEM>		Reference genome index in GEM format.
 	-a|--annotation			<GTF>		Reference genome annotation file in GTF format.                                			
-	-t|--transcriptome-index	<GEM>	
-	-k|--transcriptome-keys <FILE>
-	--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).  
+	-t|--transcriptome-index	<GEM>		Annotated transcriptome index in GEM format.
+	-k|--transcriptome-keys		<KEYS>		Transcriptome to genome coordinate conversion keys.  
+	--sample-id			<STRING>	Sample identifier (output files are named according to this id).  
 	
 * BAM:	
 
-	--bam	<INPUT_BAM>
-	-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
-	-a|--annotation			<GTF>		Reference genome annotation file in GTF format. 
-	--sample-id		<STRING>	Sample identifier (the output files will be named according to this id).  
+	--bam				<BAM>		Mapped reads in BAM format. A splicing aware aligner is needed to map the reads. 
+	-g|--genome-index		<GEM>		Reference genome index in GEM format.
+	-a|--annotation			<GTF>		Reference genome annotation file in GTF format.
+	--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).  
 	
 *** [OPTIONS] can be:
 
-** General: 
+* General: 
 	--log				<STRING>	Log level [error | warn | info | debug]. Default warn.
 	--threads			<INTEGER>	Number of threads to use. Default 1.
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
@@ -83,8 +83,8 @@ help
 }
 
 
-# Function 2. Print stdout all the other options
-#################################################
+# Function 2. Print all the other options
+##########################################
 function usage_long
 {
 cat <<help
@@ -101,12 +101,15 @@ cat <<help
 	-S|--min-split-size-fm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--refinement-step-size-fm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
 							A value of 0 disables it. Default 2. 
-	--no-stats				<FLAG>		Disable mapping statistics. Default enabled.
+	--no-stats					Disable mapping statistics. Default enabled.
 
   Second Mapping:
-	--no-remap-unmapped
-	--remap-multimapped	<INTEGER> 5 
-	--remap-unique <INTEGER>
+	--no-remap-unmapped				No remap first mapping unmapped reads. Default remapped 
+	--remap-multimapped		<ALL|INTEGER> 	Remap first mapping multimapped reads (ALL: remap all the multimapped reads; 
+							INTEGER: remap multimapped reads with more than N matches). 
+							Default multimapped not remapped. 
+	--remap-unique 			<INTEGER> 	Remap first mapping uniquelly mapped reads with more than N mismatches (Mismatches 
+							in bad-quality bases also considered). Default unique mappings not remapped
 	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
 	-s|--min-split-size-sm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--refinement-step-size-sm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
@@ -114,25 +117,17 @@ cat <<help
     
 * Chimera detection phase parameters:
 
-	--consider-multimapped 	<INTEGER>
-	--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
-							i.e. "1,2,75:50;", where:
-											
-								1st: minimum number of staggered reads spanning the chimeric junction.
-								2nd: minimum number of paired-end reads encompassing the chimeric junction.		
-								3rd: maximum similarity between the connected genes.
-								4rd: maximum length of the high similar region between the connected genes.
-	
-							All these conditions have to be fulfilled for a chimeric junction to pass the filter. It is also possible to make 
-							complex conditions by setting two different conditions where at least one of them has to be fulfilled. 
-							I.e "10,0,0:0;1,1,0:0;". Default "5,0,80:30;1,1,80:30;".	
-	--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
-							to discard junctions connecting highly similar genes. If this file is not provided it will be computed by ChimPipe.
+	--consider-multimapped 		<ALL|INTEGER>	Consider multimapped reads for the detection of chimeric junctions (ALL: all the multimapped reads; 
+							INTEGER: multimapped reads with N or less matches). Default multimapped not considered. 
+	--similarity-gene-pairs	<TEXT>			Text file with similarity information between the gene pairs in the annotation.
+							Needed for the filtering module to discard chimeric junctions connecting highly similar genes. 
+							If this file is not provided it will be computed by ChimPipe.
 													
 help
 }
 
-
+# Function 3. Display a link to ChimPipe's documentation
+########################################################
 function doc
 {
 cat <<help
@@ -140,12 +135,16 @@ A complete documentation for ChimPipe can be found at: http://chimpipe.readthedo
 help
 }
 
+# Function 4. Short help 
+#########################
 function usagedoc
 {
 usage
 doc
 }
 
+# Function 5. Long help 
+#########################
 function usagelongdoc
 {
 usage
@@ -153,23 +152,22 @@ usage_long
 doc
 }
 
-
-# Function 3. Print stdout a section header for the string variable
-#####################################################################
+# Function 6. Print a section header for the string variable
+##############################################################
 function printHeader {
     string=$1
     echo "`date` ***** $string *****"
 }
 
-# Function 4. Print stdout a section header for the string variable
-#####################################################################
+# Function 7. Print a subsection header for the string variable
+################################################################
 function printSubHeader {
     string=$1
     echo "`date` * $string *"
 }
 
-# Function 5. Print stdout a header for the string variable
-############################################################
+# Function 8. Print log information (Steps and errors)
+#######################################################
 function log {
     string=$1
     label=$2
@@ -182,9 +180,8 @@ function log {
     fi
 }
 
-
-# Function 6. Print stdout a header for the string variable
-############################################################
+# Function 6. Execute and print to stdout commands 
+###################################################
 function run {
     command=($1)
     if [[ $2 ]];then
@@ -235,6 +232,25 @@ function copyToTmp {
     done
 }
 
+# Function 8. Run the gemtools RNA-Seq pipeline to map all the reads  
+###################################################################
+# to the genome, to the transcriptome and de-novo
+##################################################
+# Input files:
+# - $fastq1 
+# - $fastq2
+# - $genomeIndex
+# - $annot
+# - $transcriptomeIndex
+# - $transcriptomeKeys
+# Output files:
+# -	${lid}_firstMap.map.gz
+# - ${lid}_firstMap.bam
+# - ${lid}_firstMap.bam.bai
+# - ${lid}_firstMap.stats.txt
+# - ${lid}_firstMap.stats.json
+
+
 function runGemtoolsRnaPipeline {
 
 	gemFirstMap=$outDir/${lid}_firstMap.map.gz
@@ -279,7 +295,7 @@ function runGemtoolsRnaPipeline {
 	printHeader "First mapping for $lid completed in $(echo "($endTimeFirstMap-$startTimeFirstMap)/60" | bc -l | xargs printf "%.2f\n") min"
 }
 
-# Function 8. Parse user's input
+# Function 9. Parse user's input
 ################################
 function getoptions {
 ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,no-remap-unmapped,remap-multimapped:,remap-unique:,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,consider-multimapped:,filter-chimeras:,similarity-gene-pairs:" \
@@ -744,7 +760,7 @@ fi
 if [[ "$remapMultimapped" == "true" ]]; 
 then 
 	extractMultimappedSM="1";
-	if [[ "$nbMultimaps2Remap" == "all" ]];
+	if [[ "$nbMultimaps2Remap" == "ALL" ]];
 	then
 		nbMultimaps2Remap="";	
 	fi
@@ -812,7 +828,7 @@ if [[ $multimapped2ChimDetection == "true" ]]
 then
 	extractMultimappedFM="1";
 	
-	if [[ "$nbMultimaps2ChimDetect" == "all" ]];
+	if [[ "$nbMultimaps2ChimDetect" == "ALL" ]];
 	then
 		nbMultimaps2ChimDetect="";	
 	fi
@@ -1012,7 +1028,7 @@ b2tmp=${b%.gtf}
 b2=${b2tmp%.gff}
     	
     	
-# 1) First mapping. Map all the reads to the genome, to the transcriptome and de-novo, using the 
+# 1) First mapping step. Map all the reads to the genome, to the transcriptome and de-novo, using the 
 #################################################################################################
 # gemtools RNA-Seq pipeline but with max intron size larger than the biggest chromosome, and with 
 ##################################################################################################  
@@ -1028,7 +1044,7 @@ then
 	bamFirstMap=$outDir/${lid}_firstMap.bam
 	if [ ! -s $bamFirstMap ]; 
 	then
-		runGemtoolsRnaPipeline	
+		runGemtoolsRnaPipeline		## Call function to run the gemtools rna-pipeline
 	else
     	printHeader "First mapping BAM file already exists... skipping first mapping step"
 	fi
