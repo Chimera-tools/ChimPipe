@@ -997,7 +997,7 @@ printf "  %-34s %s\n" "***** GENERAL *****"
 printf "  %-34s %s\n" "output-dir:" "$outDir"
 printf "  %-34s %s\n" "tmp-dir:" "$TMPDIR"
 printf "  %-34s %s\n" "threads:" "$threads"
-printf "  %-34s %s\n\n" "log:" "$logLevel"
+printf "  %-34s %s\n" "log:" "$logLevel"
 printf "  %-34s %s\n\n" "no-cleanup:" "$cleanup"
 
 	
@@ -1155,7 +1155,6 @@ else
    	printHeader "Filtered bam file already exists...skipping conversion step"
 fi
 
-exit 1
 
 # 4) Extract reads from the raw BAM produced in the first mapping for a second 
 ###############################################################################
