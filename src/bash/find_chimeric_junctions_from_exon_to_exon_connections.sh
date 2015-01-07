@@ -142,7 +142,7 @@ zcat $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1lis
 done | sort -T $TMPDIR | uniq | wc -l | awk '{print "total exonA to exonB connections:", $1}' 
 
 # List the staggered splitmappings and the total split-mappings detecting each A-> B connection -> 8 sec
-###########################################################################
+########################################################################################################
 echo I am listing the split\-mappings detecting each A\-\> B connection >&2
 cat $1 | while read f
 do
@@ -169,7 +169,7 @@ echo I am computing the distinct chimeric junctions found by the staggered split
 # first the distinct staggered directed splitmappings 
 #####################################################
 echo first the distinct staggered directed splitmappings >&2
-awk '{split($3,a,","); k=1; while(a[k]!=""){print a[k]; k++;}}' $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total_only_A_B_indiffgn.txt | sort -T $TMPDIR | uniq -c | awk '{print $2,$1}' > $outdir/distinct_staggered_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
+awk '{split($3,a,","); k=1; while(a[k]!=""){print a[k]; k++;}}' $outdir/exonA_exonB_with_splitmapping_part1overA_part2overB_staggeredlist_totalist_total_only_A_B_indiffgn.txt | sort -T $TMPDIR | uniq -c | awk '{print $2, $1}' > $outdir/distinct_staggered_split_mappings_part1overA_part2overB_only_A_B_indiffgn.txt
 
 # then the distinct junctions (keep redundancy value and direction) as well as their beg and end
 ################################################################################################
