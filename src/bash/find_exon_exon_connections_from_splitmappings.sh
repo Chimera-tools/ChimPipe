@@ -102,14 +102,14 @@ OVERLAP=$binDir/overlap
 ##############################################################################
 echo I am making an exon file with 12 fields >&2
 annotbase=`basename ${annot%.gtf}`
-awk '$3=="exon"' $annot | awk -v to=12 -f $CUTGFF > $annotbase.exons.12flds.gff
+awk '$3=="exon"' $annot | awk -v to=12 -f $CUTGFF > $outdir/$annotbase.exons.12flds.gff
 
 # For each input file it does 7 actions (time taken is specified in comments). Input files are supposed to be .gtf.gz
 #####################################################################################################################
 cat $input | while read f
 do
 b=`basename ${f%.gz}`
-btmp=${b%.gtf}
+btmp=${b%.gff}
 
 echo == For input file $b == >&2
 
@@ -139,8 +139,8 @@ awk -v outdir=$outdir -v btmp=$btmp 'NR%2==1{print > outdir"/"btmp"_part1.gff"}N
 #      (36 minutes on all cshl 2 block alignments and produces huge files)
 ##########################################################################
 echo I am adding to these files list of strandedly overlapping exons and keep the same order as \in input file >&2
-$OVERLAP $outdir/$btmp\_part1.gff $annotbase.exons.12flds.gff -m -1 -st $stranded -f ex -nr -v | awk -v fileRef=$annotbase.exons.12flds.gff 'BEGIN{while (getline < fileRef >0){split($10,a,"\""); gnlist[$1"_"$4"_"$5"_"$7]=(gnlist[$1"_"$4"_"$5"_"$7])(a[2])(",");}} {s=""; if($NF=="."){s=".";} else{split($NF,a,","); k=1; while(a[k]!=""){s=(s)(gnlist[a[k]])(","); k++;}} gsub(/,,/,",",s); print $1"_"$4"_"$5"_"$7, $NF, s;}' > $outdir/$btmp\_part1_coord_exlist_gnlist.txt
-$OVERLAP $outdir/$btmp\_part2.gff $annotbase.exons.12flds.gff -m -1 -st $stranded -f ex -nr -v | awk -v fileRef=$annotbase.exons.12flds.gff 'BEGIN{while (getline < fileRef >0){split($10,a,"\""); gnlist[$1"_"$4"_"$5"_"$7]=(gnlist[$1"_"$4"_"$5"_"$7])(a[2])(",");}} {s=""; if($NF=="."){s=".";} else{split($NF,a,","); k=1; while(a[k]!=""){s=(s)(gnlist[a[k]])(","); k++;}} gsub(/,,/,",",s); print $1"_"$4"_"$5"_"$7, $NF, s;}' > $outdir/$btmp\_part2_coord_exlist_gnlist.txt
+$OVERLAP $outdir/$btmp\_part1.gff $outdir/$annotbase.exons.12flds.gff -m -1 -st $stranded -f ex -nr -v | awk -v fileRef=$outdir/$annotbase.exons.12flds.gff 'BEGIN{while (getline < fileRef >0){split($10,a,"\""); gnlist[$1"_"$4"_"$5"_"$7]=(gnlist[$1"_"$4"_"$5"_"$7])(a[2])(",");}} {s=""; if($NF=="."){s=".";} else{split($NF,a,","); k=1; while(a[k]!=""){s=(s)(gnlist[a[k]])(","); k++;}} gsub(/,,/,",",s); print $1"_"$4"_"$5"_"$7, $NF, s;}' > $outdir/$btmp\_part1_coord_exlist_gnlist.txt
+$OVERLAP $outdir/$btmp\_part2.gff $outdir/$annotbase.exons.12flds.gff -m -1 -st $stranded -f ex -nr -v | awk -v fileRef=$outdir/$annotbase.exons.12flds.gff 'BEGIN{while (getline < fileRef >0){split($10,a,"\""); gnlist[$1"_"$4"_"$5"_"$7]=(gnlist[$1"_"$4"_"$5"_"$7])(a[2])(",");}} {s=""; if($NF=="."){s=".";} else{split($NF,a,","); k=1; while(a[k]!=""){s=(s)(gnlist[a[k]])(","); k++;}} gsub(/,,/,",",s); print $1"_"$4"_"$5"_"$7, $NF, s;}' > $outdir/$btmp\_part2_coord_exlist_gnlist.txt
 awk -v fileRef=$outdir/$btmp\_part1_coord_exlist_gnlist.txt 'BEGIN{while (getline < fileRef >0){exonlist[$1]=$2; genelist[$1]=$3}} {print $0, "exlist", exonlist[$1"_"$4"_"$5"_"$7], "gnlist", genelist[$1"_"$4"_"$5"_"$7]}' $outdir/$btmp\_part1.gff > $outdir/$btmp\_part1_withexlist_gnlist.gff
 awk -v fileRef=$outdir/$btmp\_part2_coord_exlist_gnlist.txt 'BEGIN{while (getline < fileRef >0){exonlist[$1]=$2; genelist[$1]=$3}} {print $0, "exlist", exonlist[$1"_"$4"_"$5"_"$7], "gnlist", genelist[$1"_"$4"_"$5"_"$7]}' $outdir/$btmp\_part2.gff > $outdir/$btmp\_part2_withexlist_gnlist.gff
 
@@ -191,7 +191,7 @@ rm $outdir/$b $outdir/$btmp\_part1.gff $outdir/$btmp\_part2.gff $outdir/$btmp\_p
 done 
 
 ## Cleaning
-rm $annotbase.exons.12flds.gff 
+rm $outdir/$annotbase.exons.12flds.gff 
 
 echo I am finished >&2
 

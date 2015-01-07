@@ -28,66 +28,63 @@ authors
 # FUNCTIONS
 ############
 
-# Function 1. Print stdout basic usage information
-###################################################
+# Function 1. Print basic usage information
+############################################
 function usage
 {
 cat <<help
 	
-*** ChimPipe version $version ***
+**** ChimPipe version $version ****
 
-Execute ChimPipe (from Illumina paired-end RNA-Seq reads to chimeric junctions) on one RNA-seq dataset (sample).
+Execute ChimPipe on one Illumina paired-end RNA-seq dataset (sample).
 	
-USAGE: $0 -i <fastq_file> -g <genome_index> -a <annotation> [OPTIONS]
+*** USAGE
 
-** Mandatory arguments:
+FASTQ:
+
+	$0 --fastq_1 <mate1_fastq> --fastq_2 <mate2_fastq> -g <genome_index> -a <annotation> -t <transcriptome_index> -k <transcriptome_keys> [OPTIONS]
+
+BAM:	
+
+	$0 --bam <bam> -g <genome_index> -a <annotation> [OPTIONS]
+
+*** MANDATORY ARGUMENTS
+		
+* FASTQ:
+
+	--fastq_1			<FASTQ>		First mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
+	--fastq_2			<FASTQ>		Second mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
+	-g|--genome-index		<GEM>		Reference genome index in GEM format.
+	-a|--annotation			<GTF>		Reference gene annotation file in GTF format.                                			
+	-t|--transcriptome-index	<GEM>		Annotated transcriptome index in GEM format.
+	-k|--transcriptome-keys		<KEYS>		Transcriptome to genome coordinate conversion keys.  
+	--sample-id			<STRING>	Sample identifier (output files are named according to this id).  
 	
-	-i|--input			<INPUT_FILE>	First mate sequencing reads. ChimPipe deals with paired-end RNA-seq data.
-                          				Please make sure the second mate file is in the same directory as
-                           				the first one, and the files are named according to this convention:
+* BAM:	
 
-    							* Mate 1. “SampleId + _1 + [.fastq|.fq|.txt] (+ .gz if compressed)”
-    							* Mate 2. “SampleId + _2 + [.fastq|.fq|.txt] (+ .gz if compressed)”
-    									
-                           				E.g: sample1_1.fastq.gz and sample1_2.fastq.gz.
+	--bam				<BAM>		Mapped reads in BAM format. A splicing aware aligner is needed to map the reads. 
+	-g|--genome-index		<GEM>		Reference genome index in GEM format.
+	-a|--annotation			<GTF>		Reference genome annotation file in GTF format.
+	--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).  
 	
-	-g|--genome-index		<GEM>		Index for the reference genome in GEM format.
-	
-	-a|--annotation			<GTF>		Reference genome annotation file in GTF format. The transcriptome
-                                       			index has to be in the same directory as the annotation.
+*** [OPTIONS] can be:
 
-** [OPTIONS] can be:
-
-* General:
-	-e|--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).   
+* General: 
 	--log				<STRING>	Log level [error | warn | info | debug]. Default warn.
-	-t|--threads			<INTEGER>	Number of threads to use. Default 1.
+	--threads			<INTEGER>	Number of threads to use. Default 1.
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.	
-	--no-cleanup			<FLAG>		Keep intermediate files. 		
-	--dry				<FLAG>		Test the pipeline. Writes the commands to the standard output.
-	-h|--help			<FLAG>		Display partial usage information, only mandatory plus general arguments.
-	-f|--full-help			<FLAG>		Display full usage information with additional options. 
+	--no-cleanup					Keep intermediate files. 		
+	--dry						Test the pipeline. Writes the commands to the standard output.
+	-h|--help					Display partial usage information, only mandatory plus general arguments.
+	-f|--full-help					Display full usage information with additional options. 
 
 help
 }
 
 
-function doc
-{
-cat <<help
-A complete documentation for ChimPipe can be found at: http://chimpipe.readthedocs.org/en/latest/index.html		
-help
-}
-
-function usagedoc
-{
-usage
-doc
-}
-
-# Function 2. Print stdout all the other options
-#################################################
+# Function 2. Print all the other options
+##########################################
 function usage_long
 {
 cat <<help
@@ -96,40 +93,58 @@ cat <<help
 	-l|--seq-library 		<STRING> 	Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED].
                         				UNSTRANDED for not strand-specific protocol (unstranded data) and the others for the different types 
 							of strand-specific protocols (stranded data).
-* Mapping parameters
+* Mapping phase parameters
                         				
-  First mapping parameters:
+  First mapping:
 	-C|--consensus-ss-fm		<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
                                  			List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
 	-S|--min-split-size-fm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--refinement-step-size-fm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
 							A value of 0 disables it. Default 2. 
-	--stats				<FLAG>		Enable mapping statistics. Default disabled.
+	--no-stats					Disable mapping statistics. Default enabled.
 
-  Second Mapping parameters:
+  Second Mapping:
+	--no-remap-unmapped				No remap first mapping unmapped reads. Default remapped 
+	--remap-multimapped		<ALL|INTEGER> 	Remap first mapping multimapped reads (ALL: remap all the multimapped reads; 
+							INTEGER: remap multimapped reads with more than N matches). 
+							Default multimapped not remapped. 
+	--remap-unique 			<INTEGER> 	Remap first mapping uniquelly mapped reads with more than N mismatches (Mismatches 
+							in bad-quality bases also considered). Default unique mappings not remapped
 	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
 	-s|--min-split-size-sm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--refinement-step-size-sm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
 							A value of 0 disables it. Default 2. 
     
-* Chimeric junction filter:
-	--filter-chimeras		<STRING>	Configuration for the filtering module. Quoted string with 4 numbers separated by commas and ended in semicolom, 
-							i.e. "1,2,75:50;", where:
-											
-								1st: minimum number of staggered reads spanning the chimeric junction.
-								2nd: minimum number of paired-end reads encompassing the chimeric junction.		
-								3rd: maximum similarity between the connected genes.
-								4rd: maximum length of the high similar region between the connected genes.
-	
-							All these conditions have to be fulfilled for a chimeric junction to pass the filter. It is also possible to make 
-							complex conditions by setting two different conditions where at least one of them has to be fulfilled. 
-							I.e "10,0,0:0;1,1,0:0;". Default "5,0,80:30;1,1,80:30;".	
-	--similarity-gene-pairs	<TEXT>			Text file containing similarity information between the gene pairs in the annotation. Needed for the filtering module 
-							to discard junctions connecting highly similar genes. If this file is not provided it will be computed by ChimPipe.
+* Chimera detection phase parameters:
+
+	--consider-multimapped 		<ALL|INTEGER>	Consider multimapped reads for the detection of chimeric junctions (ALL: all the multimapped reads; 
+							INTEGER: multimapped reads with N or less matches). Default multimapped not considered. 
+	--similarity-gene-pairs	<TEXT>			Text file with similarity information between the gene pairs in the annotation.
+							Needed for the filtering module to discard chimeric junctions connecting highly similar genes. 
+							If this file is not provided it will be computed by ChimPipe.
 													
 help
 }
 
+# Function 3. Display a link to ChimPipe's documentation
+########################################################
+function doc
+{
+cat <<help
+A complete documentation for ChimPipe can be found at: http://chimpipe.readthedocs.org/en/latest/index.html		
+help
+}
+
+# Function 4. Short help 
+#########################
+function usagedoc
+{
+usage
+doc
+}
+
+# Function 5. Long help 
+#########################
 function usagelongdoc
 {
 usage
@@ -137,23 +152,22 @@ usage_long
 doc
 }
 
-
-# Function 3. Print stdout a section header for the string variable
-#####################################################################
+# Function 6. Print a section header for the string variable
+##############################################################
 function printHeader {
     string=$1
     echo "`date` ***** $string *****"
 }
 
-# Function 4. Print stdout a section header for the string variable
-#####################################################################
+# Function 7. Print a subsection header for the string variable
+################################################################
 function printSubHeader {
     string=$1
     echo "`date` * $string *"
 }
 
-# Function 5. Print stdout a header for the string variable
-############################################################
+# Function 8. Print log information (Steps and errors)
+#######################################################
 function log {
     string=$1
     label=$2
@@ -166,8 +180,8 @@ function log {
     fi
 }
 
-# Function 6. Print stdout a header for the string variable
-############################################################
+# Function 6. Execute and print to stdout commands 
+###################################################
 function run {
     command=($1)
     if [[ $2 ]];then
@@ -187,30 +201,30 @@ function copyToTmp {
     for i in ${files[@]};do
         case $i in
             "annotation")
-                if [[ ! -e $TMPDIR/$annName ]];then
+                if [[ ! -e $TMPDIR/`basename $annot` ]];then
                     log "Copying annotation file to $TMPDIR..." $step
                     run "cp $annot $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "index")
-                if [[ ! -e $TMPDIR/`basename $index` ]];then
+                if [[ ! -e $TMPDIR/`basename $genomeIndex` ]];then
                     log "Copying genome index file to $TMPDIR..." $step
-                    run "cp $index $TMPDIR" "$ECHO"
+                    run "cp $genomeIndex $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "t-index")
-                if [[ ! -e $TMPDIR/$annName.gem ]];then
+                if [[ ! -e $TMPDIR/`basename $transcriptomeIndex` ]];then
                     log "Copying annotated transcriptome index file to $TMPDIR..." $step
-                    run "cp $annot.junctions.gem $TMPDIR" "$ECHO"
+                    run "cp $transcriptomeIndex $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
             "keys")
-                if [[ ! -e $TMPDIR/$annName.junctions.keys ]];then
+                if [[ ! -e $TMPDIR/`basename $transcriptomeKeys` ]];then
                     log "Copying annotated transcriptome keys file to $TMPDIR..." $step
-                    run "cp $annot.junctions.keys $TMPDIR" "$ECHO"
+                    run "cp $transcriptomeKeys $TMPDIR" "$ECHO"
                     log "done\n"
                 fi
                 ;;
@@ -218,10 +232,73 @@ function copyToTmp {
     done
 }
 
-# Function 8. Parse user's input
+# Function 8. Run the gemtools RNA-Seq pipeline to map all the reads  
+###################################################################
+# to the genome, to the transcriptome and de-novo
+##################################################
+# Input files:
+# - $fastq1 
+# - $fastq2
+# - $genomeIndex
+# - $annot
+# - $transcriptomeIndex
+# - $transcriptomeKeys
+# Output files:
+# -	${lid}_firstMap.map.gz
+# - ${lid}_firstMap.bam
+# - ${lid}_firstMap.bam.bai
+# - ${lid}_firstMap.stats.txt
+# - ${lid}_firstMap.stats.json
+
+
+function runGemtoolsRnaPipeline {
+
+	gemFirstMap=$outDir/${lid}_firstMap.map.gz
+	baiFirstMap=$outDir/${lid}_firstMap.bam.bai
+	statsFirstMap=$outDir/${lid}_firstMap.stats.txt
+	statsJsonFirstMap=$outDir/${lid}_firstMap.stats.json
+	
+	step="FIRST-MAP"
+	startTimeFirstMap=$(date +%s)
+	printHeader "Executing first mapping step"    
+	    
+	## Copy needed files to TMPDIR
+    copyToTmp "index,annotation,t-index,keys"
+
+    log "Running gemtools rna pipeline on ${lid}..." $step
+    run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-xs $stats --no-count -n `basename ${bamFirstMap%.bam}` --compress-all --output-dir $TMPDIR -t $threads" "$ECHO" 
+	log "done\n"
+   
+   	if [ -s $TMPDIR/`basename $bamFirstMap` ]; 
+   	then 
+	    # Checksums
+	    log "Computing md5sum for map file..." $step
+       	run "md5sum $TMPDIR/`basename $gemFirstMap` > ${gemFirstMap}.md5" "$ECHO"
+       	log "Computing md5sum for bam file..." $step
+       	run "md5sum $TMPDIR/`basename $bamFirstMap` > ${bamFirstMap}.md5" "$ECHO"
+		
+		# Copy files from temporary to output directory
+		run "cp $TMPDIR/`basename $gemFirstMap` $gemFirstMap" "$ECHO"
+       	run "cp $TMPDIR/`basename $bamFirstMap` $bamFirstMap" "$ECHO"
+       	run "cp $TMPDIR/`basename $baiFirstMap` $baiFirstMap" "$ECHO"
+       	
+       	if [[ "$mapStats" == "true" ]]; 
+		then 
+       		run "cp $TMPDIR/`basename $statsFirstMap` $statsFirstMap" "$ECHO"
+       		run "cp $TMPDIR/`basename $statsJsonFirstMap` $statsJsonFirstMap" "$ECHO"
+   		fi
+   	else
+       	log "Error producing bam file\n" "ERROR"
+       	exit -1
+   	fi
+   	endTimeFirstMap=$(date +%s)        		
+	printHeader "First mapping for $lid completed in $(echo "($endTimeFirstMap-$startTimeFirstMap)/60" | bc -l | xargs printf "%.2f\n") min"
+}
+
+# Function 9. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "i:g:a:e:t:o:hfl:C:S:c:s:" -l "input:,genome-index:,annotation:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,filter-chimeras:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,no-remap-unmapped,remap-multimapped:,remap-unique:,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,consider-multimapped:,filter-chimeras:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 	
 #Bad arguments
@@ -238,17 +315,32 @@ do
   case "$1" in
    	
    	## MANDATORY ARGUMENTS
-    -i|--input)
+    --fastq_1)
       if [ -n "$2" ];
       then
-        input=$2
+        fastq1=$2
       fi
       shift 2;;
 
+	--fastq_2)
+      if [ -n "$2" ];
+      then
+        fastq2=$2
+      fi
+      shift 2;;
+      
+    --bam)
+      if [ -n "$2" ];
+      then
+        bam=$2
+        bamAsInput="true"
+      fi
+      shift 2;;
+        
     -g|--genome-index)
       if [ -n "$2" ];
       then
-        index=$2
+        genomeIndex=$2
       fi
       shift 2;;
 
@@ -258,16 +350,31 @@ do
         annot=$2
       fi
       shift 2;;
+          
+    -t|--transcriptome-index)
+      if [ -n "$2" ];
+      then
+        transcriptomeIndex=$2
+      fi
+      shift 2;;
     
-    ## OPTIONS
-    
-	# General:
-    -e|--sample-id)
+    -k|--transcriptome-keys)
+      if [ -n "$2" ];
+      then
+        transcriptomeKeys=$2
+      fi
+      shift 2;;    
+	
+	--sample-id)
        if [ -n "$2" ];
        then
          lid=$2
        fi
        shift 2;;
+       
+    ## OPTIONS
+    
+	# General:
     
     --log)
        if [ -n $2 ];
@@ -276,7 +383,7 @@ do
        fi
        shift 2;;
 	
-    -t|--threads)
+    --threads)
        if [ -n $2 ];
        then
       	 threads=$2
@@ -298,7 +405,7 @@ do
       	shift 2;;
  	
 	--no-cleanup)
-	    cleanup=0;
+	    cleanup="false";
 	    shift;;   	
  
 	--dry)
@@ -334,14 +441,14 @@ do
     -C|--consensus-ss-fm)
 	    if [ -n "$2" ];
 	    then
-		spliceSitesFM=$2
+			spliceSitesFM=$2
 	    fi
 	    shift 2;;
    
     -S|--min-split-size-fm)
     	if [ -n "$2" ];
 	    then
-	    splitSizeFM=$2
+		    splitSizeFM=$2
 	    fi
 	    shift 2;;
 	
@@ -352,11 +459,37 @@ do
 	  fi
 	  shift 2;;
       
-      --stats)
-	  mapStats="1"  
-	  shift;;
+    --no-stats)
+    	if [ -n "$2" ];
+	 	then
+	  		mapStats="false"  
+	  	fi
+	  	shift;;
       
-	# Second mapping parameters:    	
+	# Second mapping parameters:
+	--no-remap-unmapped)
+		if [ -n "$2" ];
+	  	then
+	    	remapUnmapped="false"
+	  	fi
+	  	shift;;
+	 
+	--remap-multimapped)
+		if [ -n "$2" ];
+	  	then
+	    	remapMultimapped="true"
+	    	nbMultimaps2Remap=$2
+	  	fi
+	  	shift 2;;
+	
+	--remap-unique)
+	    if [ -n "$2" ];
+	  	then
+	    	remapUnique="true"
+	    	nbMism=$2
+	  	fi
+	  	shift 2;;
+	  		
 	-c|--consensus-ss-sm)
 	    if [ -n "$2" ];
 	    then
@@ -378,7 +511,15 @@ do
 	    fi
 	    shift 2;;
 	
-	# Chimeric junction filters:
+	# Chimera detection phase parameters:
+	--consider-multimapped)
+		if [ -n "$2" ];
+	  	then
+	    	multimapped2ChimDetection="true"
+	  		nbMultimaps2ChimDetect=$2
+	  	fi
+	  	shift 2;;
+	  	
 	--filter-chimeras)
 	    if [ -n $2 ];
 	    then
@@ -404,7 +545,7 @@ done
 ############################
 
 # ChimPipe version 
-version=V0.8.5
+version=v0.8.8
 
 # Enable extended pattern matching 
 shopt -s extglob
@@ -413,7 +554,7 @@ shopt -s extglob
 ##############################
 # It will be exported as an environmental variable since it will be used by every ChimPipe's scripts 
 # to set the path to the bin, awk and bash directories. 
-root=/nfs/users/rg/sdjebali/Chimeras/ChimPipe
+root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
 
 export rootDir=$root 
 
@@ -428,31 +569,40 @@ getoptions $0 $@ # call Function 5 and passing two parameters (name of the scrip
 
 ## Mandatory arguments
 ## ~~~~~~~~~~~~~~~~~~~
-if [[ ! -e $input ]]; then log "Your input file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
-if [[ `basename ${input##*_}` != @(1.fastq|1.fq|1.txt|1.fastq.gz|1.fq.gz|1.txt.gz) ]]; then log "Please check the name of your FASTQ file follows the convention \"SampleId+_1+[.fastq|.fq|.txt] (+ .gz if compressed)\n" "ERROR" >&2; usagedoc; exit -1; fi
-if [[ ! -e $index ]]; then log "Your genome index file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
-if [[ ! -e $annot ]]; then log "Your annotation file does not exist\n" "ERROR" >&2; usagedoc; exit -1; fi
-annName=`basename $annot`
+
+if [[ "$bamAsInput" != "true" ]];
+then
+	## A) FASTQ as input
+	bamAsInput="false";
+	if [[ ! -e $fastq1 ]]; then log "The mate 1 FASTQ provided does not exist. Mandatory argument --fastq_1\n" "ERROR" >&2; usagedoc; exit -1; fi
+	if [[ ! -e $fastq2 ]]; then log "The mate 2 FASTQ provided does not exist. Mandatory argument --fastq_2\n" "ERROR" >&2; usagedoc; exit -1; fi
+	if [[ ! -e $transcriptomeIndex ]]; then log "The transcriptome index provided does not exist. Mandatory argument -t|--transcriptome-index\n" "ERROR" >&2; usagedoc; exit -1; fi
+	if [[ ! -e $transcriptomeKeys ]]; then log "The transcriptome keys provided do not exist. Mandatory argument -k|--transcriptome-keys\n" "ERROR" >&2; usagedoc; exit -1; fi
+else
+	## B) BAM as input
+	if [[ ! -e $bam ]]; then log "The BAM provided do not exist. Mandatory argument --bam\n" "ERROR" >&2; usagedoc; exit -1; fi
+fi
+	
+## Common
+if [[ ! -e $genomeIndex ]]; then log "The genome index provided does not exist. Mandatory argument -g|--genome-index\n" "ERROR" >&2; usagedoc; exit -1; fi
+if [[ ! -e $annot ]]; then log "The annotation provided does not exist. Mandatory argument -a|--annotation\n" "ERROR" >&2; usagedoc; exit -1; fi
+if [[ "$lid" == "" ]]; then log "Please provide a sample identifier. Mandatory argument --sample-id\n" "ERROR" >&2; usagedoc; exit -1; fi
+
 
 ## Optional arguments
 ## ~~~~~~~~~~~~~~~~~~
 
 # General
 # ~~~~~~~
-# Sample id
-if [ ! -n "$lid" ] 
-then 			
-    lid=`basename ${input%_1.*}`;		# Default
-fi
 
 # Log level
 if [[ "$logLevel" == "" ]]; 
 then 
 	logLevel='warn'; 
 else	
-	if [[" $logLevel" != @(error|warn|info|debug) ]];
+	if [[ "$logLevel" != @(error|warn|info|debug) ]];
 	then
-		log "Please specify a proper log status [error |warn | info | debug]. Option -l|--log\n" "ERROR" >&2;
+		log "Please specify a proper log status [error||warn||info||debug]. Option -l|--log\n" "ERROR" >&2;
 		usagedoc;
 		exit -1; 
 	fi
@@ -505,9 +655,9 @@ else
 fi
 
 # Clean up
-if [[ "$cleanup" == "" ]]; 
+if [[ "$cleanup" != "false" ]]; 
 then 
-    cleanup='1'; 
+    cleanup='true'; 
 fi	
 
 # Reads information:
@@ -520,8 +670,8 @@ then
 else
     if [[ ! "$maxReadLength" =~ ^[0-9]+$ ]]; 
     then
-	log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
-	usagelongdoc;
+		log "Please specify a proper maximum read length value for mapping. Option --max-read-length\n" "ERROR" >&2;
+		usagelongdoc;
 	exit -1; 
     fi
 fi
@@ -531,13 +681,13 @@ if [[ "$readDirectionality" != "" ]];
 then
     if [[ "$readDirectionality" == @(MATE1_SENSE|MATE2_SENSE) ]];
     then
-	stranded=1;
+		stranded=1;
     elif [[ "$readDirectionality" == "UNSTRANDED" ]];
     then
-	stranded=0;
+		stranded=0;
     else
-	log "Please specify a proper sequencing library [UNSTRANDED|MATE1_SENSE|MATE2_SENSE]\n" "ERROR" >&2;
-	usagedoc; 
+		log "Please specify a proper sequencing library [UNSTRANDED|MATE1_SENSE|MATE2_SENSE]\n" "ERROR" >&2;
+		usagedoc; 
 	exit -1;	
     fi
 else
@@ -546,18 +696,6 @@ fi
 
 # First mapping parameters:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~
-# Number of mismatches contiguous mapping
-if [[ "$mism" == "" ]]; 
-then 
-    mism='4'; 
-else 
-    if [[ ! "$mism" =~ ^[0-9]+$ ]]; 
-    then
-	log "Please specify a proper number of mismatches for contiguous mapping steps. Option -M|--mism-contiguous-map\n" "ERROR" >&2;
-	usagelongdoc; 
-	exit -1; 
-    fi
-fi
 
 # Consensus splice sites for the segmental mapping
 if [[ "$spliceSitesFM" == "" ]]; 
@@ -599,15 +737,49 @@ else
 fi
 
 # First mapping statistics
-if [[ "$mapStats" != "1" ]]; 
+if [[ "$mapStats" == "false" ]]; 
 then 
-    mapStats=0;
     stats="--no-stats"; 
-    count="--no-count"; 
+else
+	mapStats="true";
 fi
 
 # Second mapping parameters:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Remap the unmapped reads from the first mappping step
+if [[ "$remapUnmapped" == "false" ]]; 
+then 
+	extractUnmappedSM="0";	
+else			
+	remapUnmapped="true"; 
+	extractUnmappedSM="1";
+fi
+
+# Remap multimapped reads with more than X matches from the first mappping step
+if [[ "$remapMultimapped" == "true" ]]; 
+then 
+	extractMultimappedSM="1";
+	if [[ "$nbMultimaps2Remap" == "ALL" ]];
+	then
+		nbMultimaps2Remap="";	
+	fi
+else
+	remapMultimapped="false";
+	extractMultimappedSM="0";
+fi
+	    	
+# Remap uniquely mapped reads with more than X mismatches from the first mappping step
+if [[ "$remapUnique" == "true" ]]; 
+then 
+	extractUniqueFM="1";
+	extractUniqueSM="1";
+else
+	remapUnique="false";
+	extractUniqueFM="1";
+	extractUniqueSM="0";
+fi
+
 # Consensus splice sites for the segmental mapping
 if [[ "$spliceSitesSM" == "" ]]; 
 then 
@@ -634,7 +806,6 @@ else
     fi
 fi
 
-
 # Refinement size for the segmental mapping
 if [[ "$refinementSM" == "" ]];
 then 
@@ -648,8 +819,24 @@ else
     fi
 fi
 
-# Chimeric junction filters:
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Chimera detection phase parameters:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Consider multimapped reads for chimera detection:
+
+if [[ $multimapped2ChimDetection == "true" ]]
+then
+	extractMultimappedFM="1";
+	
+	if [[ "$nbMultimaps2ChimDetect" == "ALL" ]];
+	then
+		nbMultimaps2ChimDetect="";	
+	fi
+else
+	multimapped2ChimDetection="false";
+	extractMultimappedFM="0";
+fi	
+	
 # Filtering module configuration	
 if [[ "$filterConf" == "" ]]; 
 then 			
@@ -710,7 +897,9 @@ gt_filter=$binDir/gemtools-1.7.1-i3/gt.filter.remove
 pigz=$binDir/pigz
 
 # Awk 
-unmapped=$awkDir/extract_unmapped.awk
+correctNMfield=$awkDir/correctNMfield_SAMFromGEM.awk
+SAMfilter=$awkDir/SAMfilter.awk 
+addMateInfoSam=$awkDir/add_mateInfo_SAM.awk
 gff2Gff=$awkDir/gff2gff.awk
 bed2bedPE=$awkDir/bed2bedPE.awk
 bedPECorrectStrand=$awkDir/bedPECorrectStrand.awk
@@ -725,45 +914,93 @@ juncFilter=$awkDir/chimjunc_filter.awk
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 printf "\n"
-header="Pipeline configuration for $lid"
+header="PIPELINE CONFIGURATION FOR $lid"
 echo $header
 eval "for i in {1..${#header}};do printf \"-\";done"
 printf "\n\n"
 printf "  %-34s %s\n\n" "ChimPipe Version $version"
-printf "  %-34s %s\n" "***** Mandatory *****"
-printf "  %-34s %s\n" "Input file:" "$input"
-printf "  %-34s %s\n" "Reference genome file:" "$index"
-printf "  %-34s %s\n\n" "Reference gene annotation file:" "$annot"
+printf "  %-34s %s\n" "***** MANDATORY ARGUMENTS *****"
 
-printf "  %-34s %s\n" "***** Reads information *****"
-printf "  %-34s %s\n" "Sequencing library type:" "$readDirectionality"
-printf "  %-34s %s\n" "Maximum read length:" "$maxReadLength"
-printf "  %-34s %s\n\n" "Sample identifier:" "$lid"
+if [[ "$bamAsInput" == "false" ]];
+then
+	## A) FASTQ as input
+	printf "  %-34s %s\n" "fastq_1:" "$fastq1"
+	printf "  %-34s %s\n" "fastq_2:" "$fastq2"
+	printf "  %-34s %s\n" "genome-index:" "$genomeIndex"
+	printf "  %-34s %s\n" "annotation:" "$annot"
+	printf "  %-34s %s\n" "transcriptome-index:" "$transcriptomeIndex"
+	printf "  %-34s %s\n" "transcriptome-keys:" "$transcriptomeKeys"
+	printf "  %-34s %s\n\n" "sample-id:" "$lid"
 
-printf "  %-34s %s\n" "***** First mapping *****"
-printf "  %-34s %s\n" "Max number of allowed mismatches contiguous mapping:" "$mism"
-printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesFM"
-printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeFM"
-printf "  %-34s %s\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementFM"
-printf "  %-34s %s\n\n" "Mapping statistics (1:enabled,0:disabled):" "$mapStats"
+	printf "  %-34s %s\n" "** Reads information **"
+	printf "  %-34s %s\n" "seq-library:" "$readDirectionality"
+	printf "  %-34s %s\n\n" "max-read-length:" "$maxReadLength"
 
-printf "  %-34s %s\n" "***** Second mapping *****"
-printf "  %-34s %s\n" "Consensus-splice-sites for segmental mapping:" "$spliceSitesSM"
-printf "  %-34s %s\n" "Minimum split size for segmental mapping:" "$splitSizeSM"
-printf "  %-34s %s\n\n" "Refinement step size for segmental mapping (0:disabled):" "$refinementSM"
+	printf "  %-34s %s\n" "***** MAPPING PHASE *****"
+	printf "  %-34s %s\n" "** 1st mapping **"
+	printf "  %-34s %s\n" "consensus-ss-fm:" "$spliceSitesFM"
+	printf "  %-34s %s\n" "min-split-size-fm:" "$splitSizeFM"
+	printf "  %-34s %s\n" "refinement-step-size-fm (0:disabled):" "$refinementFM"
+	printf "  %-34s %s\n\n" "stats:" "$mapStats"
+else
+	## B) BAM as input
+	printf "  %-34s %s\n" "bam:" "$bam"
+	printf "  %-34s %s\n" "genome-index:" "$genomeIndex"
+	printf "  %-34s %s\n" "annotation:" "$annot"
+	printf "  %-34s %s\n\n" "sample-id:" "$lid"
 
-printf "  %-34s %s\n" "***** Filters *****"
-printf "  %-34s %s\n" "Chimeric junctions filtering module configuration:" "$filterConf"
-printf "  %-34s %s\n\n" "Similarity information between gene pairs:" "$simGnPairs"
+	printf "  %-34s %s\n" "** Reads information **"
+	printf "  %-34s %s\n" "seq-library:" "$readDirectionality"
+	printf "  %-34s %s\n\n" "max-read-length:" "$maxReadLength"
+	
+	printf "  %-34s %s\n" "***** MAPPING PHASE *****"
+fi
 
-printf "  %-34s %s\n" "***** General *****"
-printf "  %-34s %s\n" "Output directory:" "$outDir"
-printf "  %-34s %s\n" "Temporary directory:" "$TMPDIR"
-printf "  %-34s %s\n" "Number of threads:" "$threads"
-printf "  %-34s %s\n\n" "Loglevel:" "$logLevel"
-printf "  %-34s %s\n\n" "Clean up (1:enabled, 0:disabled):" "$cleanup"
+printf "  %-34s %s\n" "** 2nd mapping **"
+printf "  %-34s %s\n" "remap-unmapped:" "$remapUnmapped"
+printf "  %-34s %s\n" "remap-multimapped:" "$remapMultimapped"
+if [[ "$remapMultimapped" == "true" ]]; 
+then 
+	if [[ "$nbMultimaps2Remap" == "" ]]; 
+	then
+		printf "  %-34s %s\n" "(remap all the multimapped reads)"
+	else
+		printf "  %-34s %s\n" "(remap multimapped reads with more than $nbMultimaps2Remap matches)"
+	fi
+fi 
 
+printf "  %-34s %s\n" "remap-unique:" "$remapUnique"
+if [[ "$remapUnique" == "true" ]]; 
+then 
+	printf "  %-34s %s\n" "(remap unique mapping with more than $nbMism mismatches. Mismatches in bad-quality bases also considered)"
+fi 
+printf "  %-34s %s\n" "consensus-ss-fm:" "$spliceSitesSM"
+printf "  %-34s %s\n" "min-split-size-fm:" "$splitSizeSM"
+printf "  %-34s %s\n\n" "refinement-step-size-fm (0:disabled):" "$refinementSM"
 
+printf "  %-34s %s\n" "***** CHIMERA DETECTION PHASE *****"
+printf "  %-34s %s\n" "consider-multimapped:" "$multimapped2ChimDetection"
+if [[ "$multimapped2ChimDetection" == "true" ]]; 
+then 
+	if [[ "$nbMultimaps2ChimDetect" == "" ]]; 
+	then
+		printf "  %-34s %s\n" "(consider all the multimapped reads for chimera detection)"
+	else
+		printf "  %-34s %s\n" "(Consider multimapped reads with $nbMultimaps2ChimDetect or less matches for chimera detection)"
+	fi
+fi 
+
+printf "  %-34s %s\n" "filter-chimeras:" "$filterConf"
+printf "  %-34s %s\n\n" "similarity-gene-pairs:" "$simGnPairs"
+
+printf "  %-34s %s\n" "***** GENERAL *****"
+printf "  %-34s %s\n" "output-dir:" "$outDir"
+printf "  %-34s %s\n" "tmp-dir:" "$TMPDIR"
+printf "  %-34s %s\n" "threads:" "$threads"
+printf "  %-34s %s\n" "log:" "$logLevel"
+printf "  %-34s %s\n\n" "no-cleanup:" "$cleanup"
+
+	
 ## START CHIMPIPE
 #################
 header="Executing ChimPipe $version for $lid"
@@ -774,151 +1011,55 @@ pipelineStart=$(date +%s)
 
 # 0) Preliminary steps
 ######################
-step="PRELIM"
-log "Determining the offset quality of the reads for ${lid}..." $step
-run "quality=\`$qual $input | awk '{print \$2}'\`" "$ECHO" 
-log " The read quality is $quality\n"
-log "done\n"
+
+if [[ "$bamAsInput" == "false" ]];
+then
+	step="PRELIM"
+	log "Determining the offset quality of the reads for ${lid}..." $step
+	run "quality=\`$qual $fastq1 | awk '{print \$2}'\`" "$ECHO" 
+	log " The read quality is $quality\n"
+	log "done\n"
+else
+	quality="33"
+fi
+
 b=`basename $annot`
 b2tmp=${b%.gtf}
 b2=${b2tmp%.gff}
     	
-# 1) map all the reads to the genome, to the transcriptome and de-novo, using the gemtools RNA-Seq 
+    	
+# 1) First mapping step. Map all the reads to the genome, to the transcriptome and de-novo, using the 
 #################################################################################################
-#   pipeline but with max intron size larger than the biggest chromosome, and with an edit
+# gemtools RNA-Seq pipeline but with max intron size larger than the biggest chromosome, and with 
 ##################################################################################################  
-#   distance of round(read_length/20) -> get a gem map file and a bam file of "normal" mappings;
-################################################################################################
+# a number of mismatches of round(read_length/6) an edit distance of round(read_length/20) 
+##########################################################################################
 # outputs are: 
 ##############
-# - $outDir/$lid.map.gz 
-# - $outDir/$lid\_filtered_cuff.bam
+# - $outDir/${lid}.map.gz 
+# - $outDir/${lid}_raw_chrSorted.bam
 
-bamFirstMapping=$outDir/${lid}_filtered_cuff.bam
-
-if [ ! -s $bamFirstMapping ]; then
-	step="FIRST-MAP"
-	startTimeFirstMap=$(date +%s)
-	printHeader "Executing first mapping step"    
-
-	# 1.1) Mapping
-	################
-	if [ ! -s $lid.map.gz ];then
-	    step="FIRST-MAP"
-	    startTime=$(date +%s)
-    
-	## Copy needed files to TMPDIR
-    	copyToTmp "index,annotation,t-index,keys"
-
-    	log "Running gemtools rna pipeline on ${lid}..." $step
-    	run "$gemtools --loglevel $logLevel rna-pipeline -f $input -i $TMPDIR/`basename $index` -a $TMPDIR/$annName -q $quality -n $lid --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM -t $threads --no-bam --no-filtered $stats $count" "$ECHO" 
-		
-		
-		
-		log "done\n"
-    	if [ -s $lid.map.gz ]; then
-        	log "Computing md5sum for map file..." $step
-        	run "md5sum $lid.map.gz > $lid.map.gz.md5" "$ECHO"
-        	log "done\n"
-    	else
-        	log "Error producing map file\n" "ERROR"
-        	exit -1
-    	fi
-    	endTime=$(date +%s)
-    	printSubHeader "Mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+if [[ "$bamAsInput" == "false" ]];
+then
+	bamFirstMap=$outDir/${lid}_firstMap.bam
+	if [ ! -s $bamFirstMap ]; 
+	then
+		runGemtoolsRnaPipeline		## Call function to run the gemtools rna-pipeline
 	else
-    	printSubHeader "Map file already present...skipping mapping step"
+    	printHeader "First mapping BAM file already exists... skipping first mapping step"
 	fi
-
-	# 1.2) Filtering the map file
-	##############################
-	filteredGem=${lid}_unique_${mism}mism.map.gz
-
-	if [ ! -s $filteredGem ];then
-    	step="FIRST-MAP.FILTER"
-    	startTime=$(date +%s)
-    	printSubHeader "Executing filtering step"
-	
-    	log "Filtering map file..." $step
-    	run "$gt_filter -i $lid.map.gz --max-matches 2 --max-levenshtein-error $mism -t $threads | $pigz -p $threads -c > $filteredGem" "$ECHO"
-    	log "done\n" 
-    	if [ -s $filteredGem ]; then
-    	    log "Computing md5sum for filtered file..." $step
-    	    run "md5sum $filteredGem > $filteredGem.md5" "$ECHO"
-    	    log "done\n"
-    	else
-    	    log "Error producing filtered map file\n" "ERROR" 
-    	    exit -1
-    	fi
-    	endTime=$(date +%s)
-    	printSubHeader "Filtering step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-	else	
-    	printSubHeader "Filtered map file is present...skipping filtering step"
-	fi
-
-	# 1.3) Stats from the filtered file
-	####################################
-	filteredGemStats=${filteredGem%.map.gz}.stats
-
-	if [ $filteredGemStats -ot $filteredGem ] && [ "$mapStats" == "1" ] ;then
-    	step="FIRST-MAP.STATS"
-    	startTime=$(date +%s)
-    	printSubHeader "Executing GEM stats step"
-    	log "Producing stats for $filteredGem..." $step
-    	run "$gemtools stats -i $filteredGem -t $threads -a -p 2> $filteredGemStats" "$ECHO"
-    	log "done\n"
-    	if [ -s $filteredGemStats ]; then
-        	log "Computing md5sum for stats file..." $step
-        	run "md5sum $filteredGemStats > $filteredGemStats.md5" "$ECHO"
-        	log "done\n"
-    	else
-        	log "Error producing GEM stats\n" "ERROR" 
-        	exit -1
-    	fi
-    	endTime=$(date +%s)
-    	printSubHeader "GEM stats step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-	else
-    	if [ "$mapStats" == "1" ]; then 
-    		printSubHeader "GEM stats file is present...skipping GEM stats step"; 
-    	fi 
-	fi
-
-	# 1.4) Convert to bam
-	#####################
-	filteredBam=${lid}_filtered_cuff.bam
-
-	if [ ! -s $filteredBam ];then
-	    step="FIRST-MAP.CONVERT"
-	    startTime=$(date +%s)
-	    printSubHeader "Executing conversion step"
-	
-	    ## Copy needed files to TMPDIR
-	    copyToTmp "index"	
-	    log "Converting $lid to bam..." $step
-    	run "$pigz -p $hthreads -dc $filteredGem | $gem2sam -T $hthreads -I $TMPDIR/`basename $index` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - $TMPDIR/${filteredBam%.bam}" "$ECHO"
-    	log "done\n"
-    	if [ -s $TMPDIR/$filteredBam ]; then
-        	log "Computing md5sum for bam file..." $step
-        	run "md5sum $TMPDIR/$filteredBam > $TMPDIR/$filteredBam.md5" "$ECHO"
-        	run "cp $TMPDIR/$filteredBam.md5 ." "$ECHO"
-        	log "done\n"
-        	log "Copying filtered bam file to mapping dir..." $step
-        	run "cp $TMPDIR/$filteredBam ." "$ECHO"
-        	log "done\n"
-    	else
-        	log "Error producing the filtered bam file\n" "ERROR" 
-        	exit -1
-    	fi
-    	endTime=$(date +%s)
-    	printSubHeader "Conversion step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-	else
-    	printSubHeader "Bam file is present...skipping conversion step"
-	fi
-	endTimeFirstMap=$(date +%s)
-	printHeader "First mapping for $lid completed in $(echo "($endTimeFirstMap-$startTimeFirstMap)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-    printHeader "First mapping BAM file is present...skipping first mapping step"
+	printHeader "BAM file provided as input... skipping first mapping step"
+	bamFirstMap=$bam	
 fi
+
+### Check in which fields are the number of mappings and the number of mismatches 
+
+# Comment: samtools view -F 4 ** filter out unmapped reads 
+
+NHfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NH:i:"){print field;} field++}}'`
+NMfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NM:i:"){print field;} field++}}'`
+
 
 # 2) Infer the sequencing library protocol used (UNSTRANDED, MATE2_SENSE OR MATE1_SENSE) 
 ########################################################################################
@@ -934,7 +1075,7 @@ then
     startTimeLibrary=$(date +%s)
     printHeader "Executing infer library type step" 
     log "Infering the sequencing library protocol from a random subset with 1 percent of the mapped reads..." $step
-    read fraction1 fraction2 other <<<$(bash $infer_library $bamFirstMapping $annot)
+    read fraction1 fraction2 other <<<$(bash $infer_library $bamFirstMap $annot)
     log "done\n"
     log "Fraction of reads explained by 1++,1--,2+-,2-+: $fraction1\n" $step
     log "Fraction of reads explained by 1+-,1-+,2++,2--: $fraction2\n" $step
@@ -946,30 +1087,30 @@ then
     other_int=${other/\.*};
     
     # Infer the sequencing library from the mapping distribution. 
-    if [ "$fraction1_int" -ge 80 ]; # MATE1_SENSE protocol
+    if [ "$fraction1_int" -ge 70 ]; # MATE1_SENSE protocol
     then 
-	readDirectionality="MATE1_SENSE";
-	stranded=1;
-	echo $readDirectionality;	
-    elif [ "$fraction2_int" -ge 80 ];
+		readDirectionality="MATE1_SENSE";
+		stranded=1;
+		echo $readDirectionality;	
+    elif [ "$fraction2_int" -ge 70 ];
     then	
-	readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
-	stranded=1;
+		readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
+		stranded=1;
     elif [ "$fraction1_int" -ge 40 ] && [ "$fraction1_int" -le 60 ];
     then
-	if [ "$fraction2_int" -ge 40 ] && [ "$fraction2_int" -le 60 ]; # UNSTRANDED prototol
-	then
-	    readDirectionality="UNSTRANDED";
-	    stranded=0;
-	else
-	    log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-	    usagelongdoc
-	    exit -1	
-	fi
+		if [ "$fraction2_int" -ge 40 ] && [ "$fraction2_int" -le 60 ]; # UNSTRANDED prototol
+		then
+	    	readDirectionality="UNSTRANDED";
+	    	stranded=0;
+		else
+	    	log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
+	    	usagelongdoc
+	    	exit -1	
+		fi
     else
-	log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-	usagelongdoc
-	exit -1	
+		log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
+		usagelongdoc
+		exit -1	
     fi
     log "Sequencing library type: $readDirectionality\n" $step 
     log "Strand aware protocol (1: yes, 0: no): $stranded\n" $step 
@@ -979,58 +1120,101 @@ else
     printHeader "Sequencing library type provided by the user...skipping library inference step"
 fi
 
+# 3) Produce a filtered BAM file with the alignments of the reads which will not be remapped. 
+#############################################################################################
+# Add the XS optional field to specify the read directionality for cufflinks
+##############################################################################
+# Output is: 
+############
+# - $outDir/${lid}_filtered_chrSorted.bam
 
-# 3) extract the reads that do not map with a number of mismatches lower than 6
+## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments) 
+
+filteredBam=$outDir/${lid}_filtered_firstMap.bam
+		
+if [ ! -s $filteredBam ];
+then
+	step="BAM-FILTERING"
+    startTime=$(date +%s)
+    printHeader "Executing bam filtering step"
+	log "Produce a filtered BAM file with the mappings of the reads which will not be remapped..." $step
+	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="0" -v unmapped="0" -v multimapped=$extractMultimappedFM -v nbMatches=$nbMultimaps2ChimDetect -v unique=$extractUniqueFM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | $addXS $readDirectionality | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam}" "$ECHO"
+	log "done\n"
+	if [ -s $filteredBam ]; 
+   	then
+       	log "Computing md5sum for bam file..." $step
+       	run "md5sum $filteredBam > $filteredBam.md5" "$ECHO"
+       	log "done\n"
+   	else
+       	log "Error filtering the bam file\n" "ERROR" 
+       	exit -1
+   	fi
+   	endTime=$(date +%s)
+   	printHeader "Bam filtering step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+   	printHeader "Filtered bam file already exists...skipping conversion step"
+fi
+
+
+# 4) Extract reads from the raw BAM produced in the first mapping for a second 
 ###############################################################################
-#    from the gem file: outDirget a fastq file 
-##############################################
+# split-mapping attemp allowing split-mappings in different chromosomes, strands 
+#################################################################################
+# and non genomic order. Produce a FASTQ file with them. 
+########################################################
 # output is: 
 ############
-# - $outDir/$lid.unmapped.fastq
+# - $outDir/${lid}_reads2remap.fastq
 
-unmappedReads=$outDir/${lid}.unmapped.fastq
+## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments)
 
-if [ ! -s $unmappedReads ]; then
-	step="UNMAP"
+reads2remap=$outDir/${lid}_reads2remap.fastq
+		
+if [ ! -s $reads2remap ]; 
+then
+	step="READS2REMAP"
 	startTime=$(date +%s)
-	printHeader "Executing unmapped reads step" 
-	log "Extracting the reads that do not map with a number of mismatches lower than 6..." $step
-	run "zcat $lid.map.gz | awk -f $unmapped | $gtfilter -t $threads --output-format 'FASTA' > $outDir/$lid.unmapped.fastq" "$ECHO" 	
+	printHeader "Executing extract reads to remap step" 
+	log "Extracting reads from the raw BAM for a second split-mapping step..." $step
+	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v multimapped=$extractMultimappedSM -v nbMatches=$nbMultimaps2Remap -v unique=$extractUniqueSM -v nbMism=$nbMism -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap" "$ECHO"
 	log "done\n" 
-    if [ -s $unmappedReads ]; then
-    	log "Computing md5sum for unmapped reads file..." $step
-    	run "md5sum $unmappedReads > $unmappedReads.md5" "$ECHO"
+    if [ -s $reads2remap ]; 
+    then
+    	log "Computing md5sum for the fastq file..." $step
+    	run "md5sum $reads2remap > $reads2remap.md5" "$ECHO"
         log "done\n"
     else
-        log "Error extracting the unmapped reads\n" "ERROR" 
+        log "Error extracting the reads\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
-	printHeader "Extracting unmapped reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	printHeader "Extracting reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-    printHeader "Unmapped reads file is present...skipping extracting unmapped reads step"
+    printHeader "FASTQ file with reads to remap already exists... skipping extracting reads to remap step"
 fi
 
-# 4) map the unmapped reads with the rna mapper binary: get a gem map file 
+# 5) Second split-mapping attemp. Remap the extracted reads allowing reads 
 ###########################################################################
-#   of "atypical" mappings
-##########################
+# to split in different chromosomes, strands and non genomic order.
+###################################################################
 # output is: 
 ############
-# - $outDir/SecondMapping/$lid.unmapped_rna-mapped.map
+# - $outDir/SecondMapping/${lid}.remapped.map
 
-gemSecondMapping=$outDir/SecondMapping/${lid}.unmapped_rna-mapped.map
+gemSecondMap=$outDir/SecondMapping/${lid}_secondMap.map
 
-if [ ! -s $gemSecondMapping ]; then
+if [ ! -s $gemSecondMap ];
+then
 	step="SECOND-MAP"
 	startTime=$(date +%s)
-	printHeader "Executing second mapping step"
-	log "Mapping the unmapped reads with the rna mapper..." $step	
-	run "$gemrnatools split-mapper -I $index -i $outDir/$lid.unmapped.fastq -q 'offset-$quality' -o $outDir/SecondMapping/$lid.unmapped_rna-mapped -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
+	printHeader "Executing second split-mapping step"
+	log "Remapping reads allowing them to split-map in different chromosomes, strand and non genomic order..." $step	
+	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-$quality' -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
 	log "done\n" 
-	if [ -s $gemSecondMapping ]; then
+	if [ -s $gemSecondMap ]; 
+	then
     	log "Computing md5sum for the gem file with the second mappings..." $step
-    	run "md5sum $gemSecondMapping > $gemSecondMapping.md5" "$ECHO"
+    	run "md5sum $gemSecondMap > $gemSecondMap.md5" "$ECHO"
         log "done\n"
     else
         log "Error in the second mapping\n" "ERROR" 
@@ -1039,25 +1223,27 @@ if [ ! -s $gemSecondMapping ]; then
     endTime=$(date +%s)
 	printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Second mapping GEM file is present...skipping extracting second mapping step"
+	printHeader "Second mapping GEM file already exists... skipping extracting second mapping step"
 fi
-
-# 5) extract the reads mapping both uniquely and in 2 blocks from the bam file of "normal" mappings and convert in gff.gz
+	
+# 6) extract the reads mapping both uniquely and in 2 blocks from the bam file of "normal" mappings and convert in gff.gz
 #########################################################################################################################
 # output is: 
 ############
-# - $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
+# - $outDir/FromFirstBam/${lid}_splitmappings_2blocks_firstMap.gff.gz
 
-gffFromBam=$outDir/FromFirstBam/${lid}_filtered_cuff_2blocks.gff.gz
+gffFromBam=$outDir/FromFirstBam/${lid}_splitmappings_2blocks_firstMap.gff.gz
 
-if [ ! -s $gffFromBam ]; then
+if [ ! -s $gffFromBam ]; 
+then
 	step="FIRST-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the bam into gff step"
 	log "Generating a ".gff.gz" file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
-	bedtools bamtobed -i $outDir/$lid\_filtered_cuff.bam -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz
+	bedtools bamtobed -i $filteredBam -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $gffFromBam 
 	log "done\n"
-	if [ -s $gffFromBam ]; then
+	if [ -s $gffFromBam ]; 
+	then
     	log "Computing md5sum for the gff file from the ".bam" containing the reads mapping both uniquely and in 2 blocks..." $step
     	run "md5sum $gffFromBam > $gffFromBam.md5" "$ECHO"
         log "done\n"
@@ -1068,25 +1254,27 @@ if [ ! -s $gffFromBam ]; then
 	endTime=$(date +%s)
 	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Gff from first mapping BAM file is present... skipping conversion step"
+	printHeader "Gff from first mapping BAM file already exists... skipping conversion step"
 fi
 
-# 6) extract the reads mapping both uniquely and in 2 blocks from the map file of "atypical" mappings and convert in gff.gz
+# 7) extract the reads mapping both uniquely and in 2 blocks from the map file of "atypical" mappings and convert in gff.gz
 #########################################################################################################################
 # output is: 
 ############
-# - $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz
+# - $outDir/FromSecondMapping/${lid}_splitmappings_2blocks_secondMap.gff.gz
 
-gffFromMap=$outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz
+gffFromMap=$outDir/FromSecondMapping/${lid}_splitmappings_2blocks_secondMap.gff.gz
 
-if [ ! -s $gffFromMap ]; then
+if [ ! -s $gffFromMap ]; 
+then
 	step="SECOND-CONVERT"
 	startTime=$(date +%s)
 	printHeader "Executing conversion of the gem into gff step"
 	log "Generating a ".gff.gz" file from the atypical mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step	
-	run "awk -v readDirectionality=$readDirectionality -f $gemCorrectStrand $outDir/SecondMapping/$lid.unmapped_rna-mapped.map | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $outDir/FromSecondMapping/${lid}.unmapped_rna-mapped.gff.gz" "$ECHO"
+	run "awk -v readDirectionality=$readDirectionality -f $gemCorrectStrand $gemSecondMap | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $gffFromMap" "$ECHO"
 	log "done\n" 
-	if [ -s $gffFromMap ]; then
+	if [ -s $gffFromMap ]; 
+	then
     	log "Computing md5sum for the gff file from the atypical mappings containing the reads mapping both uniquely and in 2 blocks..." $step
     	run "md5sum $gffFromMap > $gffFromMap.md5" "$ECHO"
         log "done\n"
@@ -1097,60 +1285,65 @@ if [ ! -s $gffFromMap ]; then
     endTime=$(date +%s)
 	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Gff from second mapping MAP file is present... skipping conversion step"
+	printHeader "Gff from second mapping MAP file already exists... skipping conversion step"
 fi
 
 
-# 7) put the path to the "normal" and "atypical" gff.gz files in a same txt file for chimsplice 
+# 8) put the path to the "normal" and "atypical" gff.gz files in a same txt file for chimsplice 
 #############################################################################################
+paths2chimsplice=$outDir/split_mapping_file_sample_$lid.txt
 
-run "echo $outDir/FromFirstBam/$lid\_filtered_cuff_2blocks.gff.gz > $outDir/split_mapping_file_sample_$lid.txt" "$ECHO"
-run "echo $outDir/FromSecondMapping/$lid.unmapped_rna-mapped.gff.gz >> $outDir/split_mapping_file_sample_$lid.txt" "$ECHO"
+run "echo $gffFromBam > $paths2chimsplice" "$ECHO"
+run "echo $gffFromMap >> $paths2chimsplice" "$ECHO"
 
-# 8) run chimsplice on 4) and 5)
-################################
+# 9) run chimsplice on 4) and 5)
+###############################
 # - $outDir/Chimsplice/chimeric_junctions_report_$lid.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 
-exonConnections1=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid\_filtered_cuff_2blocks.gff.txt.gz 
-exonConnections2=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_$lid.unmapped_rna-mapped.gff.txt.gz
+exonConnections1=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_splitmappings_2blocks_firstMap.txt.gz
+exonConnections2=$outDir/Chimsplice/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_splitmappings_2blocks_secondMap.txt.gz
 
 printHeader "Executing Chimsplice step"
-if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; then
+if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; 
+then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding exon to exon connections from the ".gff.gz" files containing the "normal" and "atypical" mappings..." $step
-	run "$chim1 $outDir/split_mapping_file_sample_$lid.txt $annot $outDir/Chimsplice $stranded" "$ECHO"
+	run "$chim1 $paths2chimsplice $annot $outDir/Chimsplice $stranded" "$ECHO"
 	log "done\n" 
-	if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; then
+	if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; 
+	then
         log "Error running chimsplice\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
 	printHeader "Find exon to exon connections step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Exon to exon connections file present... skipping step"
+	printHeader "Exon to exon connections file already exists... skipping step"
 fi
 
 chimJunctions=$outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-if [ ! -s $chimJunctions ]; then
+if [ ! -s $chimJunctions ]; 
+then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
-	run "$chim2 $outDir/split_mapping_file_sample_$lid.txt $index $annot $outDir/Chimsplice $stranded $spliceSitesFM > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+	run "$chim2 $paths2chimsplice $genomeIndex $annot $outDir/Chimsplice $stranded $spliceSitesFM > $outDir/Chimsplice/chimeric_junctions_report_$lid.txt 2> $outDir/Chimsplice/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	log "done\n" 
-	if [ ! -s $chimJunctions ]; then
+	if [ ! -s $chimJunctions ]; 
+	then
         log "Error running chimsplice\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
 	printHeader "Find chimeric junctions step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Chimeric Junctions file present... skipping step"
+	printHeader "Chimeric Junctions file already exists... skipping step"
 fi
 
-# 8.1) Find gene to gene connections supported by paired-end mappings from the bam file of "normal" mappings with the number of mappings supporting the connection.  
+# 9.1) Find gene to gene connections supported by paired-end mappings from the bam file of "normal" mappings with the number of mappings supporting the connection.  
 #################################################################################################################################################################
 # For a connection g1 to g2 to exist there must be at least one mapping where the first mate is strandedly (if data is stranded) overlapping with an exon 
 #########################################################################################################################################################
@@ -1160,36 +1353,39 @@ fi
 # - $outDir/PE/readid_twomateswithgnlist_alldiffgnpairs_where_1stassociatedto1stmate_and2ndto2ndmate.txt.gz
 # - $outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
 
-PEinfo=$outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
+PEsupport=$outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
 
 printHeader "Executing find gene to gene connections from PE mappings step"
-if [ ! -s $PEinfo ];then
+if [ ! -s $PEsupport ];
+then
 	step="PAIRED-END"
 	startTime=$(date +%s)
 	log "Finding gene to gene connections supported by paired-end mappings from the ".bam" containing reads mapping in a unique and continuous way..." $step
-	run "$findGeneConnections $outDir/$lid\_filtered_cuff.bam $annot $outDir/PE $readDirectionality" "$ECHO"
+	run "$findGeneConnections $filteredBam $annot $outDir/PE $readDirectionality" "$ECHO"
 	log "done\n" 
-	if [ ! -s $PEinfo ]; then
+	if [ ! -s $PEsupport ]; 
+	then
         log "Error finding gene to gene connections\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
 	printHeader "Find gene to gene connections from PE mappings step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Gene to gene connections file present... skipping step"
+	printHeader "Gene to gene connections file already exists... skipping step"
 fi
 
-# 8.2) Add gene to gene connections information to chimeric junctions matrix
+# 9.2) Add gene to gene connections information to chimeric junctions matrix
 ##########################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
 chimJunctionsPE=$outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-if [ ! -s $chimJunctionsPE ];then
+if [ ! -s $chimJunctionsPE ];
+then
 	step="PAIRED-END"
 	startTime=$(date +%s)
 	log "Adding PE information to the matrix containing chimeric junction candidates..." $step
-	run "awk -v fileRef=$PEinfo -f $addPEinfo $chimJunctions 1> $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+	run "awk -v fileRef=$PEsupport -f $addPEinfo $chimJunctions 1> $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 " "$ECHO"
 	log "done\n" 
 	if [ ! -s $chimJunctionsPE ]; then
@@ -1199,24 +1395,24 @@ if [ ! -s $chimJunctionsPE ];then
     endTime=$(date +%s)
 	printHeader "Add PE information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Chimeric junction matrix with PE information present... skipping step"
+	printHeader "Chimeric junction matrix with PE information already exists... skipping step"
 fi
 
-# 9) Compute the gene similarity matrix in case the user does not provide it
+# 10) Compute the gene similarity matrix in case the user does not provide it
 ############################################################################
 if [ ! -e "$simGnPairs" ]
 then
     step="PRE-SIM"
     startTime=$(date +%s)
     log "Computing similarity between annotated genes..." $step
-    run "$sim $annot $index 4" "$ECHO"
+    run "$sim $annot $genomeIndex 4" "$ECHO"
     log "done\n" 			
     endTime=$(date +%s)
     simGnPairs=$outDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
     printHeader "Computing similarity between annotated gene step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 fi
 
-# 10) Add information regarding the sequence similarity between connected genes
+# 11) Add information regarding the sequence similarity between connected genes
 ##############################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
@@ -1242,10 +1438,11 @@ then
 	printHeader "Similarity information between the gene pairs in the annotation is not provided... skipping step"
     fi
 else
-    printHeader "Chimeric junction matrix with similarity information present... skipping step"
+    printHeader "Chimeric junction matrix with similarity information already exists... skipping step"
 fi
 
-# 11) Produce a matrix containing chimeric junction candidates with a header in the first row
+
+# 12) Produce a matrix containing chimeric junction candidates with a header in the first row
 #############################################################################################
 # - $outDir/chimeric_junctions_candidates.txt
 
@@ -1257,35 +1454,37 @@ then
     log "Adding a header to the matrix containing the chimeric junction candidates..." $step
     if [ -s "$chimJunctionsSim" ]
     then		
-	run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\", \"maxSim\", \"maxLgal\";}{print \$0;}' $chimJunctionsSim 1> $chimJunctionsCandidates" "$ECHO"
+		run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\", \"maxSim\", \"maxLgal\";}{print \$0;}' $chimJunctionsSim 1> $chimJunctionsCandidates" "$ECHO"
 	log "done\n"
     else
-	if [ -s "$chimJunctionsPE" ]
-	then
-	    run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\";}{print \$0;}' $chimJunctionsPE 1> $chimJunctionsCandidates" "$ECHO"
-	    log "done\n" 	
-	else
-	    log "Error, intermediate file: $chimJunctionsSim or $chimJunctionsPE is missing\n" "ERROR" 
+		if [ -s "$chimJunctionsPE" ]
+		then
+	   		run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\";}{print \$0;}' $chimJunctionsPE 1> $chimJunctionsCandidates" "$ECHO"
+	    	log "done\n" 	
+		else
+	    	log "Error, intermediate file: $chimJunctionsSim or $chimJunctionsPE is missing\n" "ERROR" 
 	    exit -1			
-	fi
+		fi
     fi 
 else
-    printHeader "Header already added... skipping step"
+    printHeader "Header already already added... skipping step"
 fi
 
-# 12) Filter out chimera candidates to produce a final set of chimeric junctions
+# 13) Filter out chimera candidates to produce a final set of chimeric junctions
 ################################################################################
 # - $outDir/chimeric_junctions.txt
 
 chimJunctions=$outDir/chimeric_junctions_${lid}.txt
 
-if [ ! -s "$chimJunctions" ]; then
+if [ ! -s "$chimJunctions" ]; 
+then
 	step="FILTERING MODULE"
 	startTime=$(date +%s)
 	log "Filtering out chimera candidates to produce a final set of chimeric junctions..." $step
 	awk -v filterConf=$filterConf -f $juncFilter $chimJunctionsCandidates > $chimJunctions
 	log "done\n" 
-	if [ ! -s $chimJunction ]; then
+	if [ ! -s $chimJunction ]; 
+	then
 		log "Error filtering chimeric junction candidates\n" "ERROR" 
     	exit -1
 	fi
@@ -1296,16 +1495,18 @@ else
 	printHeader "Chimeric junction candidates already filtered... skipping step"
 fi
 
-# 13) Clean up
+
+# 14) Clean up
 ###############
 
-if [[ "$cleanup" == "1" ]]; then 
+if [[ "$cleanup" == "true" ]]; 
+then 
 	step="CLEAN-UP"
 	startTime=$(date +%s)
 	log "Removing intermediate files..." $step
-	rm -r $outDir/FromFirstBam $outDir/FromSecondMapping $outDir/Chimsplice
+	rm -r $outDir/FromFirstBam $outDir/FromSecondMapping $outDir/Chimsplice $outDir/PE
 	rm $outDir/$b2\_tr.fasta*
-	rm $outDir/split_mapping_file_sample_$lid.txt $chimJunctionsSim $chimJunctionsCandidates $chimJunctionsPE
+	rm $outDir/${lid}.junctions $outDir/${lid}_denovo-index.junctions $outDir/${lid}_denovo-index.junctions.keys $outDir/${lid}_gtf.junctions $gemFirstMapping $gemFirstMapping.md5 $filteredGem $filteredGem.md5 $unmappedReads $unmappedReads.md5 $paths2chimsplice $chimJunctionsSim $chimJunctionsCandidates $chimJunctionsPE
 	log "done\n" 
 	endTime=$(date +%s)
 	printHeader "Clean up step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -1314,7 +1515,7 @@ else
 fi	
 
 
-# 14) END
+# 15) END
 #########
 pipelineEnd=$(date +%s)
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
