@@ -106,9 +106,9 @@ cat <<help
   Second Mapping:
 	--no-remap-unmapped				No remap first mapping unmapped reads. Default remapped 
 	--remap-multimapped		<ALL|INTEGER> 	Remap first mapping multimapped reads (ALL: remap all the multimapped reads; 
-							INTEGER: remap multimapped reads with more than N matches). 
+							INTEGER: remap multimapped reads with more than N hits). 
 							Default multimapped not remapped. 
-	--remap-unique 			<INTEGER> 	Remap first mapping uniquelly mapped reads with more than N mismatches (Mismatches 
+	--remap-unique 			<INTEGER> 	Remap first mapping uniquelly mapped reads with more than M mismatches (Mismatches 
 							in bad-quality bases also considered). Default unique mappings not remapped
 	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
 	-s|--min-split-size-sm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
