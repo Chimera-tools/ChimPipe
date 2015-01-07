@@ -55,7 +55,7 @@ BAM:
 	--fastq_1			<FASTQ>		First mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
 	--fastq_2			<FASTQ>		Second mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
 	-g|--genome-index		<GEM>		Reference genome index in GEM format.
-	-a|--annotation			<GTF>		Reference genome annotation file in GTF format.                                			
+	-a|--annotation			<GTF>		Reference gene annotation file in GTF format.                                			
 	-t|--transcriptome-index	<GEM>		Annotated transcriptome index in GEM format.
 	-k|--transcriptome-keys		<KEYS>		Transcriptome to genome coordinate conversion keys.  
 	--sample-id			<STRING>	Sample identifier (output files are named according to this id).  
@@ -545,7 +545,7 @@ done
 ############################
 
 # ChimPipe version 
-version=V0.8.6
+version=v0.8.8
 
 # Enable extended pattern matching 
 shopt -s extglob
