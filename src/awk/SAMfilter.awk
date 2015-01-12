@@ -36,7 +36,7 @@
 
 # Usage:
 ########
-# awk -v OFS="\t" <INPUT_ARGS> -f SAMfilter.awk
+# awk -v OFS="\t" <INPUT_ARGS> -f SAMfilter.awk mappings.map
 
 
 # Where INPUT_ARGS can be:
@@ -45,11 +45,11 @@
 # -v unmapped="1"  Print unmapped reads;  
 # -v unique="1" Print uniquelly mapped reads;
 # -v multimapped="1" Print multi-mapped reads;
-# -v nbMatches="N" Number of multimappings threshold
+# -v nbHits="N" Number of multimappings threshold. It can be used in combination of "nbMism" to also filter the multimapping according the number of mismatches. Both conditions shoud be fullfiled for an alignment to be printed 
 # -v nbMism="N" Number of mismatches threshold
 # -v NHfield="" Position of the field containing the number of alignments (NH). Mandatory if "unique=1" or "multimapped=1"
 # -v NMfield="" Position of the field containing the edit distance (NM).
-# -v higherThan="1" Print uniquely mapped reads with a number of mismatches higher than a treshold or multimapped with a number of hits higher than treshold. If not set, do the opposite, comparison operator lower than or equal instead of higher than.
+# -v higherThan="1" If "nbMism" set, print uniquely and multimapped mapped reads with a number of mismatches higher than a treshold. If "nbHits" set, print multimapped with a number of hits higher than threshold. If not specified, do the opposite, comparison operator lower than or equal instead of higher than.
 
 ## Examples:
 
@@ -61,14 +61,14 @@
  
  
 BEGIN{
-	if	(((unique=="1")||(multimapped=="1"))&&(NHfield==""))
+	if	((multimapped=="1")&&(NHfield==""))
 	{
 		print "[ERROR] Please specify the position of the NH field (nb. of hits). I.e: awk -v NHfield=14 ..." > "/dev/stderr";
     	exit 1
 	}
 	else
 	{
-		if ((unique=="1")&&(nbMism!="")&&(NMfield==""))
+		if ((nbMism!="")&&(NMfield==""))
 		{
 			print "[ERROR] Please specify the position of the NM field (edit distance). I.e: awk -v NMfield=15 ..." > "/dev/stderr";
     		exit 1
@@ -91,13 +91,13 @@ BEGIN{
 	}	
 	else
 	{
-		if (higherThan=="1") # Flag to set the nbMism and nbMatches comparison operators to > enabled
+		if (higherThan=="1") # Flag to set the nbMism and nbHits comparison operators to > enabled
 		{
 			if ((unique=="1")&&(NH[3]=="1")&&((nbMism=="")||(NM[3]>nbMism))) # Print all uniquelly mapped reads or unique with more than X mismatches if "nbMism" input variable set
 			{
 					print $0;
 			}
-			else if ((multimapped=="1")&&(NH[3]>"1")&&((nbMatches=="")||(NH[3]>nbMatches))) # Print all multimapped reads or multimappings with more than X hits if "nbMatches" input variable set
+			else if ((multimapped=="1")&&(NH[3]>"1")&&((nbHits=="")||(NH[3]>nbHits))&&((nbMism=="")||(NM[3]>nbMism))) # Print all multimapped reads, multimappings with more than X hits if "nbHits" is set, multimappings with more than N mismatches if "nbMism" is set or multimappings with more than X hits and N mismatches if both "nbHits" and "nbMism" are set 
 			{
 					print $0;
 			}
@@ -108,7 +108,7 @@ BEGIN{
 			{
 				print $0;
 			}
-			else if ((multimapped=="1")&&(NH[3]>"1")&&((nbMatches=="")||(NH[3]<=nbMatches))) # Print all multimapped reads or multimappings with X or less hits if "nbMatches" input variable set
+			else if ((multimapped=="1")&&(NH[3]>"1")&&((nbHits=="")||(NH[3]<=nbHits))&&((nbMism=="")||(NM[3]<=nbMism))) # Print all multimapped reads, multimappings with X or less hits if "nbHits" is set, multimappings with N or less mismatches if "nbMism" is set or multimappings with X or less hits and N or less mismatches if both "nbHits" and "nbMism" are set
 			{
 				print $0;
 			}
