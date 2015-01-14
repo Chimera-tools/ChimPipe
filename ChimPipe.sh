@@ -268,10 +268,10 @@ function runGemtoolsRnaPipeline {
 	printHeader "Executing first mapping step"    
 	    
 	## Copy needed files to TMPDIR
-    copyToTmp "index,annotation,t-index,keys"
+	copyToTmp "index,annotation,t-index,keys"
 
-    log "Running GEMtools rna pipeline on ${lid}..." $step
-    run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads" "$ECHO" 
+	log "Running GEMtools rna pipeline on ${lid}..." $step
+	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads" "$ECHO" 
 	log "done\n"
    
    	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
