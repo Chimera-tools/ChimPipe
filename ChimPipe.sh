@@ -271,7 +271,7 @@ function runGemtoolsRnaPipeline {
     copyToTmp "index,annotation,t-index,keys"
 
     log "Running GEMtools rna pipeline on ${lid}..." $step
-    run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map}` --compress-all --output-dir $TMPDIR -t $threads" "$ECHO" 
+    run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads" "$ECHO" 
 	log "done\n"
    
    	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
@@ -289,7 +289,7 @@ function runGemtoolsRnaPipeline {
        		run "cp $TMPDIR/`basename $statsJsonFirstMap` $statsJsonFirstMap" "$ECHO"
    		fi
    	else
-       	log "Error running the GEMtools pipeline file\n" "ERROR"
+       	log "Error running GEMtools pipeline\n" "ERROR"
        	exit -1
    	fi
    	endTimeFirstMap=$(date +%s)        		
