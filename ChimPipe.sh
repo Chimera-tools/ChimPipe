@@ -268,29 +268,29 @@ function runGemtoolsRnaPipeline {
 	printHeader "Executing first mapping step"    
 	    
 	## Copy needed files to TMPDIR
-    copyToTmp "index,annotation,t-index,keys"
+	copyToTmp "index,annotation,t-index,keys"
 
-    log "Running GEMtools rna pipeline on ${lid}..." $step
-    run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads" "$ECHO" 
+	log "Running GEMtools rna pipeline on ${lid}..." $step
+	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads" "$ECHO" 
 	log "done\n"
    
    	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
    	then 
 	    # Checksums
 	    log "Computing md5sum for map file..." $step
-       	run "md5sum $TMPDIR/`basename $gemFirstMap` > ${gemFirstMap}.md5" "$ECHO"
-		
+       	    run "md5sum $TMPDIR/`basename $gemFirstMap` > ${gemFirstMap}.md5" "$ECHO"
+	    
 		# Copy files from temporary to output directory
-		run "cp $TMPDIR/`basename $gemFirstMap` $gemFirstMap" "$ECHO"
-       	
-       	if [[ "$mapStats" == "TRUE" ]]; 
-		then 
+	    run "cp $TMPDIR/`basename $gemFirstMap` $gemFirstMap" "$ECHO"
+       	    
+       	    if [[ "$mapStats" == "TRUE" ]]; 
+	    then 
        		run "cp $TMPDIR/`basename $statsFirstMap` $statsFirstMap" "$ECHO"
        		run "cp $TMPDIR/`basename $statsJsonFirstMap` $statsJsonFirstMap" "$ECHO"
-   		fi
+   	    fi
    	else
-       	log "Error running GEMtools pipeline\n" "ERROR"
-       	exit -1
+       	    log "Error running the GEMtools pipeline file\n" "ERROR"
+       	    exit -1
    	fi
    	endTimeFirstMap=$(date +%s)        		
 	printHeader "First mapping for $lid completed in $(echo "($endTimeFirstMap-$startTimeFirstMap)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -316,241 +316,241 @@ do
   case "$1" in
    	
    	## MANDATORY ARGUMENTS
-    --fastq_1)
-      if [ -n "$2" ];
-      then
-        fastq1=$2
-      fi
-      shift 2;;
-
-	--fastq_2)
-      if [ -n "$2" ];
-      then
-        fastq2=$2
-      fi
-      shift 2;;
+      --fastq_1)
+	  if [ -n "$2" ];
+	  then
+              fastq1=$2
+	  fi
+	  shift 2;;
       
-    --bam)
-      if [ -n "$2" ];
-      then
-        bam=$2
-        bamAsInput="TRUE"
-      fi
-      shift 2;;
-        
-    -g|--genome-index)
-      if [ -n "$2" ];
-      then
-        genomeIndex=$2
-      fi
-      shift 2;;
+      --fastq_2)
+	  if [ -n "$2" ];
+	  then
+              fastq2=$2
+	  fi
+	  shift 2;;
+      
+      --bam)
+	  if [ -n "$2" ];
+	  then
+              bam=$2
+              bamAsInput="TRUE"
+	  fi
+	  shift 2;;
+      
+      -g|--genome-index)
+	  if [ -n "$2" ];
+	  then
+              genomeIndex=$2
+	  fi
+	  shift 2;;
 
-    -a|--annotation)
-      if [ -n "$2" ];
-      then
-        annot=$2
-      fi
-      shift 2;;
-          
-    -t|--transcriptome-index)
-      if [ -n "$2" ];
-      then
-        transcriptomeIndex=$2
-      fi
-      shift 2;;
+      -a|--annotation)
+	  if [ -n "$2" ];
+	  then
+              annot=$2
+	  fi
+	  shift 2;;
+      
+      -t|--transcriptome-index)
+	  if [ -n "$2" ];
+	  then
+              transcriptomeIndex=$2
+	  fi
+	  shift 2;;
     
-    -k|--transcriptome-keys)
-      if [ -n "$2" ];
-      then
-        transcriptomeKeys=$2
-      fi
-      shift 2;;    
+      -k|--transcriptome-keys)
+	  if [ -n "$2" ];
+	  then
+              transcriptomeKeys=$2
+	  fi
+	  shift 2;;    
 	
-	--sample-id)
-       if [ -n "$2" ];
-       then
-         lid=$2
-       fi
-       shift 2;;
+      --sample-id)
+	  if [ -n "$2" ];
+	  then
+              lid=$2
+	  fi
+	  shift 2;;
        
     ## OPTIONS
     
 	# General:
     
-    --log)
-       if [ -n $2 ];
-       then
-         logLevel=$2
-       fi
-       shift 2;;
+      --log)
+	  if [ -n $2 ];
+	  then
+              logLevel=$2
+	  fi
+	  shift 2;;
 	
-    --threads)
-       if [ -n $2 ];
-       then
-      	 threads=$2
-       fi
-       shift 2;;
+      --threads)
+	  if [ -n $2 ];
+	  then
+      	      threads=$2
+	  fi
+	  shift 2;;
        	 
 	-o|--output-dir)
-       if [ -n $2 ];
-       then
-       	 outDir=$2
-       fi
-       shift 2;;
-    
-    --tmp-dir)
-      	if [ -n $2 ];
-      	then
-        	TMPDIR=$2
-      	fi
-      	shift 2;;
- 	
-	--no-cleanup)
-	    cleanup="FALSE";
-	    shift;;   	
- 
-	--dry)
-	    ECHO="echo "
+	  if [ -n $2 ];
+	  then
+       	      outDir=$2
+	  fi
+	  shift 2;;
+      
+      --tmp-dir)
+      	  if [ -n $2 ];
+      	  then
+              TMPDIR=$2
+      	  fi
+      	  shift 2;;
+      
+      --no-cleanup)
+	  cleanup="FALSE";
+	  shift;;   	
+      
+      --dry)
+	  ECHO="echo "
 	    shift;;
 
-	-h|--help)
-	    usagedoc;
-	    exit 1
-	    shift;;
-    
-	-f|--full-help)
-	    usagelongdoc;
-	    exit 1
-	    shift;;	
+      -h|--help)
+	  usagedoc;
+	  exit 1
+	  shift;;
+      
+      -f|--full-help)
+	  usagelongdoc;
+	  exit 1
+	  shift;;	
     
     # Reads information:
-    --max-read-length)
-      if [ -n $2 ];
-      then
-        maxReadLength=$2
-      fi
-      shift 2;;
+      --max-read-length)
+	  if [ -n $2 ];
+	  then
+              maxReadLength=$2
+	  fi
+	  shift 2;;
       
-    -l|--seq-library)
-      if [ -n $2 ];
-      then
-        readDirectionality=$2
-      fi
-      shift 2;;
+      -l|--seq-library)
+	  if [ -n $2 ];
+	  then
+              readDirectionality=$2
+	  fi
+	  shift 2;;
      
     # First mapping parameters: 
-    -C|--consensus-ss-fm)
-	    if [ -n "$2" ];
-	    then
-			spliceSitesFM=$2
-	    fi
-	    shift 2;;
-   
+      -C|--consensus-ss-fm)
+	  if [ -n "$2" ];
+	  then
+	      spliceSitesFM=$2
+	  fi
+	  shift 2;;
+      
     -S|--min-split-size-fm)
-    	if [ -n "$2" ];
-	    then
-		    splitSizeFM=$2
-	    fi
-	    shift 2;;
-	
-	--refinement-step-size-fm)
+    	  if [ -n "$2" ];
+	  then
+	      splitSizeFM=$2
+	  fi
+	  shift 2;;
+      
+      --refinement-step-size-fm)
 	  if [ -n "$2" ];
 	  then
 	      refinementFM=$2
 	  fi
 	  shift 2;;
       
-    --no-stats)
-    	if [ -n "$2" ];
-	 	then
-	  		mapStats="FALSE"  
-	  	fi
-	  	shift;;
+      --no-stats)
+    	  if [ -n "$2" ];
+	  then
+	      mapStats="FALSE"  
+	  fi
+	  shift;;
       
 	# Second mapping parameters:
-	--no-remap-unmapped)
-		if [ -n "$2" ];
-	  	then
-	    	remapUnmapped="FALSE"
-	  	fi
-	  	shift;;
-	 
-	--remap-unique-nbMism)
-		if [ -n "$2" ];
-	  	then
-	    	remapUnique=$2
-	  	fi
-	  	shift 2;;
-	  	
-	--remap-multimapped)
-	  	if [ -n "$2" ];
-	  	then
-	    	remapMultimapped=$2
-	  	fi
-	  	shift 2;;
+      --no-remap-unmapped)
+	  if [ -n "$2" ];
+	  then
+	      remapUnmapped="FALSE"
+	  fi
+	  shift;;
+      
+      --remap-unique-nbMism)
+	  if [ -n "$2" ];
+	  then
+	      remapUnique=$2
+	  fi
+	  shift 2;;
+      
+      --remap-multimapped)
+	  if [ -n "$2" ];
+	  then
+	      remapMultimapped=$2
+	  fi
+	  shift 2;;
 	
-	--multimapped-nbMism)
-		if [ -n "$2" ];
-	  	then
-	    	nbMismMulti=$2
-	  	fi
-	  	shift 2;;
+      --multimapped-nbMism)
+	  if [ -n "$2" ];
+	  then
+	      nbMismMulti=$2
+	  fi
+	  shift 2;;
+      
+      --multimapped-nbHits)
+	  if [ -n "$2" ];
+	  then
+	      nbHitsMulti=$2
+	  fi
+	  shift 2;;
+      
+      -c|--consensus-ss-sm)
+	  if [ -n "$2" ];
+	  then
+	      spliceSitesSM=$2
+	  fi
+	  shift 2;;
 	
-	--multimapped-nbHits)
-		if [ -n "$2" ];
-	  	then
-	    	nbHitsMulti=$2
-	  	fi
-	  	shift 2;;
-	  		
-	-c|--consensus-ss-sm)
-	    if [ -n "$2" ];
-	    then
-			spliceSitesSM=$2
-	    fi
-	    shift 2;;
+      -s|--min-split-size-sm)
+    	  if [ -n "$2" ];
+	  then
+	      splitSizeSM=$2
+	  fi
+	  shift 2;;
 	
-	-s|--min-split-size-sm)
-    	if [ -n "$2" ];
-	    then
-	    	splitSizeSM=$2
-		fi
-	    shift 2;;
-	
-	--refinement-step-size-sm)
-		if [ -n "$2" ];
-	    then
-		    refinementSM=$2
-	    fi
-	    shift 2;;
+      --refinement-step-size-sm)
+	  if [ -n "$2" ];
+	  then
+	      refinementSM=$2
+	  fi
+	  shift 2;;
 	
 	# Chimera detection phase parameters:
-	--consider-multimapped)
-		if [ -n "$2" ];
-	  	then
-	    	multimapped2ChimDetection="TRUE"
-	  		nbMultimaps2ChimDetect=$2
-	  	fi
-	  	shift 2;;
-	  	
-	--filter-chimeras)
-	    if [ -n $2 ];
-	    then
-			filterConf="$2"
-	    fi
-	    shift 2;;
-	
-	--similarity-gene-pairs)
-	    if [ -n $2 ];
-	    then
-			simGnPairs="$2"
-	    fi
-	    shift 2;;
+      --consider-multimapped)
+	  if [ -n "$2" ];
+	  then
+	      multimapped2ChimDetection="TRUE"
+	      nbMultimaps2ChimDetect=$2
+	  fi
+	  shift 2;;
       
-	--)
-	    shift
-	    break;;  
-    esac
+      --filter-chimeras)
+	  if [ -n $2 ];
+	  then
+	      filterConf="$2"
+	  fi
+	  shift 2;;
+      
+      --similarity-gene-pairs)
+	  if [ -n $2 ];
+	  then
+	      simGnPairs="$2"
+	  fi
+	  shift 2;;
+      
+      --)
+	  shift
+	  break;;  
+  esac
 done
 }
 
@@ -568,7 +568,7 @@ shopt -s extglob
 ##############################
 # It will be exported as an environmental variable since it will be used by every ChimPipe's scripts 
 # to set the path to the bin, awk and bash directories. 
-root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
+root=/nfs/users/rg/sdjebali/Chimeras/ChimPipe
 
 export rootDir=$root 
 
