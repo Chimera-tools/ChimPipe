@@ -1302,7 +1302,7 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing second split-mapping step"
 	log "Remapping reads allowing them to split-map in different chromosomes, strand and non genomic order..." $step	
-	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-$quality' -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
+	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-33' -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  > $outDir/SecondMapping/$lid.gem-rna-mapper.out" "$ECHO"
 	log "done\n" 
 	if [ -s $gemSecondMap ]; 
 	then
