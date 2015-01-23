@@ -933,14 +933,12 @@ sim=$bashDir/similarity_bt_gnpairs.sh
 # Bin 
 gemtools=$binDir/gemtools-1.7.1-i3/gemtools
 gemrnatools=$binDir/gemtools-1.7.1-i3/gem-rna-tools
-gtfilter=$binDir/gemtools-1.7.1-i3/gt.filter
+gtFilter=$binDir/gemtools-1.7.1-i3/gt.filter
 gem2sam=$binDir/gemtools-1.7.1-i3/gem-2-sam
-gt_filter=$binDir/gemtools-1.7.1-i3/gt.filter.remove
 pigz=$binDir/pigz
 
 # Awk 
 correctNMfield=$awkDir/correctNMfield_SAMFromGEM.awk
-strataFilter=$awkDir/GEMstrataFilter.awk
 SAMfilter=$awkDir/SAMfilter.awk 
 addMateInfoSam=$awkDir/add_mateInfo_SAM.awk
 gff2Gff=$awkDir/gff2gff.awk
@@ -1118,7 +1116,7 @@ then
 		## Copy needed files to TMPDIR
 		copyToTmp "index"	
 		log "Converting $lid to bam..." $step
-		run "$pigz -p $hthreads -dc $gemFirstMap | awk -v OFS="'\\\t'" -f $strataFilter | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | samtools sort -@ $threads -m 4G - $TMPDIR/${rawBam%.bam}" "$ECHO"
+		run "$pigz -p $hthreads -dc $gemFirstMap | $gtFilter -t $hthreads -p --max-strata-after-map "0" | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | samtools sort -@ $threads -m 4G - $TMPDIR/${rawBam%.bam}" "$ECHO"
 		log "done\n"
 
 		if [ -s $TMPDIR/$rawBam ];
