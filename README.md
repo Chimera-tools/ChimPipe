@@ -1,9 +1,9 @@
-###Welcome to ChimPipe's repository!
+## Welcome to ChimPipe's repository!
 
-ChimPipe is a pipeline for the detection of chimeric transcripts from Paired-End RNA-seq data developed at the Centre for Genomic Regulation (CRG) in Barcelona. 
+ChimPipe is a pipeline for the detection of chimeric transcripts and gene fusions from Paired-End RNA-seq data developed at the Centre for Genomic Regulation (CRG) in Barcelona. 
 
 
-## Download ChimPipe
+#### Download ChimPipe
 Two different ways:
 
 * Press the Download ZIP button which is located at the bottom right of the page to download the most recent version of the code as a zip archive.
@@ -17,10 +17,10 @@ $ cd /users/rg/brodriguez/bin
 $ git clone https://github.com/Chimera-tools/ChimPipe.git
 ```
 
-## Install ChimPipe
+#### Install ChimPipe
 Go to your newly created ChimPipe’s directory and type `make` to set up the path to ChimPipe in your system.
 
-## System’s requirements
+#### System’s requirements
 
 1. Hardware:
 
@@ -34,7 +34,7 @@ Go to your newly created ChimPipe’s directory and type `make` to set up the pa
     * Samtools v0.1.19 or higher
     * Blast v2.2.29+ or higher (only if you want to generate your own similarity text files, see Reference between gene pairs in the Manual section)
 
-## ChimPipe's documentation
+#### ChimPipe's documentation
 Please check [ChimPipe's documentation] (https://chimpipe.readthedocs.org/) to find detailed information about:
 
 * How ChimPipe works
