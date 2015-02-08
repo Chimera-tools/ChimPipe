@@ -12,7 +12,7 @@ ChimPipe takes as input 4 mandatory files and 1 optional file.
 
 Mandatory:
 
-* :ref:`Paired-end (PE) RNA-seq reads <input-reads>`
+* :ref:`Paired-end (PE) RNA-seq reads (FASTQ or BAM) <input-reads>`
 * :ref:`Genome index <input-genome-index>` 
 * :ref:`Genome annotation <input-annot>`
 * :ref:`Transcriptome index <input-annot-index>`
@@ -24,21 +24,17 @@ Optional:
 
 .. _input-reads:
 
-Paired-end (PE) RNA-seq reads
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing data. It takes as input two `FASTQ`_ files, one for the first mates and one for the second mates of the read pairs. These files need to be located in the same directory and named according to this convention: 
+Paired-end (PE) RNA-seq reads (FASTQ or BAM)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing data. It can take as input 2 raw `FASTQ`_ files (mate1 and mate2 sequencing reads) or a single `BAM`_ file with already mapped reads.
 
 .. _Illumina paired-end: http://technology.illumina.com/technology/next-generation-sequencing/paired-end-sequencing_assay.ilmn
 .. _FASTQ: http://maq.sourceforge.net/fastq.shtml
+.. _BAM: 
 
-* **Mate 1**. "SampleId + [.1|_1] + [.fastq|.txt] (+ .gz if compressed)"
-* **Mate 2**. "SampleId + [.2|_2] + [.fastq|.txt] (+ .gz if compressed)"
+.. warning:: If you use FASTQ as input the **read identifier** should follow **Illumina convention** to specify which member of the pair the read is. See our :ref:`FAQ <faq-reads>` section for more information. 
 
-E. g. BERGER_1.fastq.gz and BERGER_2.fastq.gz would be the compressed FASTQ files for mate 1 and mate 2 in the BERGER sample. 
-
-.. warning:: The **read identifier** should follow **Illumina convention** to specify which member of the pair the read is. See our :ref:`FAQ <faq-reads>` section for more information. 
-
-.. warning:: Make sure the 2 FASTQ files are in the **same directory** and you use the **same convention** for both mates. E. g: if mate 1 is BERGER_1.fastq.gz, mate 2 can not be BERGER.2.txt.gz but has to be BERGER_2.fastq.gz
+.. warning:: If you use BAM as input .. NH, NM.. See our :ref:`FAQ <faq-reads>` section for more information. 
 
 .. _input-genome-index:
 
@@ -64,9 +60,9 @@ It will produce 3 files in the directory where the genome fasta file is located:
 
 .. _input-annot:
 
-Genome annotation
-~~~~~~~~~~~~~~~~~
-ChimPipe also takes as input a genome annotation file in `GTF`_ format (including annotated exons). It can contain other features different from exons, i. e. introns or UTR, but they will not be considered by ChimPipe in the chimera detection process. This annotation needs to contain at least two (tag,value) pairs in the attribute field with the gene_id and the transcript_id tags. Two optional (tag,value) pairs will be taken into account by ChimPipe if they are provided: gene_name and gene_type. e.g:
+Reference annotation
+~~~~~~~~~~~~~~~~~~~~~
+ChimPipe also takes as input a reference annotation in `GTF`_ format (it has to include annotated exons). It can contain other features different from exons, i. e. introns or UTR, but they will not be considered by ChimPipe in the chimera detection process. This annotation needs to contain at least two (tag,value) pairs in the attribute field with the "gene_id" and the "transcript_id" tags. Two optional (tag,value) pairs will be taken into account by ChimPipe if they are provided: "gene_name" and "gene_type". e.g:
 
 .. _GTF: http://www.ensembl.org/info/website/upload/gff.html
 
@@ -80,7 +76,7 @@ ChimPipe also takes as input a genome annotation file in `GTF`_ format (includin
 	transcript_type "protein_coding"; transcript_status "KNOWN"; transcript_name "OR4F5-001"; exon_number 1; exon_id "ENSE00002319515.1"; level 2; tag "basic"; tag "appris_principal";
 	tag	"CCDS"; ccdsid "CCDS30547.1"; havana_gene "OTTHUMG00000001094.1"; havana_transcript "OTTHUMT00000003223.1";
 
-.. note:: ChimPipe has been benchmarked with `Gencode v10`_ and `UCSC Known Genes`_  human gene annotations. It displayed a better sensitivity with Gencode v10 but a similar false positive rate with both annotations. Thus, it is advisable to use Gencode annotation, since it is a richer annotation which increases the sensitivity of the chimera detection process. 
+.. note:: ChimPipe has been benchmarked with `Gencode v10`_ and `UCSC Known Genes`_  human gene annotations. It displayed a better sensitivity with Gencode v10 but a similar false positive rate with both annotations. It is advisable to use Gencode annotation, since it is a richer annotation which increases the sensitivity of the chimera detection process. 
 
 .. _Gencode v10: http://www.gencodegenes.org/releases/10.html
 .. _UCSC Known Genes: https://genome.ucsc.edu/cgi-bin/hgTables?command=start
@@ -89,7 +85,7 @@ ChimPipe also takes as input a genome annotation file in `GTF`_ format (includin
 
 Transcriptome index
 ~~~~~~~~~~~~~~~~~~~
-An transcriptome index in GEM format has to be provided as input to ChimPipe in the same directory as the genome annotation GTF file, in order to find reads spanning annotated splice junctions. 
+A transcriptome index in GEM format has to be provided as input to ChimPipe to find reads spanning annotated splice junctions. 
 
 We provide some **pre-generated transcriptome indices** for human, mouse and drosophila annotations in the :ref:`Downloads` section, however if your genome annotation or your genome is different, you will need to to run the *GEMtools transcriptome indexer* ((at ``ChimPipe/bin/gemtools-1.7.1-i3/gemtools``)) on your previously generated GEM indexed genome and your annotation in GTF format, as indicated below. 
 
@@ -106,8 +102,6 @@ It will produce 5 files in your current working directory:
 * annotation.gtf.junctions.log – indexer log file (not needed)
 
 .. tip:: If your machine has more than one CPU it is recommended to run the indexer with multiple threads. Use the option ``-t <threads>``, where **threads** is the number of available CPUs. 
-
-.. warning:: The transcriptome index has to be placed in the same folder as the genome annotation to be used by ChimPipe.
 
 .. _input-similarity:
 
@@ -135,7 +129,9 @@ Please check out our :ref:`FAQ <faq-dependencies>` section in case you have any 
 	
 2. Running ChimPipe
 ~~~~~~~~~~~~~~~~~~~
-Once you have generated the genome and the transcriptome indices, you know the quality offset and the library type of your PE RNA-seq reads, you can run ChimPipe as follows:
+Once you have generated the genome and the transcriptome indices you can run ChimPipe. It can take as input 
+
+
 
 .. code-block:: bash
 	
@@ -198,8 +194,8 @@ Tabular text file containing the detected chimeric junctions in your RNA-seq dat
 1. **juncId** - Chimeric junction identifier. It is an string encoding the position of the chimeric junction in the genome as follows: chrA"_"breakpointA"_"strandA":"chrB"_"breakpointB"_"strandB. E. g., "chr4_90653092_+:chr17_22023757_+" is a chimeric junction between the position 90653092 of the chromosome 4 in the plus strand, and the position 22023757 of the chromosome chr17 in the plus strand. 
 2. **nbstag** - Number of staggered reads supporting the chimera.
 3. **nbtotal** - Total number of reads supporting the chimera.
-4. **maxbeg** - Maximum beginning of the chimeric junction,  The starting position at which 
-5. **maxEnd** - Maximum end of the junction
+4. **maxbeg** - Maximum 5' coordinates for the chimeric junction. 
+5. **maxEnd** - Maximum 5' coordinates for the chimeric junction. 
 6. **samechr** - Flag to specify if the connected gene pairs are in the same cromosome (1) or not (0).
 7. **samestr** - Flag to specify if the connected gene pairs are in the same strand (1) or not (0), NA in case the *samechr* field was 0.
 8. **dist** - Distance between the two breakpoints, NA in case the "samestr" field was 0.

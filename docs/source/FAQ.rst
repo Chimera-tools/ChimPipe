@@ -6,12 +6,12 @@ FAQ
 
 .. _faq-offset:
 
-Does ChimPipe considers the reads quality for the mapping step? 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Does ChimPipe considers read quality? 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes, ChimPipe takes into account the quality for the mapping step. It **deals with both 33 and 64** quality encodings. It will automatically detect the encoding from your reads, so you do not need to specify it as a parameter. 
+
 The quality score (Q) measures the probability that a base is called incorrectly by the sequencing machine. Within your FASTQ files, they are represented in the fourth line of each read as an ASCII character string (each character corresponds to the Q score of a certain base in the sequencing read). The correspondence between each ASCII character and the Q score is based on some offset. This offset varies depending on the sequencing platform (Illumina machines from CASAVA v1.8 uses 33, while older ones use 64). 
-
-Yes, ChimPipe **deals with both 33 and 64** quality encodings. It will automatically detect it from your reads, so you do not need to specify it as a parameter. 
-
 
 .. _faq-library:
 
@@ -19,9 +19,9 @@ Which sequencing library protocols are supported?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Different protocols can be used to generate a RNA-seq library. Currently, ChimPipe can handle data generated with the following protocols:
 
-* Non strand-specific protocols. (unstranded data). The information about from which strand the transcript is transcribed is not available. 
+* **Non strand-specific protocols**. (unstranded data). The information about from which strand the transcript is transcribed is not available. 
 
-* Strand-specific protocols (stranded data):
+* **Strand-specific protocols** (stranded data):
  
 	* **MATE1_SENSE**. Mates 1 are sequenced from the transcript sequence (they will map on the same strand as the transcript), and mates 2 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand). 
 	* **MATE2_SENSE**. Mates 1 are sequenced from the reverse complement of the transcript sequence (they will map on the strand that is the opposite of the transcript strand), and mates 2 are sequenced from the transcript sequence (they will map on the same strand as the transcript). 
@@ -82,11 +82,11 @@ I case your FASTQ files do not meet this format you should modify the identifier
 	
 	# No worries, I can use awk to fix it. 
 	
-	$ awk '{if (NR%2==1){print $1"_"$2"_"$3"#0/1"} else {print $0}} dataset_1.fastq 		
+	$ awk '{if (NR%2==1){print "@"$2"#0/1"} else {print $0}} dataset_1.fastq 		
 	
-	@SRR018259.1_BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868_length=51#0/1
+	@BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868#0/1
 	GTAACATATTCACAGACATGTCAGTGTGCACTCAGGAACACTGGTTTCATT
-	+SRR018259.1_BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868_length=51#0/1
+	+BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868#0/1
 	IIIIIIIIIIIIIII>=CII=8=H032/-++D+'.@)2+4/+)1'4.#"*.
 
 	$ # Finally, I apply the same procedure for the mate 2..
@@ -107,6 +107,7 @@ To export the path of bedtools, samtools and blast (if needed) binaries you just
 		
 
 .. _faq-similarity:
+
 How does the script to compute gene pair similarity work?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
