@@ -34,7 +34,7 @@ ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing da
 
 .. warning:: **FASTQ as input.** The read identifier should follow Illumina convention to specify which member of the pair the read is. See our :ref:`FAQ <faq-reads>` section for more information. 
 
-.. warning:: **BAM as input.** Your BAM file should contain the NH (Number of hits in the reference) and NM (Edit distance to the reference) optional fields. Most popular mappers produce a BAM with these fields. Please check `SAM`_ specifications for more information. 
+.. warning:: **BAM as input.** Your BAM file should contain the **NH** (Number of hits in the reference) and **NM** (Edit distance to the reference) optional fields. Most popular mappers produce a BAM with these fields. Please check `SAM`_ specifications for more information. 
 
 .. _SAM: http://samtools.github.io/hts-specs/SAMv1.pdf
 
@@ -134,7 +134,7 @@ Please check out our :ref:`FAQ <faq-dependencies>` section in case you have any 
 Once you have generated the genome and the transcriptome indices you can run ChimPipe. There are two different running modes depending if what you will provide FASTQ or BAM files:
 
 A) FASTQ
-~~~~~~~~~
+---------
 
 .. code-block:: bash
 	
@@ -153,7 +153,7 @@ All these files and parameters given as input to ChimPipe are **mandatory argume
         --sample-id                     <STRING>        Sample identifier (output files are named according to this id).  
 
 B) BAM
-~~~~~~~
+--------
 
 .. code-block:: bash
 
