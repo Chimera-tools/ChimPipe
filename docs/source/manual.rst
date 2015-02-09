@@ -26,15 +26,17 @@ Optional:
 
 Paired-end (PE) RNA-seq reads (FASTQ or BAM)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing data. It can take as input 2 raw `FASTQ`_ files (mate1 and mate2 sequencing reads) or a single `BAM`_ file with already mapped reads.
+ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing data. It can take as input 2 `FASTQ`_ files (one for each member in the pair) or a single `BAM`_ file with already mapped reads.
 
 .. _Illumina paired-end: http://technology.illumina.com/technology/next-generation-sequencing/paired-end-sequencing_assay.ilmn
 .. _FASTQ: http://maq.sourceforge.net/fastq.shtml
-.. _BAM: 
+.. _BAM: http://samtools.github.io/hts-specs/SAMv1.pdf
 
-.. warning:: If you use FASTQ as input the **read identifier** should follow **Illumina convention** to specify which member of the pair the read is. See our :ref:`FAQ <faq-reads>` section for more information. 
+.. warning:: **FASTQ as input.** The read identifier should follow Illumina convention to specify which member of the pair the read is. See our :ref:`FAQ <faq-reads>` section for more information. 
 
-.. warning:: If you use BAM as input .. NH, NM.. See our :ref:`FAQ <faq-reads>` section for more information. 
+.. warning:: **BAM as input.** Your BAM file should contain the NH (Number of hits in the reference) and NM (Edit distance to the reference) optional fields. Most popular mappers produce a BAM with these fields. Please check `SAM`_ specifications for more information. 
+
+.. _SAM: http://samtools.github.io/hts-specs/SAMv1.pdf
 
 .. _input-genome-index:
 
@@ -129,27 +131,41 @@ Please check out our :ref:`FAQ <faq-dependencies>` section in case you have any 
 	
 2. Running ChimPipe
 ~~~~~~~~~~~~~~~~~~~
-Once you have generated the genome and the transcriptome indices you can run ChimPipe. It can take as input 
+Once you have generated the genome and the transcriptome indices you can run ChimPipe. There are two different running modes depending if what you will provide FASTQ or BAM files:
 
-
+A) FASTQ
+~~~~~~~~~
 
 .. code-block:: bash
 	
-	bash ChimPipe.sh -i reads_1.fastq -g genome.gem -a annotation.gtf 
+	ChimPipe.sh --fastq_1 <mate1_fastq> --fastq_2 <mate2_fastq> -g <genome_index> -a <annotation> -t <transcriptome_index> -k <transcriptome_keys> [OPTIONS]
 
 All these files and parameters given as input to ChimPipe are **mandatory arguments**. Please see bellow their descripion: 
 
 .. code-block:: bash
 
-	-i|--input reads_1.fastq – First mate sequencing reads. ChimPipe deals with paired-end data. 
-				   Please make sure the second mate file is in the same directory as 
-				   the first one, and the files are named according to the same convention. 
-				   E.g: the second mate of "reads_1.fastq" should be "reads_2.fastq". 
-						   
-	-g|--genome-index genome.gem – Index for the reference genome in GEM format.
+        --fastq_1                       <FASTQ>         First mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
+        --fastq_2                       <FASTQ>         Second mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
+        -g|--genome-index               <GEM>           Reference genome index in GEM format.
+        -a|--annotation                 <GTF>           Reference gene annotation file in GTF format.                                
+        -t|--transcriptome-index        <GEM>           Annotated transcriptome index in GEM format.
+        -k|--transcriptome-keys         <KEYS>          Transcriptome to genome indices coordinate conversion keys (generated when producing transcriptome index).  
+        --sample-id                     <STRING>        Sample identifier (output files are named according to this id).  
 
-	-a|--annotation annotation.gtf – Reference genome annotation file in GTF format. The transcriptome 
-						index has to be in the same directory as the annotation. 
+B) BAM
+~~~~~~~
+
+.. code-block:: bash
+
+        ChimPipe.sh --bam <bam> -g <genome_index> -a <annotation> [OPTIONS]
+
+.. code-block:: bash
+
+        --bam                           <BAM>           Already mapped reads in BAM format, then first mapping step skipped.
+        -g|--genome-index               <GEM>           Reference genome index in GEM format.
+        -a|--annotation                 <GTF>           Reference genome annotation file in GTF format.
+        --sample-id                     <STRING>        Sample identifier (the output files will be named according to this id).  
+
 								 
 **Optional arguments.** Please do ``ChimPipe.sh -h or --help`` to see a short help with the main options. You can also do ``ChimPipe.sh --full-help`` to see the all the possible options. 
 
