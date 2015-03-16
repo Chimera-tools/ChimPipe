@@ -104,23 +104,6 @@ cat <<help
 	--no-stats					Disable mapping statistics. Default enabled.
 
   Second Mapping:
-	--no-remap-unmapped				No remap first mapping unmapped reads. Default remapped 
-	
-	--remap-unique-nbMism 		<INTEGER|FALSE> INTEGER: Remap first mapping uniquely mapped reads with more than M mismatches (Mismatches 
-							in bad-quality bases also considered). FALSE: no remap any unique mapping. Default: 4.
-		
-	--remap-multimapped		<TRUE|FALSE> 	TRUE: remap first mapping multimapped reads; FALSE: no remap multimapped reads. 
-							Default: TRUE, remap multimapped reads with more than 4 mismatches. This configuration can be tuned 
-							with the parameters: "--multimapped-nbHits" and "--multimapped-nbMism".					
-	
-	--multimapped-nbMism		<ALL|INTEGER>	ALL: remap multimapped reads with no restriction on the number of mismatches; 
-							INTEGER: remap multimapped reads with more than M mismatches(Mismatches in bad-quality bases also considered) . 
-							Default: 4. This parameter can be combined with "--multimapped-hits". 
-
-	--multimapped-nbHits		<ALL|INTEGER>	ALL: remap multimapped reads with no restriction on the number of hits; 
-							INTEGER: remap multimapped reads with more than N hits. 
-							Default: ALL. This parameter can be combined with "--multimapped-mism". 
-		  
 	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
 	-s|--min-split-size-sm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--refinement-step-size-sm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
