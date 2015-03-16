@@ -259,14 +259,10 @@ function runGemtoolsRnaPipeline {
    
    	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
    	then 
-	    # Checksums
-	    log "Computing md5sum for map file..." $step
-       	    run "md5sum $TMPDIR/`basename $gemFirstMap` > ${gemFirstMap}.md5" "$ECHO"
-	    
 		# Copy files from temporary to output directory
 	    run "cp $TMPDIR/`basename $gemFirstMap` $gemFirstMap" "$ECHO"
        	    
-       	    if [[ "$mapStats" == "TRUE" ]]; 
+       	if [[ "$mapStats" == "TRUE" ]]; 
 	    then 
        		run "cp $TMPDIR/`basename $statsFirstMap` $statsFirstMap" "$ECHO"
        		run "cp $TMPDIR/`basename $statsJsonFirstMap` $statsJsonFirstMap" "$ECHO"
@@ -1123,12 +1119,8 @@ then
 		run "$pigz -p $hthreads -dc $gemFirstMap | $gtFilter -t $hthreads -p --max-strata-after-map "0" | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | samtools sort -@ $threads -m 4G - $firstMappingDir/${rawBam%.bam} >> $firstMappingDir/${lid}_map2bam_conversion.log 2>&1" "$ECHO"
 		log "done\n"
 
-		if [ -s $bamFirstMap ];
+		if [ ! -s $bamFirstMap ];
 		then
-			log "Computing md5sum for bam file..." $step
-			run "md5sum $bamFirstMap > $bamFirstMap.md5" "$ECHO"
-        	log "done\n"
-		else
 			log "Error producing the bam file\n" "ERROR"
 			exit -1
 		fi
@@ -1230,12 +1222,8 @@ then
 	log "Produce a filtered BAM file with the mappings of the reads which will not be remapped..." $step
 	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="0" -v unmapped="0" -v unique=$extractUniqueFM -v nbMismUnique=$nbMismUnique -v multimapped=$extractMultiFM -v nbMismMulti=$nbMismMulti -v nbHits=$nbHitsMulti -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | $addXS $readDirectionality | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam} >> $firstMappingDir/${lid}_filterBam.log 2>&1" "$ECHO"
 	log "done\n"
-	if [ -s $filteredBam ]; 
+	if [ ! -s $filteredBam ]; 
    	then
-       	log "Computing md5sum for BAM file..." $step
-       	run "md5sum $filteredBam > $filteredBam.md5" "$ECHO"
-       	log "done\n"
-   	else
        	log "Error filtering the bam file\n" "ERROR" 
        	exit -1
    	fi
@@ -1268,12 +1256,8 @@ then
 	log "Extracting reads from the raw BAM for a second split-mapping step..." $step
 	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v unique=$extractUniqueSM -v nbMismUnique=$nbMismUnique -v multimapped=$extractMultiSM -v nbMismMulti=$nbMismMulti -v nbHits=$nbHitsMulti -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap >> $secondMappingDir/${lid}_reads2remap.log 2>&1" "$ECHO"
 	log "done\n" 
-    if [ -s $reads2remap ]; 
+    if [ ! -s $reads2remap ]; 
     then
-    	log "Computing md5sum for the FASTQ file..." $step
-    	run "md5sum $reads2remap > $reads2remap.md5" "$ECHO"
-        log "done\n"
-    else
         log "Error extracting the reads\n" "ERROR" 
         exit -1
     fi
@@ -1301,12 +1285,8 @@ then
 	log "Remapping reads allowing them to split-map in different chromosomes, strand and non genomic order..." $step	
 	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-33' -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  >> $secondMappingDir/${lid}_secondMap.log 2>&1" "$ECHO"
 	log "done\n" 
-	if [ -s $gemSecondMap ]; 
+	if [ ! -s $gemSecondMap ]; 
 	then
-    	log "Computing md5sum for the gem file with the second mappings..." $step
-    	run "md5sum $gemSecondMap > $gemSecondMap.md5" "$ECHO"
-        log "done\n"
-    else
         log "Error in the second mapping\n" "ERROR" 
         exit -1
     fi
@@ -1332,12 +1312,8 @@ then
 	log "Generating a GFF file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
 	bedtools bamtobed -i $filteredBam -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $gffFromBam 
 	log "done\n"
-	if [ -s $gffFromBam ]; 
+	if [ ! -s $gffFromBam ]; 
 	then
-    	log "Computing md5sum for the GFF file from the BAM containing the reads mapping both uniquely and in 2 blocks..." $step
-    	run "md5sum $gffFromBam > $gffFromBam.md5" "$ECHO"
-        log "done\n"
-    else
         log "Error Generating the gff file\n" "ERROR" 
         exit -1
     fi
@@ -1363,12 +1339,8 @@ then
 	log "Generating a GFF file from the atypical mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step	
 	run "awk -v readDirectionality=$readDirectionality -f $gemCorrectStrand $gemSecondMap | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $gffFromMap" "$ECHO"
 	log "done\n" 
-	if [ -s $gffFromMap ]; 
+	if [ ! -s $gffFromMap ]; 
 	then
-    	log "Computing md5sum for the GFF file from the atypical mappings containing the reads mapping both uniquely and in 2 blocks..." $step
-    	run "md5sum $gffFromMap > $gffFromMap.md5" "$ECHO"
-        log "done\n"
-    else
         log "Error Generating the GFF file\n" "ERROR" 
         exit -1
     fi
