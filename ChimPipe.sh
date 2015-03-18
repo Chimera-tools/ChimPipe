@@ -241,38 +241,90 @@ function copyToTmp {
 # - ${lid}_firstMap.stats.json
 
 
-function runGemtoolsRnaPipeline {
+function firstMappingPipeline {
 
-	statsFirstMap=$firstMappingDir/${lid}_firstMap.stats.txt
-	statsJsonFirstMap=$firstMappingDir/${lid}_firstMap.stats.json
+	# 1.1) Produce a filtered and sorted bam file with the aligments
+	####################################################
+	gemFirstMap=$firstMappingDir/${lid}_firstMap.map.gz
 	
-	step="FIRST-MAP"
-	startTimeFirstMap=$(date +%s)
-	printHeader "Executing first mapping step"    
+	if [ ! -s $gemFirstMap ]; 
+	then
+		step="FIRST-MAP"
+		startTimeFirstMap=$(date +%s)
+		printHeader "Executing first mapping step"    
 	    
-	## Copy needed files to TMPDIR
-	copyToTmp "index,annotation,t-index,keys"
+		## Copy needed files to TMPDIR
+		copyToTmp "index,annotation,t-index,keys"
 
-	log "Running GEMtools rna pipeline on ${lid}..." $step
-	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads >> $firstMappingDir/${lid}_firstMap.log 2>&1" "$ECHO" 
-	log "done\n"
+		log "Running GEMtools rna pipeline on ${lid}..." $step
+		run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads >> $firstMappingDir/${lid}_firstMap.log 2>&1" "$ECHO" 
+		log "done\n"
    
-   	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
-   	then 
-		# Copy files from temporary to output directory
-	    run "cp $TMPDIR/`basename $gemFirstMap` $gemFirstMap" "$ECHO"
-       	    
-       	if [[ "$mapStats" == "TRUE" ]]; 
-	    then 
-       		run "cp $TMPDIR/`basename $statsFirstMap` $statsFirstMap" "$ECHO"
-       		run "cp $TMPDIR/`basename $statsJsonFirstMap` $statsJsonFirstMap" "$ECHO"
-   	    fi
-   	else
+	   	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
+	   	then 
+			# Copy files from temporary to output directory
+		    run "cp $TMPDIR/`basename $gemFirstMap` $gemFirstMap" "$ECHO"	       	    
+	   		endTimeFirstMap=$(date +%s)        		
+			printHeader "First mapping for $lid completed in $(echo "($endTimeFirstMap-$startTimeFirstMap)/60" | bc -l | xargs printf "%.2f\n") min"
+	   	else
        	    log "Error running the GEMtools pipeline file\n" "ERROR"
        	    exit -1
-   	fi
-   	endTimeFirstMap=$(date +%s)        		
-	printHeader "First mapping for $lid completed in $(echo "($endTimeFirstMap-$startTimeFirstMap)/60" | bc -l | xargs printf "%.2f\n") min"
+	   	fi		
+	else
+    	printHeader "First mapping GEM file already exists... skipping first mapping step"
+	fi
+		
+	# 1.2) Produce a filtered and sorted bam file with the aligments
+	####################################################
+	gemFirstMapFiltered=$firstMappingDir/${lid}_firstMap_filtered.map.gz
+		
+	if [ ! -s $gemFirstMapFiltered ];
+	then
+		step="FIRST-MAP.FILTER"
+		startTime=$(date +%s)
+		printSubHeader "Executing conversion GEM to BAM step"
+		run "$gtFilter -i $gemFirstMap --max-matches 10 --max-levenshtein-error 4 -t $hthreads | $pigz -p $hthreads > $gemFirstMapFiltered" "$ECHO"
+		log "done\n"
+		
+		if [ -s $gemFirstMapFiltered ];
+		then
+			endTime=$(date +%s)
+			printSubHeader "Conversion step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+		else
+			log "Error producing the bam file\n" "ERROR"
+			exit -1
+		fi
+	else
+		printSubHeader "First mapping BAM file already exists... skipping conversion step"
+	fi
+	# 1.3) 
+	#################
+	rawBam=${lid}_firstMap.bam
+	
+	if [ ! -s $bamFirstMap ];
+	then
+		step="FIRST-MAP.CONVERT"
+		startTime=$(date +%s)
+		printSubHeader "Executing conversion GEM to BAM step"
+
+		## Copy needed files to TMPDIR
+		copyToTmp "index"	
+		log "Converting $lid to bam..." $step
+		run "$pigz -p $hthreads -dc $gemFirstMapFiltered | $gtFilter -t $hthreads -p --mapped | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | samtools sort -@ $threads -m 4G - $firstMappingDir/${rawBam%.bam} >> $firstMappingDir/${lid}_map2bam_conversion.log 2>&1" "$ECHO"
+		log "done\n"
+
+		if [ -s $bamFirstMap ];
+		then
+			endTime=$(date +%s)
+			printSubHeader "Conversion step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+		else
+			log "Error producing the bam file\n" "ERROR"
+			exit -1
+		fi
+		
+	else
+		printSubHeader "First mapping BAM file already exists... skipping conversion step"
+	fi
 }
 
 # Function 9. Parse user's input
@@ -917,7 +969,7 @@ sim=$bashDir/similarity_bt_gnpairs.sh
 # Bin 
 gemtools=$binDir/gemtools-1.7.1-i3/gemtools
 gemrnatools=$binDir/gemtools-1.7.1-i3/gem-rna-tools
-gtFilter=$binDir/gemtools-1.7.1-i3/gt.filter
+gtFilter=$binDir/gemtools-1.7.1-i3/gt.filter.remove
 gem2sam=$binDir/gemtools-1.7.1-i3/gem-2-sam
 pigz=$binDir/pigz
 
@@ -1089,7 +1141,6 @@ b2=${b2tmp%.gff}
 ##############
 # - $outDir/${lid}.map.gz 
 # - $outDir/${lid}_raw_chrSorted.bam
-gemFirstMap=$firstMappingDir/${lid}_firstMap.map.gz
 bamFirstMap=$firstMappingDir/${lid}_firstMap.bam
 
 if [[ "$bamAsInput" == "FALSE" ]];
@@ -1097,144 +1148,19 @@ then
 
 	# 1.1) Map the reads with the gemtools rna-pipeline
 	###################################################
-	if [ ! -s $gemFirstMap ]; 
+	if [ ! -s $bamFirstMap ]; 
 	then
-		runGemtoolsRnaPipeline		## Call function to run the gemtools rna-pipeline
+		firstMappingPipeline		## Call function to run the gemtools rna-pipeline
 	else
-    	printHeader "First mapping GEM file already exists... skipping first mapping step"
+    	printHeader "First mapping BAM file already exists... skipping first mapping step"
 	fi
-	
-	# 1.2) Produce a sorted bam file with the aligments
-	####################################################
-	rawBam=${lid}_firstMap.bam
-	if [ ! -s $bamFirstMap ];
-	then
-		step="FIRST-MAP.CONVERT"
-		startTime=$(date +%s)
-		printSubHeader "Executing conversion GEM to BAM step"
-
-		## Copy needed files to TMPDIR
-		copyToTmp "index"	
-		log "Converting $lid to bam..." $step
-		run "$pigz -p $hthreads -dc $gemFirstMap | $gtFilter -t $hthreads -p --max-strata-after-map "0" | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | samtools sort -@ $threads -m 4G - $firstMappingDir/${rawBam%.bam} >> $firstMappingDir/${lid}_map2bam_conversion.log 2>&1" "$ECHO"
-		log "done\n"
-
-		if [ ! -s $bamFirstMap ];
-		then
-			log "Error producing the bam file\n" "ERROR"
-			exit -1
-		fi
-		endTime=$(date +%s)
-		printSubHeader "Conversion step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-	else
-		printSubHeader "First mapping BAM file already exists... skipping conversion step"
-	fi
-
 else
 	printHeader "BAM file provided as input... skipping first mapping step"
 	bamFirstMap=$bam	
 fi
 
-### Check in which fields are the number of mappings and the number of mismatches 
 
-# Comment: samtools view -F 4 ** filter out unmapped reads 
-
-NHfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NH:i:"){print field;} field++}}'`
-NMfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NM:i:"){print field;} field++}}'`
-
-
-# 2) Infer the sequencing library protocol used (UNSTRANDED, MATE2_SENSE OR MATE1_SENSE) 
-########################################################################################
-# from a subset with the 1% of the mapped reads. 
-#################################################
-# Outputs are: 
-##############
-# - variables $readDirectionality and $stranded
-
-if [[ "$readDirectionality" == "UNKNOWN" ]]; 
-then 
-    step="INFER-LIBRARY"
-    startTimeLibrary=$(date +%s)
-    printHeader "Executing infer library type step" 
-    log "Infering the sequencing library protocol from a random subset with 1 percent of the mapped reads..." $step
-    read fraction1 fraction2 other <<<$(bash $infer_library $bamFirstMap $annot)
-    log "done\n"
-    log "Fraction of reads explained by 1++,1--,2+-,2-+: $fraction1\n" $step
-    log "Fraction of reads explained by 1+-,1-+,2++,2--: $fraction2\n" $step
-    log "Fraction of reads explained by other combinations: $other\n" $step 
-    
-    # Turn the percentages into integers
-    fraction1_int=${fraction1/\.*};
-    fraction2_int=${fraction2/\.*};
-    other_int=${other/\.*};
-    
-    # Infer the sequencing library from the mapping distribution. 
-    if [ "$fraction1_int" -ge 70 ]; # MATE1_SENSE protocol
-    then 
-		readDirectionality="MATE1_SENSE";
-		stranded=1;
-		echo $readDirectionality;	
-    elif [ "$fraction2_int" -ge 70 ];
-    then	
-		readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
-		stranded=1;
-    elif [ "$fraction1_int" -ge 40 ] && [ "$fraction1_int" -le 60 ];
-    then
-		if [ "$fraction2_int" -ge 40 ] && [ "$fraction2_int" -le 60 ]; # UNSTRANDED prototol
-		then
-	    	readDirectionality="UNSTRANDED";
-	    	stranded=0;
-		else
-	    	log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-	    	usagelongdoc
-	    	exit -1	
-		fi
-    else
-		log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
-		usagelongdoc
-		exit -1	
-    fi
-    log "Sequencing library type: $readDirectionality\n" $step 
-    log "Strand aware protocol (1: yes, 0: no): $stranded\n" $step 
-    endTimeLibrary=$(date +%s)
-    printHeader "Sequencing library inference for $lid completed in $(echo "($endTimeLibrary-$startTimeLibrary)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-    printHeader "Sequencing library type provided by the user...skipping library inference step"
-fi
-
-# 3) Produce a filtered BAM file with the alignments of the reads which will not be remapped. 
-#############################################################################################
-# Add the XS optional field to specify the read directionality for cufflinks
-##############################################################################
-# Output is: 
-############
-# - $outDir/${lid}_filtered_chrSorted.bam
-
-## Comment: samtools view -F 256 ** filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments) 
-
-filteredBam=$firstMappingDir/${lid}_filtered_firstMap.bam
-		
-if [ ! -s $filteredBam ];
-then
-	step="BAM-FILTERING"
-    startTime=$(date +%s)
-    printHeader "Executing BAM filtering step"
-	log "Produce a filtered BAM file with the mappings of the reads which will not be remapped..." $step
-	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="0" -v unmapped="0" -v unique=$extractUniqueFM -v nbMismUnique=$nbMismUnique -v multimapped=$extractMultiFM -v nbMismMulti=$nbMismMulti -v nbHits=$nbHitsMulti -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | $addXS $readDirectionality | samtools view -@ $threads -Sb - | samtools sort -@ $threads -m 4G - ${filteredBam%.bam} >> $firstMappingDir/${lid}_filterBam.log 2>&1" "$ECHO"
-	log "done\n"
-	if [ ! -s $filteredBam ]; 
-   	then
-       	log "Error filtering the bam file\n" "ERROR" 
-       	exit -1
-   	fi
-   	endTime=$(date +%s)
-   	printHeader "BAM filtering step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-   	printHeader "Filtered BAM file already exists...skipping conversion step"
-fi
-
-
-# 4) Extract reads from the raw BAM produced in the first mapping for a second 
+# 2) Extract reads from the raw BAM produced in the first mapping for a second 
 ###############################################################################
 # split-mapping attemp allowing split-mappings in different chromosomes, strands 
 #################################################################################
@@ -1253,16 +1179,35 @@ then
 	step="READS2REMAP"
 	startTime=$(date +%s)
 	printHeader "Executing extract reads to remap step" 
-	log "Extracting reads from the raw BAM for a second split-mapping step..." $step
-	run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v unique=$extractUniqueSM -v nbMismUnique=$nbMismUnique -v multimapped=$extractMultiSM -v nbMismMulti=$nbMismMulti -v nbHits=$nbHitsMulti -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap >> $secondMappingDir/${lid}_reads2remap.log 2>&1" "$ECHO"
+	if [[ "$bamAsInput" == "FALSE" ]];
+	then		
+		extractReads2Remap_FASTQAsInput
+	zcat edgren_remapMultimapped_firstMap_filtered.map.gz | awk '$NF=="-"{print $0;}' | /users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe/bin/gemtools-1.7.1-i3/gt.filter --output-format FASTA
+	
+	
+	else
+		extractReads2Remap_BAMAsInput
+		log "Extracting reads from the raw BAM for a second split-mapping step..." $step
+		### Check in which fields are the number of mappings and the number of mismatches 
+
+		# Comment: samtools view -F 4 ** filter out unmapped reads 
+
+		NHfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NH:i:"){print field;} field++}}'`
+		NMfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NM:i:"){print field;} field++}}'`
+
+		run "samtools view -h -F 256 $bamFirstMap | awk -v OFS="'\\\t'" -f $correctNMfield | awk -v OFS="'\\\t'" -v higherThan="1" -v unmapped=$extractUnmappedSM -v unique=$extractUniqueSM -v nbMismUnique=$nbMismUnique -v multimapped=$extractMultiSM -v nbMismMulti=$nbMismMulti -v nbHits=$nbHitsMulti -v NHfield=$NHfield -v NMfield=$NMfield -f $SAMfilter | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap >> $secondMappingDir/${lid}_reads2remap.log 2>&1" "$ECHO"
+	
+	fi
+	
 	log "done\n" 
-    if [ ! -s $reads2remap ]; 
+    if [ -s $reads2remap ]; 
     then
+        endTime=$(date +%s)
+		printHeader "Extracting reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+    else	    
         log "Error extracting the reads\n" "ERROR" 
         exit -1
-    fi
-    endTime=$(date +%s)
-	printHeader "Extracting reads completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	fi
 else
     printHeader "FASTQ file with reads to remap already exists... skipping extracting reads to remap step"
 fi
@@ -1348,6 +1293,65 @@ then
 	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
 	printHeader "GFF from second mapping GEM file already exists... skipping conversion step"
+fi
+
+# 2) Infer the sequencing library protocol used (UNSTRANDED, MATE2_SENSE OR MATE1_SENSE) 
+########################################################################################
+# from a subset with the 1% of the mapped reads. 
+#################################################
+# Outputs are: 
+##############
+# - variables $readDirectionality and $stranded
+
+if [[ "$readDirectionality" == "UNKNOWN" ]]; 
+then 
+    step="INFER-LIBRARY"
+    startTimeLibrary=$(date +%s)
+    printHeader "Executing infer library type step" 
+    log "Infering the sequencing library protocol from a random subset with 1 percent of the mapped reads..." $step
+    read fraction1 fraction2 other <<<$(bash $infer_library $bamFirstMap $annot)
+    log "done\n"
+    log "Fraction of reads explained by 1++,1--,2+-,2-+: $fraction1\n" $step
+    log "Fraction of reads explained by 1+-,1-+,2++,2--: $fraction2\n" $step
+    log "Fraction of reads explained by other combinations: $other\n" $step 
+    
+    # Turn the percentages into integers
+    fraction1_int=${fraction1/\.*};
+    fraction2_int=${fraction2/\.*};
+    other_int=${other/\.*};
+    
+    # Infer the sequencing library from the mapping distribution. 
+    if [ "$fraction1_int" -ge 70 ]; # MATE1_SENSE protocol
+    then 
+		readDirectionality="MATE1_SENSE";
+		stranded=1;
+		echo $readDirectionality;	
+    elif [ "$fraction2_int" -ge 70 ];
+    then	
+		readDirectionality="MATE2_SENSE"; # MATE2_SENSE protocol
+		stranded=1;
+    elif [ "$fraction1_int" -ge 40 ] && [ "$fraction1_int" -le 60 ];
+    then
+		if [ "$fraction2_int" -ge 40 ] && [ "$fraction2_int" -le 60 ]; # UNSTRANDED prototol
+		then
+	    	readDirectionality="UNSTRANDED";
+	    	stranded=0;
+		else
+	    	log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
+	    	usagelongdoc
+	    	exit -1	
+		fi
+    else
+		log "ChimPipe is not able to determine the library type. Ask your data provider and use the option -l|--seq-library\n" "ERROR" >&2;
+		usagelongdoc
+		exit -1	
+    fi
+    log "Sequencing library type: $readDirectionality\n" $step 
+    log "Strand aware protocol (1: yes, 0: no): $stranded\n" $step 
+    endTimeLibrary=$(date +%s)
+    printHeader "Sequencing library inference for $lid completed in $(echo "($endTimeLibrary-$startTimeLibrary)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+    printHeader "Sequencing library type provided by the user...skipping library inference step"
 fi
 
 
