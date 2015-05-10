@@ -1439,7 +1439,7 @@ fi
 # 3) CLEANUP AND END #
 ######################
 
-#rm $filteredBamFirstMap
+rm $filteredBamFirstMap
 
 if [[ "$cleanup" == "TRUE" ]]; 
 then 
