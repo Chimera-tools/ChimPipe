@@ -62,7 +62,7 @@
  
  
 BEGIN{
-	if	((multimapped=="1")&&(NHfield==""))
+	if	(((multimapped=="1")||(unique=="1"))&&(NHfield==""))
 	{
 		print "[ERROR] Please specify the position of the NH field (nb. of hits). I.e: awk -v NHfield=14 ..." > "/dev/stderr";
     	exit 1

@@ -31,7 +31,7 @@
 # but different from ~brodriguez/Chimeras_project/Chimeras_detection_pipeline/Chimera_mapping/Workdir/Awk/gemsplit2gff_unique3.awk since it is able to write the blocks in reverse order when the split-mappings are in the same chromosome, same strand and in the minus strand. This is to generate a gff file with the same convention than the
 # one generated from a bam file, since bam and gem has different conventions, while the bam provides the alignment in genomic order gem does it in the biological one (from 5' to 3').
 
-#  awk -v rev=0 -f ~/Awk/gemsplit2gff_unique4.awk
+#  awk -v rev=0 -f ~/Awk/gemsplit2gff_unique.awk
 
 # example of input
 ##################
@@ -51,13 +51,13 @@ $NF!="-"{
 	    	split(b[2],b2,":"); 
 	    	if ((b1[1]!=b2[1]) || (b1[2]!=b2[2]) || (b1[2]!="-") || (rev=="") || (rev==0))
 	    	{
-	    		print b1[1], "hts", "alblock", b1[3], b1[3]+b1[4]-1,  ".", b1[2], ".", "name:", "\""$1"\"\;"; 
-	   	 		print b2[1], "hts", "alblock", b2[3], b2[3]+b2[4]-1,  ".", b2[2], ".", "name:", "\""$1"\"\;";
+	    		print b1[1], "ChimPipe", "alBlock1", b1[3], b1[3]+b1[4]-1,  ".", b1[2], ".", "ReadName:", "\""$1"\"\;"; 
+	   	 		print b2[1], "ChimPipe", "alBlock2", b2[3], b2[3]+b2[4]-1,  ".", b2[2], ".", "ReadName:", "\""$1"\"\;";
 			}
 			else 
 			{ 
-	   	 		print b2[1], "hts", "alblock", b2[3], b2[3]+b2[4]-1,  ".", b2[2], ".", "name:", "\""$1"\"\;";
-				print b1[1], "hts", "alblock", b1[3], b1[3]+b1[4]-1,  ".", b1[2], ".", "name:", "\""$1"\"\;";
+	   	 		print b2[1], "ChimPipe", "alBlock1", b2[3], b2[3]+b2[4]-1,  ".", b2[2], ".", "ReadName:", "\""$1"\"\;";
+				print b1[1], "ChimPipe", "alBlock2", b1[3], b1[3]+b1[4]-1,  ".", b1[2], ".", "ReadName:", "\""$1"\"\;";
 			}	
 		}
 	}

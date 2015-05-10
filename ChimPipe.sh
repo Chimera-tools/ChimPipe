@@ -280,7 +280,7 @@ function firstMapping_FASTQinput {
 		step="FIRST-MAP.FILTERMAP"
 		startTime=$(date +%s)
 		printSubHeader "Executing conversion GEM to BAM step"
-		run "$gtFilterRemove -i $gemFirstMap --max-matches 2 --max-levenshtein-error 4 -t $hthreads | $pigz -p $hthreads > $gemFirstMapFiltered" "$ECHO"
+		run "$gtFilterRemove -i $gemFirstMap --max-matches 10 --max-levenshtein-error 4 -t $hthreads | $pigz -p $hthreads > $gemFirstMapFiltered" "$ECHO"
 		
 		if [ -s $gemFirstMapFiltered ];
 		then
@@ -820,11 +820,11 @@ bashDir=$rootDir/src/bash
 mappingPhaseDir=$outDir/MappingPhase
 firstMappingDir=$mappingPhaseDir/FirstMapping
 secondMappingDir=$mappingPhaseDir/SecondMapping
-splicedReadsGFFDir=$mappingPhaseDir/splicedReadsGFF
 
 # 2. Chimera detection phase
 chimeraDetPhaseDir=$outDir/ChimeraDetectionPhase
-chimJuncDir=$chimeraDetPhaseDir/ChimericJunctions
+splicedReadsGFFDir=$chimeraDetPhaseDir/ReadsSpanningSpliceJunctions
+chimJuncDir=$chimeraDetPhaseDir/ChimericSpliceJunctions
 PEsupportDir=$chimeraDetPhaseDir/PEsupport
 genePairSimDir=$chimeraDetPhaseDir/genePairSim
 
@@ -853,6 +853,7 @@ pigz=$binDir/pigz
 # Awk 
 addMateInfoSam=$awkDir/add_mateInfo_SAM.awk
 gff2Gff=$awkDir/gff2gff.awk
+SAMfilter=$awkDir/SAMfilter.awk
 bed2bedPE=$awkDir/bed2bedPE.awk
 bedPECorrectStrand=$awkDir/bedPECorrectStrand.awk
 bedPE2gff=$awkDir/bedPE2gff.awk
@@ -924,26 +925,29 @@ printf "  %-34s %s\n" "log:" "$logLevel"
 printf "  %-34s %s\n\n" "no-cleanup:" "$cleanup"
 
 
-## START CHIMPIPE
-#################
+
+###################
+## START CHIMPIPE #
+###################
 header="Executing ChimPipe $version for $lid"
 echo $header
 eval "for i in {1..${#header}};do printf \"-\";done"
 printf "\n\n"
 pipelineStart=$(date +%s)
 
-# 0) Preliminary steps
-######################
+#######################    	
+# 0) PRELIMINAR STEPS #
+#######################
 
 ## Make directories
 # 1. Mapping phase
 if [[ ! -d $mappingPhaseDir ]]; then mkdir $mappingPhaseDir; fi
 if [ ! -d $firstMappingDir ] && [ "$bamAsInput" == "FALSE" ]; then mkdir $firstMappingDir; fi
 if [[ ! -d $secondMappingDir ]]; then mkdir $secondMappingDir; fi
-if [[ ! -d $splicedReadsGFFDir ]]; then mkdir $splicedReadsGFFDir; fi
 
 # 2. Chimera detection phase
 if [[ ! -d $chimeraDetPhaseDir ]]; then mkdir $chimeraDetPhaseDir; fi
+if [[ ! -d $splicedReadsGFFDir ]]; then mkdir $splicedReadsGFFDir; fi
 if [[ ! -d $chimJuncDir ]]; then mkdir $chimJuncDir; fi
 if [[ ! -d $PEsupportDir ]]; then mkdir $PEsupportDir; fi
 
@@ -964,8 +968,12 @@ b=`basename $annot`
 b2tmp=${b%.gtf}
 b2=${b2tmp%.gff}
     	
+    	
+####################    	
+# 1) MAPPING PHASE #
+####################
  	
-# 1) First mapping step (skipped if BAM as input). Map all the reads to the genome, to the transcriptome and de-novo, using the 
+# 1.1) First mapping step (skipped if BAM as input). Map all the reads to the genome, to the transcriptome and de-novo, using the 
 #################################################################################################
 # gemtools RNA-Seq pipeline but with max intron size larger than the biggest chromosome, and with 
 ##################################################################################################  
@@ -980,7 +988,7 @@ b2=${b2tmp%.gff}
 if [[ "$bamAsInput" == "FALSE" ]];
 then
 	gemFirstMap=$firstMappingDir/${lid}_firstMap.map.gz
-	bamFirstMap=$firstMappingDir/${lid}_firstMap_filtered.bam
+	bamFirstMap=$firstMappingDir/${lid}_firstMap.bam
 	
 	if [ ! -s $bamFirstMap ]; 
 	then
@@ -994,24 +1002,21 @@ else
 fi
 
 
-# 2) Extract reads from the raw BAM produced in the first mapping for a second 
-###############################################################################
-# split-mapping attemp allowing split-mappings in different chromosomes, strands 
-#################################################################################
+# 1.2) Extract first mapping unmapped reads for a second split-mapping
+##########################################################################
+# attemp allowing split-mappings in different chromosomes, strands 
+######################################################################
 # and non genomic order. Produce a FASTQ file with them. 
 ########################################################
 # output is: 
 ############
 # - $outDir/${lid}_reads2remap.fastq
 
-## Comment: samtools view -f 4  ** extract unmapped reads  -F 256 filter out secondary alignments (multimapped reads represented as one primary alignment plus several secondary alignments)
+## Comment: samtools view -f 4  ** extract unmapped reads  
 
 reads2remap=$secondMappingDir/${lid}_reads2remap.fastq
 
-### Check in which fields are the number of mappings and the number of mismatches 
-NHfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NH:i:"){print field;} field++}}'`
-NMfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NM:i:"){print field;} field++}}'`
-		
+
 if [ ! -s $reads2remap ]; 
 then
 	step="READS2REMAP"
@@ -1031,7 +1036,7 @@ else
     printHeader "FASTQ file with reads to remap already exists... skipping extracting reads to remap step"
 fi
 
-# 3) Second split-mapping attemp. Remap the extracted reads allowing reads 
+# 1.3) Second split-mapping attemp. Remap the extracted reads allowing reads 
 ###########################################################################
 # to split in different chromosomes, strands and non genomic order.
 ###################################################################
@@ -1048,7 +1053,7 @@ then
 	printHeader "Executing second split-mapping step"
 	log "Remapping reads allowing them to split-map in different chromosomes, strand and non genomic order..." $step	
 	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-33' -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  >> $secondMappingDir/${lid}_secondMap.log 2>&1" "$ECHO"
-	log "done\n" 
+	
 	if [ ! -s $gemSecondMap ]; 
 	then
         log "Error in the second mapping\n" "ERROR" 
@@ -1061,7 +1066,7 @@ else
 fi
 	
 
-# 4) Infer the sequencing library protocol used (UNSTRANDED, MATE2_SENSE OR MATE1_SENSE) 
+# 1.4) Infer the sequencing library protocol used (UNSTRANDED, MATE2_SENSE OR MATE1_SENSE) 
 ########################################################################################
 # from a subset with the 1% of the mapped reads. 
 #################################################
@@ -1120,23 +1125,59 @@ else
     printHeader "Sequencing library type provided by the user...skipping library inference step"
 fi
 
+##############################    	
+# 2) CHIMERA DETECTION PHASE #
+##############################
 
-# 5) extract the reads mapping both uniquely and in 2 blocks from the bam file of "normal" mappings and convert in gff.gz
-#########################################################################################################################
-# output is: 
-############
+# 2.1 filter out multimapped reads in the BAM file and produce a filtered BAM file 
+###################################################################################
+# containing uniquely mapped reads for chimera detection
+#########################################################
 # - $outDir/FromFirstBam/${lid}_splitmappings_2blocks_firstMap.gff.gz
 
-gffFromBam=$splicedReadsGFFDir/${lid}_splitmappings_2blocks_firstMap.gff.gz
+filteredBamFirstMap=$firstMappingDir/${lid}_firstMap_filtered.bam
+
+### Check in which field is the number of mappings
+NHfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NH:i:"){print field;} field++}}'`
+
+if [ ! -s $filteredBamFirstMap ]; 
+then
+	step="UNIQUE-BAM"
+	startTime=$(date +%s)
+	printHeader "Executing make BAM with unambiguosly mapped reads step"
+	log "Generating a BAM file containing only unambiguously mapped reads for chimera detection..." $step
+	run "samtools view -h $bamFirstMap | awk -v OFS="'\\\t'" -v unique="1" -v NHfield=$NHfield -f $SAMfilter | samtools view -@ $threads -bS - > $filteredBamFirstMap 2> $firstMappingDir/${lid}_bamFiltering.log" "$ECHO"
+	
+	if [ ! -s $filteredBamFirstMap ]; 
+	then
+        log "Error Generating the filtered BAM file\n" "ERROR" 
+        exit -1
+    fi
+	endTime=$(date +%s)
+	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "filtered BAM file already exists... skipping filtering step"
+fi
+
+	
+# 2.2) extract the reads spanning splice junctions from the filtered first mapping 
+##########################################################################################
+# bam file and convert in gff.gz
+##################################
+# output is: 
+############
+# - $outDir/FromFirstBam/${lid}_readsSpanningSpliceJunctions_firstMap.gff.gz
+
+gffFromBam=$splicedReadsGFFDir/${lid}_readsSpanningSpliceJunctions_firstMap.gff.gz
 
 if [ ! -s $gffFromBam ]; 
 then
-	step="FIRST-CONVERT"
+	step="SPLICED-READS1"
 	startTime=$(date +%s)
-	printHeader "Executing conversion of BAM to GFF step"
-	log "Generating a GFF file from the normal mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step
-	bedtools bamtobed -i $bamFirstMap -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $gffFromBam 
-	log "done\n"
+	printHeader "Extract unambiguously spliced mapped reads from first mapping BAM step"
+	log "Generating a GFF file with the aligment information of the reads spanning splice junctions..." $step
+	bedtools bamtobed -i $filteredBamFirstMap -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $gffFromBam 
+	
 	if [ ! -s $gffFromBam ]; 
 	then
         log "Error Generating the gff file\n" "ERROR" 
@@ -1145,25 +1186,27 @@ then
 	endTime=$(date +%s)
 	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "GFF from first mapping BAM file already exists... skipping conversion step"
+	printHeader "GFF from first mapping BAM file already exists... skipping extract reads spanning splice junctions step"
 fi
 
-# 6) extract the reads mapping both uniquely and in 2 blocks from the map file of "atypical" mappings and convert in gff.gz
-#########################################################################################################################
+# 2.3) extract the reads spanning splice junctions from the second mapping 
+#################################################################################
+# map file and convert in gff.gz
+##################################
 # output is: 
 ############
 # - $outDir/FromSecondMapping/${lid}_splitmappings_2blocks_secondMap.gff.gz
 
-gffFromMap=$splicedReadsGFFDir/${lid}_splitmappings_2blocks_secondMap.gff.gz
+gffFromMap=$splicedReadsGFFDir/${lid}_readsSpanningSpliceJunctions_secondMap.gff.gz
 
 if [ ! -s $gffFromMap ]; 
 then
-	step="SECOND-CONVERT"
+	step="SPLICED-READS2"
 	startTime=$(date +%s)
-	printHeader "Executing conversion of the GEM into GFF step"
-	log "Generating a GFF file from the atypical mappings containing the reads split-mapping both uniquely and in 2 blocks..." $step	
+	printHeader "Extract unambiguously spliced mapped reads from second mapping filtered BAM step"
+	log "Generating a GFF file with the aligment information of the reads spanning splice junctions..." $step	
 	run "awk -v readDirectionality=$readDirectionality -f $gemCorrectStrand $gemSecondMap | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $gffFromMap" "$ECHO"
-	log "done\n" 
+	
 	if [ ! -s $gffFromMap ]; 
 	then
         log "Error Generating the GFF file\n" "ERROR" 
@@ -1172,26 +1215,27 @@ then
     endTime=$(date +%s)
 	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "GFF from second mapping GEM file already exists... skipping conversion step"
+	printHeader "GFF from second mapping GEM file already exists... skipping extract reads spanning splice junctions step"
 fi
 
 
-# 7) put the path to the "normal" and "atypical" gff.gz files in a same txt file for chimsplice 
-#############################################################################################
+# 2.4) put the path to the first and second mapping spliced mapped reads gff.gz files in a same txt file for chimsplice 
+########################################################################################################################
 
 paths2chimsplice=$splicedReadsGFFDir/split_mapping_file_sample_$lid.txt
 
 run "echo $gffFromBam > $paths2chimsplice" "$ECHO"
 run "echo $gffFromMap >> $paths2chimsplice" "$ECHO"
 
-# 8) run chimsplice on 4) and 5) 
+# 2.5) run chimsplice on ..) and ..) 
 ###############################
 # - $outDir/Chimsplice/chimeric_junctions_report_$lid.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 
-exonConnections1=$chimJuncDir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_splitmappings_2blocks_firstMap.txt.gz
-exonConnections2=$chimJuncDir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_splitmappings_2blocks_secondMap.txt.gz
+exonConnections1=$chimJuncDir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_readsSpanningSpliceJunctions_firstMap.txt.gz
+
+exonConnections2=$chimJuncDir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_readsSpanningSpliceJunctions_secondMap.txt.gz
 
 
 printHeader "Executing Chimsplice step"
@@ -1201,7 +1245,7 @@ then
 	startTime=$(date +%s)
 	log "Finding exon to exon connections from the GFF files containing the "normal" and "atypical" mappings..." $step
 	run "$chim1 $paths2chimsplice $annot $chimJuncDir $stranded >> $chimJuncDir/find_exon_to_exon_connections_from_split-mapped_reads_$lid.err 2>&1" "$ECHO"
-	log "done\n" 
+	
 	if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; 
 	then
         log "Error running chimsplice\n" "ERROR" 
@@ -1221,7 +1265,7 @@ then
 	startTime=$(date +%s)
 	log "Finding chimeric junctions from exon to exon connections..." $step
 	run "$chim2 $paths2chimsplice $genomeIndex $annot $chimJuncDir $stranded $spliceSitesFM > $chimJuncDir/chimeric_junctions_report_$lid.txt 2> $chimJuncDir/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
-	log "done\n" 
+	
 	if [ ! -s $chimJunctions ]; 
 	then
         log "Error running chimsplice\n" "ERROR" 
@@ -1233,7 +1277,7 @@ else
 	printHeader "Chimeric Junctions file already exists... skipping step"
 fi
 
-# 9.1) Find gene to gene connections supported by paired-end mappings from the bam file of "normal" mappings with the number of mappings supporting the connection.  
+# 2.6) Find gene to gene connections supported by paired-end mappings from the bam file of "normal" mappings with the number of mappings supporting the connection.  
 #################################################################################################################################################################
 # For a connection g1 to g2 to exist there must be at least one mapping where the first mate is strandedly (if data is stranded) overlapping with an exon 
 #########################################################################################################################################################
@@ -1252,8 +1296,8 @@ then
 	step="PAIRED-END"
 	startTime=$(date +%s)
 	log "Finding gene to gene connections supported by paired-end mappings from the BAM containing reads mapping in a unique and continuous way..." $step
-	run "$findGeneConnections $bamFirstMap $annot $PEsupportDir $readDirectionality" "$ECHO"
-	log "done\n" 
+	run "$findGeneConnections $filteredBamFirstMap $annot $PEsupportDir $readDirectionality" "$ECHO"
+	
 	if [ ! -s $PEsupport ]; 
 	then
         log "Error finding gene to gene connections\n" "ERROR" 
@@ -1266,7 +1310,7 @@ else
 fi
 
 
-# 9.2) Add gene to gene connections information to chimeric junctions matrix
+# 2.7) Add gene to gene connections information to chimeric junctions matrix
 ##########################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
@@ -1279,7 +1323,7 @@ then
 	startTime=$(date +%s)
 	log "Adding PE information to the matrix containing chimeric junction candidates..." $step
 	run "awk -v fileRef=$PEsupport -f $addPEinfo $chimJunctions 1> $chimJuncPEsupport" "$ECHO"
-	log "done\n" 
+	
 	if [ ! -s $chimJuncPEsupport ]; then
         log "Error adding PE information\n" "ERROR" 
         exit -1
@@ -1290,7 +1334,7 @@ else
 	printHeader "Chimeric junction matrix with PE information already exists... skipping step"
 fi
 
-# 10) Compute the gene similarity matrix in case the user does not provide it
+# 2.8) Compute the gene similarity matrix in case the user does not provide it
 ############################################################################
 
 if [ ! -e "$simGnPairs" ]
@@ -1301,14 +1345,14 @@ then
     startTime=$(date +%s)
     log "Computing similarity between annotated genes..." $step
     run "$sim $annot $genomeIndex" "$ECHO"
-    log "done\n" 			
+    	
     endTime=$(date +%s)
     simGnPairs=$genePairSimDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
     cd $outDir
     printHeader "Computing similarity between annotated gene step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 fi
 
-# 11) Add information regarding the sequence similarity between connected genes
+# 2.9) Add information regarding the sequence similarity between connected genes
 ##############################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
@@ -1322,7 +1366,7 @@ then
 	startTime=$(date +%s)
 	log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
 	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJuncPEsupport > $chimJunctionsSim" "$ECHO"
-	log "done\n" 
+	
 	if [ ! -s $chimJunctionsSim ]
 	then
 	    log "Error adding similarity information, file is empty\n" "ERROR" 
@@ -1338,7 +1382,7 @@ else
 fi
 
 
-# 12) Produce a matrix containing chimeric junction candidates with a header in the first row
+# 2.10) Produce a matrix containing chimeric junction candidates with a header in the first row
 #############################################################################################
 # - $outDir/chimeric_junctions_candidates.txt
 
@@ -1366,7 +1410,7 @@ else
     printHeader "Header already already added... skipping step"
 fi
 
-# 13) Filter out chimera candidates to produce a final set of chimeric junctions
+# 2.11) Filter out chimera candidates to produce a final set of chimeric junctions
 ################################################################################
 # - $outDir/chimeric_junctions.txt
 
@@ -1378,7 +1422,7 @@ then
 	startTime=$(date +%s)
 	log "Filtering out chimera candidates to produce a final set of chimeric junctions..." $step
 	awk -v filterConf=$filterConf -f $juncFilter $chimJunctionsCandidates > $chimJunctions
-	log "done\n" 
+	
 	if [ ! -s $chimJunction ]; 
 	then
 		log "Error filtering chimeric junction candidates\n" "ERROR" 
@@ -1391,9 +1435,11 @@ else
 	printHeader "Chimeric junction candidates already filtered... skipping step"
 fi
 
+######################
+# 3) CLEANUP AND END #
+######################
 
-# 14) Clean up
-###############
+#rm $filteredBamFirstMap
 
 if [[ "$cleanup" == "TRUE" ]]; 
 then 
@@ -1409,8 +1455,6 @@ else
 fi	
 
 
-# 15) END
-#########
 pipelineEnd=$(date +%s)
 printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
 
