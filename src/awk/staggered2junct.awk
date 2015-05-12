@@ -165,9 +165,7 @@ function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 	
 	if ((juncStr1=="")||(juncStr2=="")) # If no consensus splice sites (css). However this case should not exist, since the rna-mapper requires css to split-map the reads
 	{
-		print $0
 		print "[ERROR] Consensus splice sites were not found." > "/dev/stderr"
-        exit 1
 	}
 }
 
