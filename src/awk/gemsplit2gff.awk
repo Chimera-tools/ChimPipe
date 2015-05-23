@@ -2,7 +2,7 @@
 
 # *****************************************************************************
 	
-#	gemsplit2gff_unique.awk
+#	gemsplit2gff.awk
 	
 #	This file is part of the ChimPipe pipeline 
 
@@ -41,23 +41,23 @@
 
 
 $NF!="-"{
-    n=split($NF,a,","); 
-    if(n==1)
+    nbHits=split($NF,alignments,","); 
+    for (align in alignments)
     {
-		n2=split($NF,b,"::"); 
-		if(n2==2)
+		nbBlocks=split(alignments[align],blocks,"::"); 
+		if(nbBlocks==2)
 		{
-	   	 	split(b[1],b1,":"); 
-	    	split(b[2],b2,":"); 
+	   	 	split(blocks[1],b1,":"); 
+	    	split(blocks[2],b2,":"); 
 	    	if ((b1[1]!=b2[1]) || (b1[2]!=b2[2]) || (b1[2]!="-") || (rev=="") || (rev==0))
 	    	{
-	    		print b1[1], "ChimPipe", "alBlock1", b1[3], b1[3]+b1[4]-1,  ".", b1[2], ".", "ReadName:", "\""$1"\"\;"; 
-	   	 		print b2[1], "ChimPipe", "alBlock2", b2[3], b2[3]+b2[4]-1,  ".", b2[2], ".", "ReadName:", "\""$1"\"\;";
+	    		print b1[1], "ChimPipe", "alBlock1", b1[3], b1[3]+b1[4]-1,  nbHits, b1[2], ".", "ReadName:", "\""$1"\"\;"; 
+	   	 		print b2[1], "ChimPipe", "alBlock2", b2[3], b2[3]+b2[4]-1,  nbHits, b2[2], ".", "ReadName:", "\""$1"\"\;";
 			}
 			else 
 			{ 
-	   	 		print b2[1], "ChimPipe", "alBlock1", b2[3], b2[3]+b2[4]-1,  ".", b2[2], ".", "ReadName:", "\""$1"\"\;";
-				print b1[1], "ChimPipe", "alBlock2", b1[3], b1[3]+b1[4]-1,  ".", b1[2], ".", "ReadName:", "\""$1"\"\;";
+	   	 		print b2[1], "ChimPipe", "alBlock1", b2[3], b2[3]+b2[4]-1,  nbHits, b2[2], ".", "ReadName:", "\""$1"\"\;";
+				print b1[1], "ChimPipe", "alBlock2", b1[3], b1[3]+b1[4]-1,  nbHits, b1[2], ".", "ReadName:", "\""$1"\"\;";
 			}	
 		}
 	}
