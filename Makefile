@@ -6,17 +6,18 @@ SHELL := /bin/bash
 all: write run clean
 
 write:		
+	@echo
+	@echo "Setting up ChimPipe V0.9.0 ..."
 	@echo "#!bin/bash" > temp.sh
 	@echo "root=\$$(cd \$$(dirname \$$0); pwd -P )" >> temp.sh
-	@echo "sed -i \"s|root=.*|root=\$$root|\" ChimPipe.sh" >> temp.sh
-		
+	@echo "sed -i \"s|rootDir=.*|rootDir=\$$root|\" ChimPipe.sh" >> temp.sh
+	@echo "sed -i \"s|rootDir=.*|rootDir=\$$root|\" src/bash/*.sh" >> temp.sh	
 run:
 	@$(shell bash temp.sh)
 
 # Clean up
 clean: temp.sh
-	@echo
 	@rm -f temp.sh 
-	@echo "Done!"
+	@echo "done!"
 	@echo
 
