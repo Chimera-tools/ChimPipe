@@ -47,14 +47,17 @@
 BEGIN{OFS="\t"}
 $NF!="-"{
 	rev=0;
-    n=split($NF,a,","); 
-    if(n==1)
+    mappings="";
+    
+    #n=split($NF,a,","); 
+    nbHits=split($NF,alignments,","); 
+    for (align in alignments)
     {
-		n2=split($NF,b,"::"); 
-		if(n2==2)
+		nbBlocks=split(alignments[align],blocks,"::"); 
+		if(nbBlocks==2)
 		{
-	    	split(b[1],b1,":"); 
-	    	split(b[2],b2,":");
+	   	 	split(blocks[1],b1,":"); 
+	    	split(blocks[2],b2,":");
 	    	strA=b1[2];
 	    	strB=b2[2];
 	    	if (readDirectionality=="MATE1_SENSE")
@@ -91,13 +94,23 @@ $NF!="-"{
 	    	}
 	    	if (rev=="0")
 	    	{	
-	    		print $1, $2, $3, $4, b1[1]":"strA":"b1[3]":"b1[4]"::"b2[1]":"strB":"b2[3]":"b2[4];
+	    		 map=b1[1]":"strA":"b1[3]":"b1[4]"::"b2[1]":"strB":"b2[3]":"b2[4];
 			}
 			else
 			{
-				print $1, $2, $3, $4, b2[1]":"strB":"b2[3]":"b2[4]"::"b1[1]":"strA":"b1[3]":"b1[4];
+				 map=b2[1]":"strB":"b2[3]":"b2[4]"::"b1[1]":"strA":"b1[3]":"b1[4];
+			}
+			
+			if (mappings == "")
+			{
+				mappings=map
+			}
+			else
+			{
+				mappings=mappings","map
 			}
 		}
     }
+    print $1, $2, $3, $4, mappings;
 }	
 
