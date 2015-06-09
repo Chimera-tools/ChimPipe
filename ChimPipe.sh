@@ -547,7 +547,7 @@ shopt -s extglob
 ##############################
 # It will be exported as an environmental variable since it will be used by every ChimPipe's scripts 
 # to set the path to the bin, awk and bash directories. 
-root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
+root=/nfs/users/rg/sdjebali/Chimeras/ChimPipe
 
 export rootDir=$root 
 
@@ -942,7 +942,7 @@ pipelineStart=$(date +%s)
 ## Make directories
 # 1. Mapping phase
 if [[ ! -d $mappingPhaseDir ]]; then mkdir $mappingPhaseDir; fi
-if [ ! -d $firstMappingDir ] && [ "$bamAsInput" == "FALSE" ]; then mkdir $firstMappingDir; fi
+if [ ! -d $firstMappingDir ]; then mkdir $firstMappingDir; fi
 if [[ ! -d $secondMappingDir ]]; then mkdir $secondMappingDir; fi
 
 # 2. Chimera detection phase
