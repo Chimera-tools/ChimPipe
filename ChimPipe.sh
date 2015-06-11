@@ -1446,7 +1446,7 @@ then
 	step="CLEAN-UP"
 	startTime=$(date +%s)
 	log "Removing intermediate files..." $step
-	rm -r $splicedReadsGFFDir $chimeraDetPhaseDir $firstMappingDir/*firstMap.map* $firstMappingDir/*filtered_firstMap.bam* $firstMappingDir/${lid}_map2bam_conversion.log $secondMappingDir/*reads2remap* $chimJunctionsSim $chimJunctionsCandidates
+	rm -r $splicedReadsGFFDir $chimeraDetPhaseDir $firstMappingDir/*firstMap.map* $firstMappingDir/*filtered_firstMap.bam* $firstMappingDir/${lid}_map2bam_conversion.log $secondMappingDir/*reads2remap* $chimJunctionsSim 
 	log "done\n" 
 	endTime=$(date +%s)
 	printHeader "Clean up step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
