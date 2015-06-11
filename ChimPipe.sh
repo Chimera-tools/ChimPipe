@@ -245,28 +245,28 @@ function firstMapping_FASTQinput {
 
 	# 1.1) Produce a filtered and sorted bam file with the aligments
 	####################################################	
-	if [ ! -s $gemFirstMap ]; 
-	then
-		step="FIRST-MAP"
-		startTimeFirstMap=$(date +%s)
-		printHeader "Executing first mapping step"    
-	    
+    if [ ! -s $gemFirstMap ]; 
+    then
+	step="FIRST-MAP"
+	startTimeFirstMap=$(date +%s)
+	printHeader "Executing first mapping step"    
+	
 		## Copy needed files to TMPDIR
-		copyToTmp "index,annotation,t-index,keys"
-
-		log "Running GEMtools rna pipeline on ${lid}..." $step
-		run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads >> $firstMappingDir/${lid}_firstMap.log 2>&1" "$ECHO" 
+	copyToTmp "index,annotation,t-index,keys"
+	
+	log "Running GEMtools rna pipeline on ${lid}..." $step
+	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads >> $firstMappingDir/${lid}_firstMap.log 2>&1" "$ECHO" 
    
-	   	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
-	   	then 
+	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
+	then 
 			# Copy files from temporary to output directory
-		    run "cp $TMPDIR/`basename $gemFirstMap` $gemFirstMap" "$ECHO"	       	    
-	   		endTimeFirstMap=$(date +%s)        		
-			printHeader "First mapping for $lid completed in $(echo "($endTimeFirstMap-$startTimeFirstMap)/60" | bc -l | xargs printf "%.2f\n") min"
-	   	else
-       	    log "Error running the GEMtools pipeline file\n" "ERROR"
+	    run "cp $TMPDIR/`basename $gemFirstMap` $gemFirstMap" "$ECHO"	       	    
+	    endTimeFirstMap=$(date +%s)        		
+	    printHeader "First mapping for $lid completed in $(echo "($endTimeFirstMap-$startTimeFirstMap)/60" | bc -l | xargs printf "%.2f\n") min"
+	else
+       	    log "Error running the GEMtools pipeline\n" "ERROR"
        	    exit -1
-	   	fi		
+	fi		
 	else
     	printHeader "First mapping GEM file already exists... skipping first mapping step"
 	fi

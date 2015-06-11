@@ -163,9 +163,13 @@ function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 		}
 	}
 	
-	if ((juncStr1=="")||(juncStr2=="")) # If no consensus splice sites (css). However this case should not exist, since the rna-mapper requires css to split-map the reads
+	if ((juncStr1=="")||(juncStr2=="")) # If no consensus splice sites (css). 
 	{
-		print "[ERROR] Consensus splice sites were not found." > "/dev/stderr"
+	    juncDonor="na";
+	    juncAcceptor="na";
+	    juncStr1=".";
+	    juncStr2=".";
+	    rev=0;
 	}
 }
 
@@ -330,8 +334,11 @@ function findMaxBegEnd(beg, end, chimJunc)
 			findMaxBegEnd(beg, end, chimJunc);
 		}
 	}	
-	if ((strandedness!="1")||(rev!="1")) # Filter out junction if it is stranded data and the read split-map with the complementary
-									 # reverse of the consensus splice sites. This case is a gem mapping artefact.
+	if (((strandedness!="1")||(rev!="1"))&&((juncDonor!="na")&&(juncAcceptor!="na")))  
+        # Filter out splice junctions if it is stranded data and the read split-map
+        # with the complementary reverse of the consensus splice sites.
+        # This case is a gem mapping artefact. Filter out also junctions without canonical
+        # donor or acceptor splice sites. 
 	{												
 		# Save the donor and the acceptor associated to the chimeric junction into a dictionary
 		juncDonors[chimJunc]=juncDonor;
