@@ -34,11 +34,17 @@ BEGIN{
 		lgal[$1"-"$2]=$4;
 	}
 }
-{
+
+# Print header
+NR==1{
+	print $0, "maxSim", "maxLgal";
+}
+
+NR>1{
 	maxLgal=0;
 	maxLgalSim=0;
-	split($11,gnlist1,",");
-	split($12,gnlist2,",");
+	split($13,gnlist1,",");
+	split($14,gnlist2,",");
 	for (gn1 in gnlist1)
 	{
 		for (gn2 in gnlist2)
