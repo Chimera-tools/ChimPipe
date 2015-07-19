@@ -213,7 +213,7 @@ awk -v chimera="0" -f $CLASSIFY_SPLICEJUNC $outDir/spliceJunctions_annotated.txt
 # 4) CLEANUP AND END #
 ######################
 echo "4. Cleanup and end" >&2
-rm $outDir/spliceJunctions_2parts_beg_end.gff $outDir/spliceJunctions_2parts_beg_end_intersected.txt $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt $outDir/spliceJunctions_annotated.txt
+rm $outDir/spliceJunctions_2parts_beg_end.gff $outDir/spliceJunctions_2parts_beg_end_intersected.txt $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt $outDir/spliceJunctions_annotated.txt
 
 
 
