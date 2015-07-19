@@ -545,15 +545,12 @@ shopt -s extglob
 
 # 1. ChimPipe's root directory
 ##############################
-# It will be exported as an environmental variable since it will be used by every ChimPipe's scripts 
 # to set the path to the bin, awk and bash directories. 
-root=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
-
-export rootDir=$root 
+rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
 
 # 2. Parse input arguments with getopt  
 ######################################
-getopt=$root/bin/getopt
+getopt=$rootDir/bin/getopt
 
 getoptions $0 $@ # call Function 5 and passing two parameters (name of the script and command used to call it)
 
@@ -816,16 +813,19 @@ awkDir=$rootDir/src/awk
 bashDir=$rootDir/src/bash
 
 ## Output files directories
-# 1. Mapping phase
+
+# 1. Processed annotation
+annotDir=$outDir/Annotation
+
+# 2. Mapping phase
 mappingPhaseDir=$outDir/MappingPhase
 firstMappingDir=$mappingPhaseDir/FirstMapping
 secondMappingDir=$mappingPhaseDir/SecondMapping
 
-# 2. Chimera detection phase
+# 3. Chimera detection phase
 chimeraDetPhaseDir=$outDir/ChimeraDetectionPhase
-splicedReadsGFFDir=$chimeraDetPhaseDir/ReadsSpanningSpliceJunctions
-chimJuncDir=$chimeraDetPhaseDir/ChimericSpliceJunctions
-PEsupportDir=$chimeraDetPhaseDir/PEsupport
+chimSpliceDir=$chimeraDetPhaseDir/ChimSplice
+chimPEDir=$chimeraDetPhaseDir/ChimPE
 genePairSimDir=$chimeraDetPhaseDir/genePairSim
 
 # The temporary directory will be exported as an environmental variable since it will 
@@ -838,8 +838,7 @@ export TMPDIR=$TMPDIR
 qual=$bashDir/detect.fq.qual.sh
 addXS=$bashDir/sam2cufflinks.sh
 infer_library=$bashDir/infer_library_type.sh
-chim1=$bashDir/find_exon_exon_connections_from_splitmappings.sh
-chim2=$bashDir/find_chimeric_junctions_from_exon_to_exon_connections.sh
+ChimSplice=$bashDir/ChimSplice.sh
 findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
 sim=$bashDir/similarity_bt_gnpairs.sh
 
@@ -851,14 +850,10 @@ gem2sam=$binDir/gemtools-1.7.1-i3/gem-2-sam
 pigz=$binDir/pigz
 
 # Awk 
+processAnnot=$awkDir/preprocess_annotation.awk
 addMateInfoSam=$awkDir/add_mateInfo_SAM.awk
 gff2Gff=$awkDir/gff2gff.awk
 SAMfilter=$awkDir/SAMfilter.awk
-bed2bedPE=$awkDir/bed2bedPE.awk
-bedPECorrectStrand=$awkDir/bedPECorrectStrand.awk
-bedPE2gff=$awkDir/bedPE2gff.awk
-gemCorrectStrand=$awkDir/gemCorrectStrand.awk
-gemToGff=$awkDir/gemsplit2gff_unique.awk
 addPEinfo=$awkDir/add_PE_info.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
 juncFilter=$awkDir/chimjunc_filter.awk
@@ -935,23 +930,28 @@ eval "for i in {1..${#header}};do printf \"-\";done"
 printf "\n\n"
 pipelineStart=$(date +%s)
 
+
 #######################    	
-# 0) PRELIMINAR STEPS #
+# 0) PRELIMINARY STEPS #
 #######################
 
-## Make directories
-# 1. Mapping phase
+## 1) Make directories
+#######################
+# 1.1) Processed annotation
+if [[ ! -d $annotDir ]]; then mkdir $annotDir; fi
+
+# 1.2) Mapping phase
 if [[ ! -d $mappingPhaseDir ]]; then mkdir $mappingPhaseDir; fi
-if [ ! -d $firstMappingDir ] && [ "$bamAsInput" == "FALSE" ]; then mkdir $firstMappingDir; fi
+if [[ ! -d $firstMappingDir ]] ; then mkdir $firstMappingDir; fi
 if [[ ! -d $secondMappingDir ]]; then mkdir $secondMappingDir; fi
 
-# 2. Chimera detection phase
+# 1.3 Chimera detection phase
 if [[ ! -d $chimeraDetPhaseDir ]]; then mkdir $chimeraDetPhaseDir; fi
-if [[ ! -d $splicedReadsGFFDir ]]; then mkdir $splicedReadsGFFDir; fi
-if [[ ! -d $chimJuncDir ]]; then mkdir $chimJuncDir; fi
-if [[ ! -d $PEsupportDir ]]; then mkdir $PEsupportDir; fi
+if [[ ! -d $chimSpliceDir ]]; then mkdir $chimSpliceDir; fi
+if [[ ! -d $chimPEDir ]]; then mkdir $chimPEDir; fi
 
-## Check quality offset if FASTQ as input
+## 2) Check quality offset if FASTQ as input
+#############################################
 if [[ "$bamAsInput" == "FALSE" ]];
 then
 	step="PRELIM"
@@ -962,6 +962,11 @@ then
 else
 	quality="33"
 fi
+
+## 3) Process annotation
+#########################
+
+awk -f $processAnnot $annot | sort -k1,1 -k4,4n -k5,5n > $annotDir/gencode19_annotatedExons.gff
 
 ## Define variable with annotation name
 b=`basename $annot`
@@ -1160,113 +1165,30 @@ else
 fi
 
 	
-# 2.2) extract the reads spanning splice junctions from the filtered first mapping 
-##########################################################################################
-# bam file and convert in gff.gz
-##################################
-# output is: 
-############
-# - $outDir/FromFirstBam/${lid}_readsSpanningSpliceJunctions_firstMap.gff.gz
+# 2.4) put the path to the first (.BAM) and second mapping (.MAP) files in a .txt file for chimsplice 
+#########################################################################################################
 
-gffFromBam=$splicedReadsGFFDir/${lid}_readsSpanningSpliceJunctions_firstMap.gff.gz
+paths2ChimSplice=$chimSpliceDir/first_second_mapping_aligment_files_paths_$lid.txt
 
-if [ ! -s $gffFromBam ]; 
-then
-	step="SPLICED-READS1"
-	startTime=$(date +%s)
-	printHeader "Extract unambiguously spliced mapped reads from first mapping BAM step"
-	log "Generating a GFF file with the aligment information of the reads spanning splice junctions..." $step
-	bedtools bamtobed -i $filteredBamFirstMap -bed12 | awk '$10==2' | awk -v rev='1' -f $bed2bedPE | awk -v readDirectionality=$readDirectionality  -f $bedPECorrectStrand | awk -f $bedPE2gff | awk -f $gff2Gff | gzip > $gffFromBam 
-	
-	if [ ! -s $gffFromBam ]; 
-	then
-        log "Error Generating the gff file\n" "ERROR" 
-        exit -1
-    fi
-	endTime=$(date +%s)
-	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-	printHeader "GFF from first mapping BAM file already exists... skipping extract reads spanning splice junctions step"
-fi
+run "echo $bamFirstMap > $paths2ChimSplice" "$ECHO"
+run "echo $gemSecondMap >> $paths2ChimSplice" "$ECHO"
 
-# 2.3) extract the reads spanning splice junctions from the second mapping 
-#################################################################################
-# map file and convert in gff.gz
-##################################
-# output is: 
-############
-# - $outDir/FromSecondMapping/${lid}_splitmappings_2blocks_secondMap.gff.gz
-
-gffFromMap=$splicedReadsGFFDir/${lid}_readsSpanningSpliceJunctions_secondMap.gff.gz
-
-if [ ! -s $gffFromMap ]; 
-then
-	step="SPLICED-READS2"
-	startTime=$(date +%s)
-	printHeader "Extract unambiguously spliced mapped reads from second mapping filtered BAM step"
-	log "Generating a GFF file with the aligment information of the reads spanning splice junctions..." $step	
-	run "awk -v readDirectionality=$readDirectionality -f $gemCorrectStrand $gemSecondMap | awk -v rev="0" -f $gemToGff | awk -f $gff2Gff | gzip > $gffFromMap" "$ECHO"
-	
-	if [ ! -s $gffFromMap ]; 
-	then
-        log "Error Generating the GFF file\n" "ERROR" 
-        exit -1
-    fi
-    endTime=$(date +%s)
-	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-	printHeader "GFF from second mapping GEM file already exists... skipping extract reads spanning splice junctions step"
-fi
-
-
-# 2.4) put the path to the first and second mapping spliced mapped reads gff.gz files in a same txt file for chimsplice 
-########################################################################################################################
-
-paths2chimsplice=$splicedReadsGFFDir/split_mapping_file_sample_$lid.txt
-
-run "echo $gffFromBam > $paths2chimsplice" "$ECHO"
-run "echo $gffFromMap >> $paths2chimsplice" "$ECHO"
-
-# 2.5) run chimsplice on ..) and ..) 
-###############################
+# 2.5) run ChimSplice on  
+###########################
 # - $outDir/Chimsplice/chimeric_junctions_report_$lid.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 # - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
 
-exonConnections1=$chimJuncDir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_readsSpanningSpliceJunctions_firstMap.txt.gz
+chimSpliceOut=$chimSpliceDir/chimJunctions_chimSplice.txt 
 
-exonConnections2=$chimJuncDir/exonA_exonB_with_splitmapping_part1overA_part2overB_readlist_sm1list_sm2list_staggeredlist_totalist_${lid}_readsSpanningSpliceJunctions_secondMap.txt.gz
-
-
-printHeader "Executing Chimsplice step"
-if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; 
+if [ ! -s $chimSpliceOut ]; 
 then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
-	log "Finding exon to exon connections from the GFF files containing the "normal" and "atypical" mappings..." $step
-	run "$chim1 $paths2chimsplice $annot $chimJuncDir $stranded >> $chimJuncDir/find_exon_to_exon_connections_from_split-mapped_reads_$lid.err 2>&1" "$ECHO"
+	log "Finding chimeric junctions from split-mappings..." $step
+	run "$ChimSplice $paths2ChimSplice $genomeIndex $annotDir/gencode19_annotatedExons.gff $readDirectionality $spliceSitesFM $chimSpliceDir 2> $chimSpliceDir/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
 	
-	if [ ! -s $exonConnections1 ] || [ ! -s $exonConnections2 ]; 
-	then
-        log "Error running chimsplice\n" "ERROR" 
-        exit -1
-    fi
-    endTime=$(date +%s)
-	printHeader "Find exon to exon connections step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-	printHeader "Exon to exon connections file already exists... skipping step"
-fi
-
-chimJunctions=$chimJuncDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-
-if [ ! -s $chimJunctions ]; 
-then
-	step="CHIMSPLICE"
-	startTime=$(date +%s)
-	log "Finding chimeric junctions from exon to exon connections..." $step
-	run "$chim2 $paths2chimsplice $genomeIndex $annot $chimJuncDir $stranded $spliceSitesFM > $chimJuncDir/chimeric_junctions_report_$lid.txt 2> $chimJuncDir/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
-	
-	if [ ! -s $chimJunctions ]; 
+	if [ ! -s $chimSpliceOut ]; 
 	then
         log "Error running chimsplice\n" "ERROR" 
         exit -1
@@ -1287,18 +1209,17 @@ fi
 # - $outDir/PE/readid_twomateswithgnlist_alldiffgnpairs_where_1stassociatedto1stmate_and2ndto2ndmate.txt.gz
 # - $outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
 
-PEsupport=$PEsupportDir/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
-
+chimPEOut=$chimPEDir/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
 
 printHeader "Executing find gene to gene connections from PE mappings step"
-if [ ! -s $PEsupport ];
+if [ ! -s $chimPEOut ];
 then
-	step="PAIRED-END"
+	step="CHIMPE"
 	startTime=$(date +%s)
 	log "Finding gene to gene connections supported by paired-end mappings from the BAM containing reads mapping in a unique and continuous way..." $step
-	run "$findGeneConnections $filteredBamFirstMap $annot $PEsupportDir $readDirectionality" "$ECHO"
+	run "$findGeneConnections $filteredBamFirstMap $annot $chimPEDir $readDirectionality" "$ECHO"
 	
-	if [ ! -s $PEsupport ]; 
+	if [ ! -s $chimPEOut ]; 
 	then
         log "Error finding gene to gene connections\n" "ERROR" 
         exit -1
@@ -1314,15 +1235,14 @@ fi
 ##########################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-chimJuncPEsupport=$chimeraDetPhaseDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-
+chimJuncPEsupport=$chimeraDetPhaseDir/chimJunctions_candidates_PEsupport.txt
 
 if [ ! -s $chimJuncPEsupport ];
 then
 	step="PAIRED-END"
 	startTime=$(date +%s)
 	log "Adding PE information to the matrix containing chimeric junction candidates..." $step
-	run "awk -v fileRef=$PEsupport -f $addPEinfo $chimJunctions 1> $chimJuncPEsupport" "$ECHO"
+	run "awk -v fileRef=$chimPEOut -f $addPEinfo $chimSpliceOut 1> $chimJuncPEsupport" "$ECHO"
 	
 	if [ ! -s $chimJuncPEsupport ]; then
         log "Error adding PE information\n" "ERROR" 
@@ -1356,7 +1276,7 @@ fi
 ##############################################################################
 # - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
 
-chimJunctionsSim=$chimeraDetPhaseDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+chimJunctionsCandidates=$outDir/chimeric_junctions_candidates_${lid}.txt
 
 if [  ! -e "$chimJunctionsSim" ]
 then		
@@ -1365,7 +1285,7 @@ then
 	step="SIM"
 	startTime=$(date +%s)
 	log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
-	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJuncPEsupport > $chimJunctionsSim" "$ECHO"
+	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJuncPEsupport > $chimJunctionsCandidates" "$ECHO"
 	
 	if [ ! -s $chimJunctionsSim ]
 	then
@@ -1382,35 +1302,7 @@ else
 fi
 
 
-# 2.10) Produce a matrix containing chimeric junction candidates with a header in the first row
-#############################################################################################
-# - $outDir/chimeric_junctions_candidates.txt
-
-chimJunctionsCandidates=$outDir/chimeric_junctions_candidates_${lid}.txt
-
-if [ ! -s "$chimJunctionsCandidates" ]
-then		
-    step="HEADER"
-    log "Adding a header to the matrix containing the chimeric junction candidates..." $step
-    if [ -s "$chimJunctionsSim" ]
-    then		
-		run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\", \"maxSim\", \"maxLgal\";}{print \$0;}' $chimJunctionsSim 1> $chimJunctionsCandidates" "$ECHO"
-	log "done\n"
-    else
-		if [ -s "$chimJunctionsPE" ]
-		then
-	   		run "awk 'BEGIN{print \"juncId\", \"nbstag\", \"nbtotal\", \"maxbeg\", \"maxEnd\", \"samechr\", \"samestr\", \"dist\", \"ss1\", \"ss2\", \"gnlist1\", \"gnlist2\", \"gnname1\", \"gnname2\", \"bt1\", \"bt2\", \"PEsupport\";}{print \$0;}' $chimJunctionsPE 1> $chimJunctionsCandidates" "$ECHO"
-	    	log "done\n" 	
-		else
-	    	log "Error, intermediate file: $chimJunctionsSim or $chimJunctionsPE is missing\n" "ERROR" 
-	    exit -1			
-		fi
-    fi 
-else
-    printHeader "Header already already added... skipping step"
-fi
-
-# 2.11) Filter out chimera candidates to produce a final set of chimeric junctions
+# 2.10) Filter out chimera candidates to produce a final set of chimeric junctions
 ################################################################################
 # - $outDir/chimeric_junctions.txt
 
@@ -1446,7 +1338,7 @@ then
 	step="CLEAN-UP"
 	startTime=$(date +%s)
 	log "Removing intermediate files..." $step
-	rm -r $splicedReadsGFFDir $chimeraDetPhaseDir $firstMappingDir/*firstMap.map* $firstMappingDir/*filtered_firstMap.bam* $firstMappingDir/${lid}_map2bam_conversion.log $secondMappingDir/*reads2remap* $chimJunctionsSim $chimJunctionsCandidates
+	rm -r $chimeraDetPhaseDir $firstMappingDir/*firstMap.map* $firstMappingDir/*filtered_firstMap.bam* $firstMappingDir/${lid}_map2bam_conversion.log $secondMappingDir/*reads2remap* $chimJunctionsSim $chimJunctionsCandidates
 	log "done\n" 
 	endTime=$(date +%s)
 	printHeader "Clean up step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
