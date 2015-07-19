@@ -211,7 +211,7 @@ Tabular text file containing the detected chimeric junctions in your RNA-seq dat
 2. **nbstag** - Number of staggered reads supporting the chimera.
 3. **nbtotal** - Total number of reads supporting the chimera.
 4. **maxbeg** - Maximum 5' coordinates for the chimeric junction. 
-5. **maxEnd** - Maximum 5' coordinates for the chimeric junction. 
+5. **maxEnd** - Maximum 3' coordinates for the chimeric junction. 
 6. **samechr** - Flag to specify if the connected gene pairs are in the same cromosome (1) or not (0).
 7. **samestr** - Flag to specify if the connected gene pairs are in the same strand (1) or not (0), NA in case the *samechr* field was 0.
 8. **dist** - Distance between the two breakpoints, NA in case the "samestr" field was 0.
