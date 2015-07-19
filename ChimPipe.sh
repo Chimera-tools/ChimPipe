@@ -538,7 +538,7 @@ done
 ############################
 
 # ChimPipe version 
-version=v0.8.8
+version=v0.9.0
 
 # Enable extended pattern matching 
 shopt -s extglob
@@ -546,13 +546,8 @@ shopt -s extglob
 # 1. ChimPipe's root directory
 ##############################
 # to set the path to the bin, awk and bash directories. 
-<<<<<<< HEAD
-rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
-=======
-root=/nfs/users/rg/sdjebali/Chimeras/ChimPipe
 
-export rootDir=$root 
->>>>>>> 03d14d784ff6d48b3646ae26c89c27dcdc91c25b
+rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
 
 # 2. Parse input arguments with getopt  
 ######################################
