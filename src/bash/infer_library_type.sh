@@ -79,9 +79,7 @@ annot=$2
 
 # Directories 
 #############
-# Environmental variables 
-# rootDir - path to the root folder of ChimPipe pipeline. 
-# It is an environmental variable defined and exported in the main script 
+rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
 awkDir=$rootDir/src/awk
 
 # PROGRAMS

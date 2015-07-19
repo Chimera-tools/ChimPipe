@@ -65,11 +65,7 @@ if [[ ! -e $genome ]]; then printf "\n\tERROR:Please specify a valid genome gem 
 
 # Directories 
 #############
-# Environmental variables 
-# rootDir - path to the root folder of ChimPipe pipeline. 
-# TMPDIR  - temporary directory
-# They are environmental variable defined and exported in the main script
- 
+rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
 binDir=$rootDir/bin
 awkDir=$rootDir/src/awk
 bashDir=$rootDir/src/bash
