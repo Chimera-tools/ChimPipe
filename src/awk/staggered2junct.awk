@@ -26,7 +26,7 @@
 # Description
 ###############
 
-# Takes as input a file containing staggered reads split-mapping in two exons from different genes and the 8-kmer on each side of the blocks. It uses this information to make the correct chimeric junctions joining the donnor and acceptor sides of the blocks, compute the number of staggered reads supporting the junctions, their maximum beginning and end coordinates and their consensus splice sites. 
+# Takes as input a file containing staggered reads split-mapping in two exons from different genes and the 8-kmer on each side of the blocks. It uses this information to make the correct splice junctions joining the donnor and acceptor sides of the blocks, compute the number of staggered reads, the total number of reads, the number of unique and multi mappings supporting the junction, their maximum beginning and end coordinates, their consensus splice sites.... 
 
 # input
 # chr10_100013508_100013530_-:chr3_50392315_50392367_-	1	CTACTTGG	TGATGAAC	GTTTCCCT	GAGCCGAC		
@@ -44,7 +44,7 @@
 
 # Usage example:
 ################
-# awk -v strandedness="1" -v CSS='GT+AG,GC+AG,ATATC+A.,GTATC+AT' -f $MAKE_JUNCTIONS $outdir/staggered_nb_dnt.txt
+# awk -v strandedness="1" -v CSS='GT+AG,GC+AG,ATATC+A.,GTATC+AT' -f staggered2junct.awk staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt
 
 
 # How the script find the position of the splice sites regarding on the strand the blocks map?? 
@@ -163,37 +163,42 @@ function findStrand(seq1,seq2,mapStr1,mapStr2,CSS)
 		}
 	}
 	
-	if ((juncStr1=="")||(juncStr2=="")) # If no consensus splice sites (css). However this case should not exist, since the rna-mapper requires css to split-map the reads
+	
+	if ((juncStr1=="")||(juncStr2=="")) # If no consensus splice sites (css). However this case should not exist, since the rna-mapper requires css to split-map the reads -- indeed it seems happens for few junctions in certain samples (e.g. mouse)
 	{
-		print "[ERROR] Consensus splice sites were not found." > "/dev/stderr"
+		juncDonor="na";
+	    juncAcceptor="na";
+		juncStr1=".";
+		juncStr2=".";
+		rev=0;
 	}
 }
 
-function makeChimJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev)
+function makeSpliceJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev)
 {
 	if (rev=="0")
 	{	
-		chimJunc=chr1"_"breakpoint1"_"juncStr1":"chr2"_"breakpoint2"_"juncStr2;	
+		spliceJunc=chr1"_"breakpoint1"_"juncStr1":"chr2"_"breakpoint2"_"juncStr2;	
 	}
 	else # Reverse to write first the donnor block and then the acceptor
 	{	
-		chimJunc=chr2"_"breakpoint2"_"juncStr2":"chr1"_"breakpoint1"_"juncStr1;		
+		spliceJunc=chr2"_"breakpoint2"_"juncStr2":"chr1"_"breakpoint1"_"juncStr1;		
 	}
-	return chimJunc
+	return spliceJunc
 }
 
-function findMaxBegEnd(beg, end, chimJunc)
+function findMaxBegEnd(beg, end, spliceJunc)
 {
-	split(chimJunc,a,":");
+	split(spliceJunc,a,":");
 	split(a[1],b1,"_");
 	split(a[2],b2,"_");
 	str1=b1[3];
 	str2=b2[3];
 	
-	if ((maxBeg[chimJunc]=="")||(maxEnd[chimJunc]==""))
+	if ((maxBeg[spliceJunc]=="")||(maxEnd[spliceJunc]==""))
 	{
-		maxBeg[chimJunc]=beg;
-		maxEnd[chimJunc]=end;
+		maxBeg[spliceJunc]=beg;
+		maxEnd[spliceJunc]=end;
 	}
 	else
 	{
@@ -201,26 +206,26 @@ function findMaxBegEnd(beg, end, chimJunc)
 		{
 			if (str2=="+") # junc +/+
 			{
-				maxBeg[chimJunc]=(maxBeg[chimJunc] > beg ? beg : maxBeg[chimJunc]);
-				maxEnd[chimJunc]=(maxEnd[chimJunc] < end ? end : maxEnd[chimJunc]);
+				maxBeg[spliceJunc]=(maxBeg[spliceJunc] > beg ? beg : maxBeg[spliceJunc]);
+				maxEnd[spliceJunc]=(maxEnd[spliceJunc] < end ? end : maxEnd[spliceJunc]);
 			}
 			else # junc +/-
 			{
-				maxBeg[chimJunc]=(maxBeg[chimJunc] > beg ? beg : maxBeg[chimJunc]);
-				maxEnd[chimJunc]=(maxEnd[chimJunc] > end ? end : maxEnd[chimJunc]);
+				maxBeg[spliceJunc]=(maxBeg[spliceJunc] > beg ? beg : maxBeg[spliceJunc]);
+				maxEnd[spliceJunc]=(maxEnd[spliceJunc] > end ? end : maxEnd[spliceJunc]);
 			}
 		}		
 		else
 		{
 			if (str2=="+") # junc -/+
 			{
-				maxBeg[chimJunc]=(maxBeg[chimJunc] < beg ? beg : maxBeg[chimJunc]);
-				maxEnd[chimJunc]=(maxEnd[chimJunc] < end ? end : maxEnd[chimJunc]);
+				maxBeg[spliceJunc]=(maxBeg[spliceJunc] < beg ? beg : maxBeg[spliceJunc]);
+				maxEnd[spliceJunc]=(maxEnd[spliceJunc] < end ? end : maxEnd[spliceJunc]);
 			}
 			else # junc -/-
 			{
-				maxBeg[chimJunc]=(maxBeg[chimJunc] < beg ? beg : maxBeg[chimJunc]);
-				maxEnd[chimJunc]=(maxEnd[chimJunc] > end ? end : maxEnd[chimJunc]);
+				maxBeg[spliceJunc]=(maxBeg[spliceJunc] < beg ? beg : maxBeg[spliceJunc]);
+				maxEnd[spliceJunc]=(maxEnd[spliceJunc] > end ? end : maxEnd[spliceJunc]);
 			}
 		}
 	}
@@ -240,113 +245,132 @@ function findMaxBegEnd(beg, end, chimJunc)
 	{
 		if (mapStr2=="+") # 2 Blocks mapped in +/+
 		{
-   			# Chimeric junction breakpoints
+   			# splice junction boundaries
    			breakpoint1=b1[3];
 			breakpoint2=b2[2];
 			
 			# 8-mers containing the donor and acceptor splice sites 
-			seq1=$4;
-			seq2=$5;
+			seq1=$6;
+			seq2=$7;
 		
 			# Find the splice sites in the 8-mers and determine the strand of the blocks based on the splice sites sequences
 			findStrand(seq1,seq2,mapStr1,mapStr2,CSS);
 			
-			# Make the chimeric junction
-			makeChimJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
+			# Make the splice junction
+			makeSpliceJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
 			strandedness
 			# Determine the maximum external coordinates of the junction 		
 			beg=(rev=="0" ? b1[2] : b2[3]);
 			end=(rev=="0" ? b2[3] : b1[2]);
 			
-			findMaxBegEnd(beg, end, chimJunc);
+			findMaxBegEnd(beg, end, spliceJunc);
 		}
 		else # 2 Blocks mapped in +/-
 		{
-			# Chimeric junction breakpoints
+			# Splice junction boundaries
 			breakpoint1=b1[3];
 			breakpoint2=b2[3];
 		
 			# 8-mers containing the donor and acceptor splice sites 
-			seq1=$4;
-			seq2=$6;
+			seq1=$6;
+			seq2=$8;
 			
 			# Find the splice sites in the 8-mers and determine the strand of the blocks based on the splice sites sequences
 			findStrand(seq1,seq2,mapStr1,mapStr2,CSS);
 			
-			# Make the chimeric junction
-			makeChimJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
+			# Make the splice junction
+			makeSpliceJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
 			
 			# Determine the maximum external coordinates of the junction 		
 			beg=(rev=="0" ? b1[2] : b2[2]);
 			end=(rev=="0" ? b2[2] : b1[2]);
 			
-			findMaxBegEnd(beg, end, chimJunc);
+			findMaxBegEnd(beg, end, spliceJunc);
 		}
 	}
 	else
 	{
 		if (mapStr2=="+") # 2 Blocks mapped in -/+
 		{
-			# Chimeric junction breakpoints
+			# Splice junction boundaries
 			breakpoint1=b1[2];
 			breakpoint2=b2[2];
 		
 			# 8-mers containing the donor and acceptor splice sites 
-			seq1=$3;
-			seq2=$5;
+			seq1=$5;
+			seq2=$7;
 					
 			# Find the splice sites in the 8-mers and determine the strand of the blocks based on the splice sites sequences
 			findStrand(seq1,seq2,mapStr1,mapStr2,CSS);
 			
-			# Make the chimeric junction
-			makeChimJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
+			# Make the splice junction
+			makeSpliceJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
 			
 			# Determine the maximum external coordinates of the junction 		
 			beg=(rev=="0" ? b1[3] : b2[3]);
 			end=(rev=="0" ? b2[3] : b1[3]);
 			
-			findMaxBegEnd(beg, end, chimJunc);			
+			findMaxBegEnd(beg, end, spliceJunc);			
 		}
 		else # 2 Blocks mapped in -/-
 		{
-			# Chimeric junction breakpoints
+			# Splice junction boundaries
 			breakpoint1=b1[2];
 			breakpoint2=b2[3];
 		
 			# 8-mers containing the donor and acceptor splice sites 
-			seq1=$3;
-			seq2=$6;
+			seq1=$5;
+			seq2=$8;
 					
 			# Find the splice sites in the 8-mers and determine the strand of the blocks based on the splice sites sequences
 			findStrand(seq1,seq2,mapStr1,mapStr2,CSS);
 			
-			# Make the chimeric junction
-			makeChimJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
+			# Make the splice junction
+			makeSpliceJunc(chr1, breakpoint1, juncStr1, chr2, breakpoint2, juncStr2, rev);
 			
 			# Determine the maximum external coordinates of the junction 		
 			beg=(rev=="0" ? b1[3] : b2[2]);
 			end=(rev=="0" ? b2[2] : b1[3]);
 			
-			findMaxBegEnd(beg, end, chimJunc);
+			findMaxBegEnd(beg, end, spliceJunc);
 		}
 	}	
 	if ((strandedness!="1")||(rev!="1")) # Filter out junction if it is stranded data and the read split-map with the complementary
 									 # reverse of the consensus splice sites. This case is a gem mapping artefact.
 	{												
-		# Save the donor and the acceptor associated to the chimeric junction into a dictionary
-		juncDonors[chimJunc]=juncDonor;
-		juncAcceptors[chimJunc]=juncAcceptor;
+		# Save the donor and the acceptor associated to the splice junction into a dictionary
+		juncDonors[spliceJunc]=juncDonor;
+		juncAcceptors[spliceJunc]=juncAcceptor;
 	
 		# Count the number of staggered reads and the total number of reads supporting the junction
-		nbStag[chimJunc]++;
-		nbTotal[chimJunc]=nbTotal[chimJunc]+$2;
+		nbStag[spliceJunc]++;
+		totalNb[spliceJunc]=totalNb[spliceJunc]+$2;
+		nbUnique[spliceJunc]=nbUnique[spliceJunc]+$3;
+		nbMulti[spliceJunc]=nbMulti[spliceJunc]+$4;
+		supportingReads[spliceJunc]=$9supportingReads[spliceJunc]
 	}
 }		
 	
 END{
-	for (chimJunc in nbStag)
+	for (spliceJunc in nbStag)
 	{
-		print chimJunc, nbStag[chimJunc], nbTotal[chimJunc], maxBeg[chimJunc], maxEnd[chimJunc], juncDonors[chimJunc], juncAcceptors[chimJunc];
+		## Add flags 2 booleands: 
+		# intra chromosomal-same strand (1: yes, 0; no) 
+		# expected genomic order (1: yes, 0; no). It only can be yes if intra chromosomal-same strand is yes
+		## Add distance if intrachromosomal-same strand and expected genomic order equal to yes. 
+		
+		split(spliceJunc,a,":"); # chr19_39804571_-:chr19_39799182_- -> chr19_39804571_-   chr19_39799182_-
+		split(a[1],a1,"_"); # chr19_39804571_-  ->  chr19 39804571 -
+		split(a[2],a2,"_"); # chr19_39799182_- -> chr19 39799182 -
+		
+		sameChrStr=(((a1[1]==a2[1])&&(a1[3]==a2[3])) ? 1 : 0); 
+		okGxOrder=((sameChrStr==1) ? ((((a1[3]=="+")&&((a2[2]-a1[2])>=0))||((a1[3]=="-")&&((a1[2]-a2[2])>=0))) ? 1 : 0) : "na");
+		dist=((okGxOrder==1) ? ((a1[3]=="+") ? (a2[2]-a1[2]) : (a1[2]-a2[2])) : "na")
+		
+		## Print splice junctions and assotiated info to standard output
+		row=spliceJunc"\t"nbStag[spliceJunc]"\t"totalNb[spliceJunc]"\t"nbUnique[spliceJunc]"\t"nbMulti[spliceJunc]"\t"maxBeg[spliceJunc]"\t"maxEnd[spliceJunc]"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"juncDonors[spliceJunc]"\t"juncAcceptors[spliceJunc]"\t"supportingReads[spliceJunc]; 
+		
+		print row;
 	}
 }
 
