@@ -31,7 +31,7 @@ You can do it from the `ChimPipe GitHub repository`_ in two different ways:
 
 .. _ChimPipe GitHub repository: https://github.com/Chimera-tools/ChimPipe.git
 
-1. Press the `Download ZIP` button which is located at the bottom right of the page to download the most recent version of the code as a zip archive. 
+1. Go to the releases tab to download the latest version.   
 2. Clone the Git repository in case you want the code under the Git version control system (currently, it is not allowed to contribute to the project, but it will in the future):
 
 .. code-block:: bash

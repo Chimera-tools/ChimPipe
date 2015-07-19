@@ -212,9 +212,9 @@ Tabular text file containing the detected chimeric junctions in your RNA-seq dat
 3. **nbtotal** - Total number of reads supporting the chimera.
 4. **maxbeg** - Maximum 5' coordinates for the chimeric junction. 
 5. **maxEnd** - Maximum 3' coordinates for the chimeric junction. 
-6. **samechr** - Flag to specify if the connected gene pairs are in the same cromosome (1) or not (0).
-7. **samestr** - Flag to specify if the connected gene pairs are in the same strand (1) or not (0), NA in case the *samechr* field was 0.
-8. **dist** - Distance between the two breakpoints, NA in case the "samestr" field was 0.
+6. **samechrstr** - Flag to specify if the connected gene pairs are in the same cromosome and strand (1) or not (0).
+7. **okgxorder** - Flag to specify if the connected gene pairs are in genomic order (1) or not (0). NA in case the samechrstr field was 0 (with being in genomic order we mean that the donor gene is located in the genome in 5' while the acceptor in 3'. This means that if both genes are in the plus strand, the genomic coordinates of the first gene are lower than the ones for the second one. For genes in the minus it is the opposite).
+8. **dist** - Distance between the two breakpoints, NA in case the “samestr” field was 0.
 9. **ss1** - Splice donor site sequence.
 10. **ss2**	- Splice acceptor site sequence.
 11. **gnlist1** - List of genes overlapping the first part of the chimera. 	

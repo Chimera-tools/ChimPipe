@@ -6,7 +6,7 @@ ChimPipe is a pipeline for the detection of chimeric transcripts and gene fusion
 #### Download ChimPipe
 Two different ways:
 
-* Press the Download ZIP button which is located at the bottom right of the page to download the most recent version of the code as a zip archive.
+* Go to the releases tab and to download the latest version. 
 
 * Clone the Git repository in case you want the code under the Git version control system (currently, it is not allowed to contribute to the project, but it will in the future):
 
