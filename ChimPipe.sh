@@ -967,7 +967,7 @@ fi
 ## 3) Process annotation
 #########################
 
-awk -f $processAnnot $annot | sort -k1,1 -k4,4n -k5,5n > $annotDir/gencode19_annotatedExons.gff
+awk -f $processAnnot $annot | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | sort -V -k1,1 -k4,4n -k5,5n > $annotDir/gencode19_annotatedExons.gff
 
 ## Define variable with annotation name
 b=`basename $annot`
