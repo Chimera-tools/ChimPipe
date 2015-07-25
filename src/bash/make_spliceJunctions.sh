@@ -141,10 +141,10 @@ do
 	
 	case $extension in
     	"bam")
-       		samtools view -bF 4 $file | bedtools bamtobed -bed12 -tag NH -i stdin | awk '$10==2' | awk -v rev='1' -f $BED2BEDPE | awk -v readDirectionality=$readDirectionality -f $BEDPE_CORRECTSTRAND | awk -f $BEDPE2GFF | awk -f $GFF2GFF 
+       		samtools view -bF 4 $file | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($10==2) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -v rev='1' -f $BED2BEDPE | awk -v readDirectionality=$readDirectionality -f $BEDPE_CORRECTSTRAND | awk -f $BEDPE2GFF | awk -f $GFF2GFF 
         	;;	    
     	"map")
-    	    awk -v readDirectionality=$readDirectionality -f $GEM_CORRECT_STRAND $file | awk -v rev="0" -f $GEM2GFF | awk -f $GFF2GFF
+    	    awk -v readDirectionality=$readDirectionality -f $GEM_CORRECT_STRAND $file | awk '($5 !~ /M/) && ($5 !~ /Mt/) && ($5 !~ /MT/)' | awk -v rev="0" -f $GEM2GFF | awk -f $GFF2GFF
             ;;    
    		 esac 
 done | gzip > $outDir/spliceAlignments_2blocks.gff.gz
