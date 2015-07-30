@@ -255,7 +255,7 @@ function firstMapping_FASTQinput {
 	copyToTmp "index,annotation,t-index,keys"
 	
 	log "Running GEMtools rna pipeline on ${lid}..." $step
-	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length 300000000 --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads >> $firstMappingDir/${lid}_firstMap.log 2>&1" "$ECHO" 
+	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length $longestChrLength --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads >> $firstMappingDir/${lid}_firstMap.log 2>&1" "$ECHO" 
    
 	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
 	then 
@@ -835,6 +835,15 @@ export TMPDIR=$TMPDIR
 
 # 5. Programs/Scripts
 #####################
+# Bin 
+gemtools=$binDir/gemtools-1.7.1-i3/gemtools
+gemrnatools=$binDir/gemtools-1.7.1-i3/gem-rna-tools
+gtFilterRemove=$binDir/gemtools-1.7.1-i3/gt.filter.remove
+gem2sam=$binDir/gemtools-1.7.1-i3/gem-2-sam
+gemInfo=$binDir/gemtools-1.7.1-i3/gem-info
+pigz=$binDir/pigz
+
+
 # Bash 
 qual=$bashDir/detect.fq.qual.sh
 addXS=$bashDir/sam2cufflinks.sh
@@ -843,12 +852,6 @@ ChimSplice=$bashDir/ChimSplice.sh
 findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
 sim=$bashDir/similarity_bt_gnpairs.sh
 
-# Bin 
-gemtools=$binDir/gemtools-1.7.1-i3/gemtools
-gemrnatools=$binDir/gemtools-1.7.1-i3/gem-rna-tools
-gtFilterRemove=$binDir/gemtools-1.7.1-i3/gt.filter.remove
-gem2sam=$binDir/gemtools-1.7.1-i3/gem-2-sam
-pigz=$binDir/pigz
 
 # Awk 
 processAnnot=$awkDir/preprocess_annotation.awk
@@ -964,7 +967,16 @@ else
 	quality="33"
 fi
 
-## 3) Process annotation
+## 3) Generate genome file and 
+#################################
+# retrieve length longest chromosome    	
+#####################################
+
+$gemInfo $genomeIndex | awk '$1 ~ /^#/ && ($2 !~ /M/) && ($2 !~ /Mt/) && ($2 !~ /MT/) && ($3 ~ /F/) {split($5,lengths,"@"); chrLengths[$2]=lengths[2];}END{for (chr in chrLengths){print chr, chrLengths[chr]+1;}}' | tr -d \'\" | sort -V -k1,1 > $annotDir/chromosomes_length.txt
+
+longestChrLength=`sort -k2 -n -r $annotDir/chromosomes_length.txt | awk '{print $2}' | head -1`
+
+## 4) Process annotation
 #########################
 
 awk -f $processAnnot $annot | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | sort -V -k1,1 -k4,4n -k5,5n > $annotDir/gencode19_annotatedExons.gff
@@ -974,6 +986,7 @@ b=`basename $annot`
 b2tmp=${b%.gtf}
 b2=${b2tmp%.gff}
     	
+
     	
 ####################    	
 # 1) MAPPING PHASE #
