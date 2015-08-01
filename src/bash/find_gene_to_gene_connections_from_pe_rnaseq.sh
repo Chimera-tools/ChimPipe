@@ -109,8 +109,8 @@ else
 	    if [ "$4" != "MATE1_SENSE" ] &&  [ "$4" != "MATE2_SENSE" ] && [ "$4" != "MATE_STRAND_CSHL" ] && [ "$4" != "UNSTRANDED" ]
 	    then 
 		echo "" >&2
-		echo Usage: find_gene_to_gene_connections_from_pe_rnaseq_fast2.sh mapping.bam annot.gff outputdir mate_strand elt >&2
-		echo Wrong value for mate_strand: it can only be UNSTRANDED, MATE1_SENSE, MATE2_SENSE, SENSE OR ANTISENSE, not anything else >&2
+		echo "Usage: find_gene_to_gene_connections_from_pe_rnaseq_fast2.sh mapping.bam annot.gff outputdir mate_strand elt" >&2
+		echo "Wrong value for mate_strand: it can only be UNSTRANDED, MATE1_SENSE, MATE2_SENSE, SENSE OR ANTISENSE, not anything else" >&2
 		echo "" >&2
 		exit 1
 	    else
@@ -128,9 +128,20 @@ fi
 
 # Directories 
 #############
-rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
-awkDir=$rootDir/src/awk
-binDir=$rootDir/bin
+## Set root directory
+path="`dirname \"$0\"`"              # relative path
+rootDir="`( cd \"$path\" && pwd )`"  # absolute path
+
+if [ -z "$rootDir" ] ; 
+then
+  # error; for some reason, the path is not accessible
+  # to the script
+  log "Path not accessible to the script\n" "ERROR" 
+  exit 1  # fail
+fi
+
+## Set awk directory
+awkDir=$rootDir/../awk
 
 # Programs
 ##########

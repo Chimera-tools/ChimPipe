@@ -65,10 +65,22 @@ if [[ ! -e $genome ]]; then printf "\n\tERROR:Please specify a valid genome gem 
 
 # Directories 
 #############
-rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
-binDir=$rootDir/bin
-awkDir=$rootDir/src/awk
-bashDir=$rootDir/src/bash
+## Set root directory
+path="`dirname \"$0\"`"              # relative path
+rootDir="`( cd \"$path\" && pwd )`"  # absolute path
+
+if [ -z "$rootDir" ] ; 
+then
+  # error; for some reason, the path is not accessible
+  # to the script
+  log "Path not accessible to the script\n" "ERROR" 
+  exit 1  # fail
+fi
+
+## Set bin, bash and awk directories
+binDir=$rootDir/../../bin
+awkDir=$rootDir/../awk
+bashDir=$rootDir
 
 # Programs
 ##########

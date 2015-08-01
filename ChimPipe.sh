@@ -538,7 +538,7 @@ done
 ############################
 
 # ChimPipe version 
-version=v0.9.0
+version=v0.9.1
 
 # Enable extended pattern matching 
 shopt -s extglob
@@ -547,7 +547,17 @@ shopt -s extglob
 ##############################
 # to set the path to the bin, awk and bash directories. 
 
-rootDir=/nfs/users/rg/brodriguez/Chimeras_project/Chimeras_detection_pipeline/ChimPipe
+path="`dirname \"$0\"`"              # relative path
+rootDir="`( cd \"$path\" && pwd )`"  # absolute path
+
+if [ -z "$rootDir" ] ; 
+then
+  # error; for some reason, the path is not accessible
+  # to the script
+  log "Path not accessible to the script\n" "ERROR" 
+  exit 1  # fail
+fi
+
 
 # 2. Parse input arguments with getopt  
 ######################################
