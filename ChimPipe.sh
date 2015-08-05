@@ -989,7 +989,7 @@ longestChrLength=`sort -k2 -n -r $annotDir/chromosomes_length.txt | awk '{print 
 ## 4) Process annotation
 #########################
 
-awk -f $processAnnot $annot | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | sort -V -k1,1 -k4,4n -k5,5n > $annotDir/gencode19_annotatedExons.gff
+awk -f $processAnnot $annot | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -f $gff2Gff | sort -V -k1,1 -k4,4n -k5,5n | gzip > $annotDir/gencode19_annotatedExons.gff.gz
 
 ## Define variable with annotation name
 b=`basename $annot`
@@ -997,7 +997,6 @@ b2tmp=${b%.gtf}
 b2=${b2tmp%.gff}
     	
 
-    	
 ####################    	
 # 1) MAPPING PHASE #
 ####################
