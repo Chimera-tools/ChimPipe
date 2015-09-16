@@ -57,6 +57,9 @@ authors
 # - uses awk scripts
 # - uses bedtools
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
+
 # In case the user does not provide any input file, an error message is raised
 ##############################################################################
 if [ ! -n "$1" ] || [ ! -n "$2" ]

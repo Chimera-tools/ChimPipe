@@ -54,6 +54,8 @@ authors
 # NOTE: assumes that the geneid string does not contain any dash (-)
 # IMPORTANT: It should be added ANTISENSE and SENSE directionalities. Availables in the pipeline but not in this script. 
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
 
 # In case the user does not provide any input file, an error message is raised
 ##############################################################################
