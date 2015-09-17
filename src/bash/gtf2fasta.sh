@@ -53,6 +53,9 @@ cat <<help
 help
 }
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
+
 # GETTING INPUT ARGUMENTS 
 #########################
 annot=$1

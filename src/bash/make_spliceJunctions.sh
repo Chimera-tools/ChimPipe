@@ -57,6 +57,9 @@ authors
 # - Made for using on a 64 bit linux architecture
 # - uses awk scripts
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
+
 # In case the user does not provide any input file, an error message is raised
 ##############################################################################
 if [ ! -n "$1" ] || [ ! -n "$2" ]
@@ -146,24 +149,50 @@ RETRIEVER=$binDir/gemtools-1.7.1-i3/gem-retriever
 ################################################################################
 # - $outDir/spliceAlignments_2blocks.gff.gz
 
+nbFiles=1; # Count files
+
+### Iterate reading a BAM or GEM file in each iteration and saving junction blocks into a GFF
 cat $input | while read file
 do
 	fileName=$(basename "$file")
 	extension="${fileName##*.}"
 	
-	case $extension in
+	## A) First file, create output gff file
+	if [[ "$nbFiles" == "1" ]];
+    then
+		case $extension in
     	"bam")
-       		samtools view -bF 4 $file | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($10==2) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -v rev='1' -f $BED2BEDPE | awk -v readDirectionality=$readDirectionality -f $BEDPE_CORRECTSTRAND | awk -f $BEDPE2GFF | awk -f $GFF2GFF 
+       		samtools view -bF 4 $file | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($10==2) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -v rev='1' -f $BED2BEDPE | awk -v readDirectionality=$readDirectionality -f $BEDPE_CORRECTSTRAND | awk -f $BEDPE2GFF | awk -f $GFF2GFF  > $outDir/spliceAlignments_2blocks.gff
         	;;	    
     	"map")
-    	    awk -v readDirectionality=$readDirectionality -f $GEM_CORRECT_STRAND $file | awk '($5 !~ /M/) && ($5 !~ /Mt/) && ($5 !~ /MT/)' | awk -v rev="0" -f $GEM2GFF | awk -f $GFF2GFF
+    	    awk -v readDirectionality=$readDirectionality -f $GEM_CORRECT_STRAND $file | awk '($5 !~ /M/) && ($5 !~ /Mt/) && ($5 !~ /MT/)' | awk -v rev="0" -f $GEM2GFF | awk -f $GFF2GFF > $outDir/spliceAlignments_2blocks.gff
             ;;    
-   		 esac 
-done | gzip > $outDir/spliceAlignments_2blocks.gff.gz
+   		 esac
+   	
+   	## B) Not first file, append to already created output gff file
+	else
+		case $extension in
+    	"bam")
+       		samtools view -bF 4 $file | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($10==2) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -v rev='1' -f $BED2BEDPE | awk -v readDirectionality=$readDirectionality -f $BEDPE_CORRECTSTRAND | awk -f $BEDPE2GFF | awk -f $GFF2GFF  >> $outDir/spliceAlignments_2blocks.gff
+        	;;	    
+    	"map")
+    	    awk -v readDirectionality=$readDirectionality -f $GEM_CORRECT_STRAND $file | awk '($5 !~ /M/) && ($5 !~ /Mt/) && ($5 !~ /MT/)' | awk -v rev="0" -f $GEM2GFF | awk -f $GFF2GFF >> $outDir/spliceAlignments_2blocks.gff
+            ;;
+         esac
+	fi
+	
+	# Update counter 
+	let nbFiles=nbFiles+1;
+done 
+
+### Compress gff file
+gzip $outDir/spliceAlignments_2blocks.gff
+
 
 # 2. Make the staggered reads from gff containing split-mapping blocks
 ######################################################################## 
 zcat $outDir/spliceAlignments_2blocks.gff.gz | awk -f $MAKE_STAGGERED > $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt
+
 
 # 3. Subtract for each staggered the first 8 flanking nucleotides in each side (this makes a total of 4 8-mers). 
 ###############################################################################################################

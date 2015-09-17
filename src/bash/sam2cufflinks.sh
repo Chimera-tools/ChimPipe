@@ -47,6 +47,9 @@ authors
 # 0x40 --> the read is MATE1
 # 0x50 --> the read is MATE2
 
+# will exit if there is an error or in a pipe
+set -e -o pipefail
+
 mate=$1
 
 
