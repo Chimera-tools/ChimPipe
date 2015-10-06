@@ -27,47 +27,106 @@
 ##############
 # Need to be done..
 
+## Input:
+
+# 1) chimeric_spliceJunctions_discordantPE.txt
+# juncCoord	totalNbPE	nbSpanningPE	nbStag	percStag	nbMulti	percMulti	nbDiscordantPE	nbInconsistentPE	percInconsistentPE	overlapA	overlapB	distExonBoundaryA	distExonBoundaryB	donorSS	acceptorSS	beg	end	sameChrStr	okGxOrder	dist	gnIdA	 gnIdB	gnNameA	gnNameB	gnTypeA	gnTypeB	juncSpanningReadIds	supportingPairsIds	inconsistentPairsIds
+# chr21_42880008_-:chr21_39817544_-	200	126	32	25.3968	36	28.5714	74	14	15.9091	100	100	0	0	GT	AG	42880059	39817494	1	1	3062464	ENSG00000184012.7	ENSG00000157554.14	TMPRSS2	ERG	protein_coding	protein_coding ...
+
+# 2) fileRef=annotId_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
+# ENSG00000000003.10 ENSG00000042317.12 100.00 31 ENST00000373020.4 ENST00000553885.1
+# ENSG00000000003.10 ENSG00000053524.7 91.67 84 ENST00000373020.4 ENST00000461074.1
+# ENSG00000000003.10 ENSG00000059804.11 87.50 80 ENST00000373020.4 ENST00000075120.7
+
 BEGIN{
 	while (getline < fileRef >0)
 	{
-		sim[$1"-"$2]=$3;
-		lgal[$1"-"$2]=$4;
+		# Declare variables with relevant input information
+		gnIdA=$1;
+		gnIdB=$2;
+		percSim=$3;
+		alignLength=$4;
+		
+		alignLengths[gnIdA"-"gnIdB]=alignLength;
+		percSimilarities[gnIdA"-"gnIdB]=percSim;
 	}
 }
 
 # Print header
 NR==1{
-	print $0, "maxSim", "maxLgal";
+	header="juncCoord\ttotalNbPE\tnbSpanningPE\tnbStag\tpercStag\tnbMulti\tpercMulti\tnbDiscordantPE\tnbInconsistentPE\tpercInconsistentPE\toverlapA\toverlapB\tdistExonBoundaryA\tdistExonBoundaryB\tmaxBLastAlignLen\tblastAlignSim\tdonorSS\tacceptorSS\tbeg\tend\tsameChrStr\tokGxOrder\tdist\tgnIdA\t gnIdB\tgnNameA\tgnNameB\tgnTypeA\tgnTypeB\tjuncSpanningReadIds\tsupportingPairsIds\tinconsistentPairsIds";
+    print header;
 }
 
 NR>1{
-	maxLgal=0;
-	maxLgalSim=0;
-	split($13,gnlist1,",");
-	split($14,gnlist2,",");
-	for (gn1 in gnlist1)
+	# Declare variables with chimeric junctions plus associated information
+	juncCoord=$1;
+	totalNbPE=$2;
+	nbSpanningPE=$3;
+	nbStag=$4;
+	percStag=$5;
+	nbMulti=$6;
+	percMulti=$7;
+	nbDiscordantPE=$8;
+	nbInconsistentPE=$9;
+	percInconsistentPE=$10;
+	overlapA=$11;
+	overlapB=$12;
+	distExonBoundaryA=$13;
+	distExonBoundaryB=$14;
+	donorSS=$15;
+	acceptorSS=$16;
+	beg=$17;
+	end=$18;
+	sameChrStr=$19;
+	okGxOrder=$20;
+	dist=$21;
+	gnIdA=$22;
+	gnIdB=$23;
+	gnNameA=$24;
+	gnNameB=$25;
+	gnTypeA=$26;
+	gnTypeB=$27;
+	juncSpanningReadIds=$28;
+	supportingPairsIds=$29;
+	inconsistentPairsIds=$30;
+	
+	maxBLastAlignLen=0;
+	blastAlignSim=0; 	
+	
+	##
+	split(gnIdA, gnlistA, ",");
+	split(gnIdB,gnlistB,",");
+	
+	for (gnA in gnlistA)
 	{
-		for (gn2 in gnlist2)
+		for (gnB in gnlistB)
 		{
-			if((gnlist1[gn1]!="")||(gnlist2[gn2]!=""))
+			if ((gnlistA[gnA]!="") || (gnlistB[gnB]!=""))
 			{
-				gp=((gnlist1[gn1]<=gnlist2[gn2]) ? (gnlist1[gn1]"-"gnlist2[gn2]) : (gnlist2[gn2]"-"gnlist1[gn1]));
-				if (lgal[gp]>maxLgal)
+				gnPairIds=((gnlistA[gnA]<=gnlistB[gnB]) ? (gnlistA[gnA]"-"gnlistB[gnB]) : (gnlistB[gnB]"-"gnlistA[gnA]));
+				
+				if ((alignLengths[gnPairIds] > maxBLastAlignLen) || ((alignLengths[gnPairIds] == maxBLastAlignLen) && (percSimilarities[gnPairIds] > blastAlignSim)))
 				{
-					maxLgal=lgal[gp];
-					maxLgalSim=sim[gp];
+					maxBLastAlignLen=alignLengths[gnPairIds];
+					blastAlignSim=percSimilarities[gnPairIds];
 				}
 			}
 		}
 	}
-	if((maxLgalSim!=0)||(maxLgal!=0))	 
+	
+	if ((maxBLastAlignLen == 0) || (blastAlignSim == 0))	 
 	{
-		print $0, maxLgalSim, maxLgal; 
+		maxBLastAlignLen="na";
+		blastAlignSim="na";
 	}
-	else
-	{
-		print $0, ".", ".";
-	} 
+	
+ 
+ 	## Print output
+ 	
+		  row=juncCoord"\t"totalNbPE"\t"nbSpanningPE"\t"nbStag"\t"percStag"\t"nbMulti"\t"percMulti"\t"nbDiscordantPE"\t"nbInconsistentPE"\t"percInconsistentPE"\t"overlapA"\t"overlapB"\t"distExonBoundaryA"\t"distExonBoundaryB"\t"maxBLastAlignLen"\t"blastAlignSim"\t"donorSS"\t"acceptorSS"\t"beg"\t"end"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"gnIdA"\t"gnIdB"\t"gnNameA"\t"gnNameB"\t"gnTypeA"\t"gnTypeB"\t"juncSpanningReadIds"\t"supportingPairsIds"\t"inconsistentPairsIds;
+	        
+	print row;
 }
 
 
