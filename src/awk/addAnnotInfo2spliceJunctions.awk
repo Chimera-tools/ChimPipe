@@ -31,7 +31,6 @@
 # chr7_100859976_-:chr7_100859827_- spliceJunc1 100 0 ENSG00000106397.7 PLOD3 protein_coding
 
 ## input 2 
-# chr7_100859976_-:chr7_100859827_-	10	11	11	0	100860018	100859780	GT	AG	1	1	149	SRR201779.3750664_PATHBIO-SOLEXA2_30TUEAAXX:3:58:1707:1197_length=53#0/1,SRR201779.5891847_PATHBIO-SOLEXA2_30TUEAAXX:3:91:769:114_length=53#0/1,SRR201779.3883456_PATHBIO-SOLEXA2_30TUEAAXX:3:61:823:1701_length=53#0/2,SRR201779.1222929_PATHBIO-SOLEXA2_30TUEAAXX:3:18:21:810_length=53#0/1,SRR201779.4428441_PATHBIO-SOLEXA2_30TUEAAXX:3:69:484:1727_length=53#0/1,SRR201779.3750664_PATHBIO-SOLEXA2_30TUEAAXX:3:58:1707:1197_length=53#0/2,SRR201779.5219014_PATHBIO-SOLEXA2_30TUEAAXX:3:81:330:424_length=53#0/1,SRR201779.6481993_PATHBIO-SOLEXA2_30TUEAAXX:3:99:1639:590_length=53#0/1,SRR201779.1851231_PATHBIO-SOLEXA2_30TUEAAXX:3:28:1220:256_length=53#0/2,SRR201779.337899_PATHBIO-SOLEXA2_30TUEAAXX:3:5:1084:1720_length=53#0/2,SRR201779.3760532_PATHBIO-SOLEXA2_30TUEAAXX:3:58:507:1518_length=53#0/2,
 
 ## output
 # chr7_100859976_-:chr7_100859827_-	10	11	11	0	100860018	100859780	GT	AG	1	1	149	100	100	0	0ENSG00000106397.7	ENSG00000106397.7	PLOD3	PLOD3	protein_coding	protein_coding	SRR201779.3750664_PATHBIO-SOLEXA2_30TUEAAXX:3:58:1707:1197_length=53#0/1,SRR201779.5891847_PATHBIO-SOLEXA2_30TUEAAXX:3:91:769:114_length=53#0/1,SRR201779.3883456_PATHBIO-SOLEXA2_30TUEAAXX:3:61:823:1701_length=53#0/2,SRR201779.1222929_PATHBIO-SOLEXA2_30TUEAAXX:3:18:21:810_length=53#0/1,SRR201779.4428441_PATHBIO-SOLEXA2_30TUEAAXX:3:69:484:1727_length=53#0/1,SRR201779.3750664_PATHBIO-SOLEXA2_30TUEAAXX:3:58:1707:1197_length=53#0/2,SRR201779.5219014_PATHBIO-SOLEXA2_30TUEAAXX:3:81:330:424_length=53#0/1,SRR201779.6481993_PATHBIO-SOLEXA2_30TUEAAXX:3:99:1639:590_length=53#0/1,SRR201779.1851231_PATHBIO-SOLEXA2_30TUEAAXX:3:28:1220:256_length=53#0/2,SRR201779.337899_PATHBIO-SOLEXA2_30TUEAAXX:3:5:1084:1720_length=53#0/2,SRR201779.3760532_PATHBIO-SOLEXA2_30TUEAAXX:3:58:507:1518_length=53#0/2,
@@ -42,10 +41,6 @@
 # awk -v juncAnnotated=file1.txt -f addAnnotInfo2spliceJunctions.awk file2.txt
 
 BEGIN{
-	## print header:
-	header="spliceJunc\tnbStag\tnbtotal\tNbUnique\tnbMulti\tmaxBeg\tmaxEnd\tss1\tss2\tsameChrStr\tokGxOrder\tdist\tgnIdA\tgnIdB\tgnNameA\tgnNameB\tgnTypeA\tgnTypeB\toverlapA\toverlapB\tdistExonBoundaryA\tdistExonBoundaryB\treadIds";	
-	print header
-	
 	## Make a hash for each junction side containing its annotation info
 	while (getline < juncAnnotated > 0)
 	{
@@ -60,16 +55,16 @@ BEGIN{
 	}
 }
 
-{
+{	
 	juncCoord=$1; 
 	nbStag=$2; 
 	nbTotal=$3; 
 	nbUnique=$4; 
 	nbMulti=$5; 
-	beg=$6; 
-	end=$7; 
-	donorSS=$8; 
-	acceptorSS=$9;
+	donorSS=$6; 
+	acceptorSS=$7;
+	beg=$8; 
+	end=$9; 
 	sameChrStr=$10;
 	okGxOrder=$11;
 	dist=$12; 
@@ -88,6 +83,13 @@ BEGIN{
 	gnIdB=gnIds[juncCoord":spliceJunc2"]; 
 	gnNameB=gnNames[juncCoord":spliceJunc2"]; 
 	gnTypeB=gnTypes[juncCoord":spliceJunc2"];       
-	   	 row=juncCoord"\t"nbStag"\t"nbTotal"\t"nbUnique"\t"nbMulti"\t"beg"\t"end"\t"donorSS"\t"acceptorSS"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"gnIdA"\t" gnIdB"\t"gnNameA"\t"gnNameB"\t"gnTypeA"\t"gnTypeB"\t"overlapA"\t"overlapB"\t"distExonBoundaryA"\t"distExonBoundaryB"\t"readIds;
+	   	 
+	# Compute the percentage of staggered and multimapped reads supporting a junctions
+	percStag=nbStag/nbTotal*100;
+	percMulti=nbMulti/nbTotal*100;
+	
+	# Print splice junction plus associated info as output   	 
+	
+	   	 row=juncCoord"\t"nbTotal"\t"nbStag"\t"percStag"\t"nbMulti"\t"percMulti"\t"overlapA"\t"overlapB"\t"distExonBoundaryA"\t"distExonBoundaryB"\t"donorSS"\t"acceptorSS"\t"beg"\t"end"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"gnIdA"\t" gnIdB"\t"gnNameA"\t"gnNameB"\t"gnTypeA"\t"gnTypeB"\t"readIds;
 	print row;  
 }
