@@ -48,7 +48,7 @@ BAM:
 
 	$0 --bam <bam> -g <genome_index> -a <annotation> [OPTIONS]
 
-*** MANDATORY ARGUMENTS
+*** MANDATORY 
 		
 * FASTQ:
 
@@ -75,7 +75,6 @@ BAM:
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.	
 	--no-cleanup					Keep intermediate files. 		
-	--dry						Test the pipeline. Writes the commands to the standard output.
 	-h|--help					Display partial usage information, only mandatory plus general arguments.
 	-f|--full-help					Display full usage information with additional options. 
 
@@ -88,12 +87,12 @@ help
 function usage_long
 {
 cat <<help
-* Read information:
+* Reads information:
 	--max-read-length		<INTEGER>	Maximum read length. This is used to create the de-novo transcriptome and acts as an upper bound. Default 150.
 	-l|--seq-library 		<STRING> 	Type of sequencing library [MATE1_SENSE | MATE2_SENSE | UNSTRANDED].
                         				UNSTRANDED for not strand-specific protocol (unstranded data) and the others for the different types 
 							of strand-specific protocols (stranded data).
-* Mapping phase parameters
+* Mapping phase 
                         				
   First mapping:
 	-C|--consensus-ss-fm		<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
@@ -109,9 +108,20 @@ cat <<help
 	--refinement-step-size-sm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
 							A value of 0 disables it. Default 2. 
     
-* Chimera detection phase parameters:
+* Chimera detection phase 
+	
+  Filters:
+	--total-pairs			<INTEGER>	Minimum number of total paired-ends (spanning + discordant). Default 3.
+	--spanning-pairs		<INTEGER>  	Minimum number of spanning paired-ends. Default 1.
+	--discordant-pairs		<INTEGER>	Minimum number of discordant paired-ends. Default 1.
+	--perc-staggered		<PERCENTAGE>	Minimum percentage of staggered reads. A value of 0 disables it. Default 0.
+	--perc-multimappings		<PERCENTAGE>	Maximum percentage of multimapped spanning reads. Default 95.
+	--perc-inconsistent-pairs	<PERCENTAGE>	Maximum percentage of inconsistent paired ends. Default 50.
+	--dist-exonBoundaries		<INTEGER>	Maximum distance of donor and acceptor splice junction coordinates to exon boundary. 
+							A value of -1 disables it. Default -1.
 
-	--similarity-gene-pairs	<TEXT>			Text file with similarity information between the gene pairs in the annotation.
+  Files:	
+	--similarity-gene-pairs		<TEXT>		Text file with similarity information between the gene pairs in the annotation.
 							Needed for the filtering module to discard chimeric junctions connecting highly similar genes. 
 							If this file is not provided it will be computed by ChimPipe.
 													
@@ -319,9 +329,9 @@ function firstMapping_FASTQinput {
 # Function 9. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,total-pairs:,spanning-pairs:,discordant-pairs:,perc-staggered:,perc-multimappings:,perc-inconsistent-pairs:,dist-exonBoundaries:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
-	
+
 #Bad arguments
 if [ $? -ne 0 ];
 then
@@ -497,7 +507,7 @@ do
 	  shift 2;;
 	
       -s|--min-split-size-sm)
-    	  if [ -n "$2" ];
+   	  if [ -n "$2" ];
 	  then
 	      splitSizeSM=$2
 	  fi
@@ -510,15 +520,58 @@ do
 	  fi
 	  shift 2;;
 	
-	# Chimera detection phase parameters:
-      
-      --filter-chimeras)
-	  if [ -n $2 ];
+	# Chimera detection phase parameters 
+  	# Filters:
+  	  --total-pairs)
+	  if [ -n "$2" ];
 	  then
-	      filterConf="$2"
+	      minTotalNbPE=$2
 	  fi
 	  shift 2;;
-      
+	  
+	  --spanning-pairs)
+	  if [ -n "$2" ];
+	  then
+	      minNbSpanningPE=$2
+	  fi
+	  shift 2;;
+	  
+	  --discordant-pairs)
+	  if [ -n "$2" ];
+	  then
+	      minNbDiscordantPE=$2
+	  fi
+	  shift 2;;
+	  
+	  --perc-staggered)
+	  if [ -n "$2" ];
+	  then
+	      minPercStaggered=$2
+	  fi
+	  shift 2;;
+	  
+	  --perc-multimappings)
+	  if [ -n "$2" ];
+	  then
+	      maxPercMultimaps=$2
+	  fi
+	  shift 2;;
+	  
+	  --perc-inconsistent-pairs)
+	  if [ -n "$2" ];
+	  then
+	      maxPercInconsistentPE=$2
+	  fi
+	  shift 2;;
+	  
+	  --dist-exonBoundaries)
+	  if [ -n "$2" ];
+	  then
+	      maxDistExonBoundary=$2
+	  fi
+	  shift 2;;
+	  
+	  # Files:	
       --similarity-gene-pairs)
 	  if [ -n $2 ];
 	  then
@@ -748,7 +801,6 @@ fi
 # Second mapping parameters:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 # Consensus splice sites for the segmental mapping
 if [[ "$spliceSitesSM" == "" ]]; 
 then 
@@ -791,16 +843,94 @@ fi
 # Chimera detection phase parameters:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Filtering module configuration	
-if [[ "$filterConf" == "" ]]; 
-then 			
-    filterConf="5,0,80,30;1,1,80,30;";		# Default
+# Minimum number of total paired-ends (staggered + discordant)
+if [[ "$minTotalNbPE" == "" ]];
+then 
+    minTotalNbPE='3';
 else
-    if [[ ! "$filterConf" =~ ^([0-9]+,[0-9]+,[0-9]{,3},[0-9]+;){1,2}$ ]]; 
+	if [[ ! "$minTotalNbPE" =~ ^[0-9]+$ ]]; 
     then
-	log "Please check your filtering module configuration. Option --filter-chimeras\n" "ERROR" >&2; 
+	log "Please specify a proper minimum number of total paired-ends. Option --total-pairs\n" "ERROR" >&2;
 	usagelongdoc; 
-	exit -1;
+	exit -1; 
+    fi
+fi
+	
+# Minimum number of spanning paired-ends 
+if [[ "$minNbSpanningPE" == "" ]];
+then 
+    minNbSpanningPE=1;
+else
+	if [[ ! "$minNbSpanningPE" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper minimum number of spanning paired-ends. Option --spanning-pairs\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi
+	
+# Minimum number of discordant paired-ends 
+if [[ "$minNbDiscordantPE" == "" ]];
+then 
+    minNbDiscordantPE=1;
+else
+	if [[ ! "$minNbDiscordantPE" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper minimum number of discordant paired-ends . Option --discordant-pairs\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi
+	
+# Minimum percentage of staggered reads
+if [[ "$minPercStaggered" == "" ]];
+then 
+    minPercStaggered=0;
+else
+	if [[ ! "$minPercStaggered" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper minimum percentage of staggered reads. Option --perc-staggered\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi
+	
+# Maximum percentage of multimapped spanning reads
+if [[ "$maxPercMultimaps" == "" ]];
+then 
+    maxPercMultimaps=95;
+else
+	if [[ ! "$maxPercMultimaps" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper maximum percentage of multimapped spanning reads. Option --perc-multimappings\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi
+	
+# Maximum percentage of inconsistent paired ends
+if [[ "$maxPercInconsistentPE" == "" ]];
+then 
+    maxPercInconsistentPE=50;
+else
+	if [[ ! "$maxPercInconsistentPE" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper maximum percentage of inconsistent paired ends. Option --perc-inconsistent-pairs\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi
+	
+# Maximum distance to exon boundary
+if [[ "$maxDistExonBoundary" == "" ]];
+then 
+	maxDistExonBoundary="-1"; 
+else
+	if [[ ! "$maxDistExonBoundary" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper maximum distance to exon boundary. Option --dist-exonBoundaries\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
     fi
 fi
 
@@ -859,7 +989,7 @@ qual=$bashDir/detect.fq.qual.sh
 addXS=$bashDir/sam2cufflinks.sh
 infer_library=$bashDir/infer_library_type.sh
 ChimSplice=$bashDir/ChimSplice.sh
-findGeneConnections=$bashDir/find_gene_to_gene_connections_from_pe_rnaseq.sh
+chimPE=$bashDir/ChimPE.sh
 sim=$bashDir/similarity_bt_gnpairs.sh
 
 
@@ -867,10 +997,9 @@ sim=$bashDir/similarity_bt_gnpairs.sh
 processAnnot=$awkDir/preprocess_annotation.awk
 addMateInfoSam=$awkDir/add_mateInfo_SAM.awk
 gff2Gff=$awkDir/gff2gff.awk
-SAMfilter=$awkDir/SAMfilter.awk
-addPEinfo=$awkDir/add_PE_info.awk
+ChimIntegrate=$awkDir/integrate_ChimSplice_ChimPE_output.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
-juncFilter=$awkDir/chimjunc_filter.awk
+ChimFilter=$awkDir/ChimFilter.awk
 
 
 ## DISPLAY PIPELINE CONFIGURATION  
@@ -921,9 +1050,17 @@ fi
 printf "  %-34s %s\n" "** 2nd mapping **"
 printf "  %-34s %s\n" "consensus-ss-fm:" "$spliceSitesSM"
 printf "  %-34s %s\n" "min-split-size-fm:" "$splitSizeSM"
-printf "  %-34s %s\n\n" "refinement-step-size-fm (0:disabled):" "$refinementSM"
-
+printf "  %-34s %s\n\n" "refinement-step-size-fm (0:disabled):" "$refinementSM"	
 printf "  %-34s %s\n" "***** CHIMERA DETECTION PHASE *****"
+printf "  %-34s %s\n" "** Filters **"
+printf "  %-34s %s\n" "total-pairs:" "$minTotalNbPE"
+printf "  %-34s %s\n" "spanning-pairs:" "$minNbSpanningPE"
+printf "  %-34s %s\n" "discordant-pairs:" "$minNbDiscordantPE"
+printf "  %-34s %s\n" "perc-staggered (0:disabled):" "$minPercStaggered"
+printf "  %-34s %s\n" "perc-multimappings:" "$maxPercMultimaps"
+printf "  %-34s %s\n" "perc-inconsistent-pairs:" "$maxPercInconsistentPE"
+printf "  %-34s %s\n\n" "dist-exonBoundaries (-1:disabled):" "$maxDistExonBoundary"
+printf "  %-34s %s\n" "** Files **"
 printf "  %-34s %s\n\n" "similarity-gene-pairs:" "$simGnPairs"
 
 printf "  %-34s %s\n" "***** GENERAL *****"
@@ -931,8 +1068,7 @@ printf "  %-34s %s\n" "output-dir:" "$outDir"
 printf "  %-34s %s\n" "tmp-dir:" "$TMPDIR"
 printf "  %-34s %s\n" "threads:" "$threads"
 printf "  %-34s %s\n" "log:" "$logLevel"
-printf "  %-34s %s\n\n" "no-cleanup:" "$cleanup"
-
+printf "  %-34s %s\n\n" "cleanup:" "$cleanup"
 
 
 ###################
@@ -949,22 +1085,22 @@ pipelineStart=$(date +%s)
 # 0) PRELIMINARY STEPS #
 #######################
 
-## 1) Make directories
+## 0.1) Make directories
 #######################
-# 1.1) Processed annotation
+# Processed annotation
 if [[ ! -d $annotDir ]]; then mkdir $annotDir; fi
 
-# 1.2) Mapping phase
+# Mapping phase
 if [[ ! -d $mappingPhaseDir ]]; then mkdir $mappingPhaseDir; fi
 if [[ ! -d $firstMappingDir ]] ; then mkdir $firstMappingDir; fi
 if [[ ! -d $secondMappingDir ]]; then mkdir $secondMappingDir; fi
 
-# 1.3 Chimera detection phase
+# Chimera detection phase
 if [[ ! -d $chimeraDetPhaseDir ]]; then mkdir $chimeraDetPhaseDir; fi
 if [[ ! -d $chimSpliceDir ]]; then mkdir $chimSpliceDir; fi
 if [[ ! -d $chimPEDir ]]; then mkdir $chimPEDir; fi
 
-## 2) Check quality offset if FASTQ as input
+## 0.2) Check quality offset if FASTQ as input
 #############################################
 if [[ "$bamAsInput" == "FALSE" ]];
 then
@@ -977,7 +1113,7 @@ else
 	quality="33"
 fi
 
-## 3) Generate genome file and 
+## 0.3) Generate genome file and 
 #################################
 # retrieve length longest chromosome    	
 #####################################
@@ -986,10 +1122,10 @@ $gemInfo $genomeIndex | awk '$1 ~ /^#/ && ($2 !~ /M/) && ($2 !~ /Mt/) && ($2 !~ 
 
 longestChrLength=`sort -k2 -n -r $annotDir/chromosomes_length.txt | awk '{print $2}' | head -1`
 
-## 4) Process annotation
+## 0.4) Process annotation
 #########################
 
-awk -f $processAnnot $annot | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -f $gff2Gff | sort -V -k1,1 -k4,4n -k5,5n | gzip > $annotDir/gencode19_annotatedExons.gff.gz
+awk -f $processAnnot $annot | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -f $gff2Gff | sort -V -k1,1 -k4,4n -k5,5n | gzip > $annotDir/annotatedExons.gff.gz
 
 ## Define variable with annotation name
 b=`basename $annot`
@@ -1153,199 +1289,183 @@ else
     printHeader "Sequencing library type provided by the user...skipping library inference step"
 fi
 
+
 ##############################    	
 # 2) CHIMERA DETECTION PHASE #
 ##############################
 
-# 2.1 filter out multimapped reads in the BAM file and produce a filtered BAM file 
-###################################################################################
-# containing uniquely mapped reads for chimera detection
-#########################################################
-# - $outDir/FromFirstBam/${lid}_splitmappings_2blocks_firstMap.gff.gz
-
-filteredBamFirstMap=$firstMappingDir/${lid}_firstMap_filtered.bam
-
-### Check in which field is the number of mappings
-NHfield=`samtools view -F 4 $bamFirstMap | head -1 | awk 'BEGIN{field=1;}{while(field<=NF){ if ($field ~ "NH:i:"){print field;} field++}}'`
-
-if [ ! -s $filteredBamFirstMap ]; 
-then
-	step="UNIQUE-BAM"
-	startTime=$(date +%s)
-	printHeader "Executing make BAM with unambiguosly mapped reads step"
-	log "Generating a BAM file containing only unambiguously mapped reads for chimera detection..." $step
-	run "samtools view -h $bamFirstMap | awk -v OFS="'\\\t'" -v unique="1" -v NHfield=$NHfield -f $SAMfilter | samtools view -@ $threads -bS - > $filteredBamFirstMap 2> $firstMappingDir/${lid}_bamFiltering.log" "$ECHO"
-	
-	if [ ! -s $filteredBamFirstMap ]; 
-	then
-        log "Error Generating the filtered BAM file\n" "ERROR" 
-        exit -1
-    fi
-	endTime=$(date +%s)
-	printHeader "Step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-else
-	printHeader "filtered BAM file already exists... skipping filtering step"
-fi
-
-	
-# 2.4) put the path to the first (.BAM) and second mapping (.MAP) files in a .txt file for chimsplice 
-#########################################################################################################
+# 2.1) run ChimSplice on first and second mappings 
+###################################################
+# output files: 
+################
+# - $chimSpliceDir/chimeric_spliceJunctions.txt
+# - $chimSpliceDir/normal_spliceJunctions.txt
+# - $chimSpliceDir/unannotated_spliceJunctions.txt
 
 paths2ChimSplice=$chimSpliceDir/first_second_mapping_aligment_files_paths_$lid.txt
+chimSpliceOut=$chimSpliceDir/chimeric_spliceJunctions.txt
 
-run "echo $bamFirstMap > $paths2ChimSplice" "$ECHO"
-run "echo $gemSecondMap >> $paths2ChimSplice" "$ECHO"
-
-# 2.5) run ChimSplice on  
-###########################
-# - $outDir/Chimsplice/chimeric_junctions_report_$lid.txt
-# - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
-# - $outDir/Chimsplice/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn_morethan10staggered.txt
-
-chimSpliceOut=$chimSpliceDir/chimJunctions_chimSplice.txt 
+### Execute ChimSplice
 
 if [ ! -s $chimSpliceOut ]; 
 then
 	step="CHIMSPLICE"
 	startTime=$(date +%s)
+	printHeader "Executing ChimSplice"
 	log "Finding chimeric junctions from split-mappings..." $step
-	run "$ChimSplice $paths2ChimSplice $genomeIndex $annotDir/gencode19_annotatedExons.gff $readDirectionality $spliceSitesFM $chimSpliceDir 2> $chimSpliceDir/find_chimeric_junctions_from_exon_to_exon_connections_$lid.err" "$ECHO"
+	run "echo $bamFirstMap > $paths2ChimSplice" "$ECHO"
+	run "echo $gemSecondMap >> $paths2ChimSplice" "$ECHO"
+	run "$ChimSplice $paths2ChimSplice $genomeIndex $annotDir/annotatedExons.gff.gz $readDirectionality $spliceSitesFM $chimSpliceDir 1> $chimSpliceDir/ChimSplice.out 2> $chimSpliceDir/ChimSplice.err" "$ECHO"
 	
 	if [ ! -s $chimSpliceOut ]; 
 	then
-        log "Error running chimsplice\n" "ERROR" 
+        log "Error running ChimSplice\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
-	printHeader "Find chimeric junctions step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	printHeader "ChimSplice step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
 	printHeader "Chimeric Junctions file already exists... skipping step"
 fi
 
-# 2.6) Find gene to gene connections supported by paired-end mappings from the bam file of "normal" mappings with the number of mappings supporting the connection.  
-#################################################################################################################################################################
-# For a connection g1 to g2 to exist there must be at least one mapping where the first mate is strandedly (if data is stranded) overlapping with an exon 
-#########################################################################################################################################################
-# of g1 and the second mate is (strandedly if data is stranded) overlapping with an exon of g2
-##############################################################################################
-# - $outDir/PE/readid_gnlist_whoseexoverread_noredund.txt.gz
-# - $outDir/PE/readid_twomateswithgnlist_alldiffgnpairs_where_1stassociatedto1stmate_and2ndto2ndmate.txt.gz
-# - $outDir/PE/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
+# 2.2) run ChimPE on first and second mappings 
+###################################################
+# output files: 
+################
+# - $chimPEDir/discordant_readPairs.txt
+# - $chimPEDir/concordant_contiguousMapped_readPairs.txt
+# - $chimPEDir/unannotated_contiguousMapped_readPairs.txt
 
-chimPEOut=$chimPEDir/pairs_of_diff_gn_supported_by_pereads_nbpereads.txt
+chimPEOut=$chimPEDir/discordant_readPairs.txt
 
-printHeader "Executing find gene to gene connections from PE mappings step"
 if [ ! -s $chimPEOut ];
 then
 	step="CHIMPE"
 	startTime=$(date +%s)
-	log "Finding gene to gene connections supported by paired-end mappings from the BAM containing reads mapping in a unique and continuous way..." $step
-	run "$findGeneConnections $filteredBamFirstMap $annot $chimPEDir $readDirectionality" "$ECHO"
+	printHeader "Executing ChimPE"
+	log "Finding discordant read pairs connecting exons from two different genes..." $step
+	run "$chimPE $bamFirstMap $genomeIndex $annotDir/annotatedExons.gff.gz $chimSpliceDir/normal_spliceJunctions.txt $readDirectionality $chimPEDir 1> $chimPEDir/ChimPE.out 2> $chimPEDir/ChimPE.err" "$ECHO"
 	
 	if [ ! -s $chimPEOut ]; 
 	then
-        log "Error finding gene to gene connections\n" "ERROR" 
+        log "Error running ChimPE\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
-	printHeader "Find gene to gene connections from PE mappings step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	printHeader "ChimPE step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Gene to gene connections file already exists... skipping step"
+	printHeader "Discordant paired-end file already exists... skipping step"
 fi
 
+# 2.3) Integrate ChimSplice and ChimPE outputs
+##############################################
+# output file: 
+##############
+# - $chimeraDetPhaseDir/chimeric_spliceJunctions_discordantPE.txt
 
-# 2.7) Add gene to gene connections information to chimeric junctions matrix
-##########################################################################
-# - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+ChimIntegrateOut=$chimeraDetPhaseDir/chimeric_spliceJunctions_discordantPE.txt
 
-chimJuncPEsupport=$chimeraDetPhaseDir/chimJunctions_candidates_PEsupport.txt
-
-if [ ! -s $chimJuncPEsupport ];
+if [ ! -s $ChimIntegrateOut ];
 then
-	step="PAIRED-END"
+	step="CHIMINTEGRATE"
 	startTime=$(date +%s)
-	log "Adding PE information to the matrix containing chimeric junction candidates..." $step
-	run "awk -v fileRef=$chimPEOut -f $addPEinfo $chimSpliceOut 1> $chimJuncPEsupport" "$ECHO"
+	printHeader "Executing ChimIntegrate"
+	log "Integrate ChimSplice and ChimPE output files..." $step
+	run "awk -v ChimSplice=$chimSpliceOut -f $ChimIntegrate $chimPEOut > $ChimIntegrateOut" "$ECHO"
 	
-	if [ ! -s $chimJuncPEsupport ]; then
-        log "Error adding PE information\n" "ERROR" 
+	if [ ! -s $ChimIntegrateOut ]; 
+	then
+        log "Error running ChimIntegrate\n" "ERROR" 
         exit -1
     fi
     endTime=$(date +%s)
-	printHeader "Add PE information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	printHeader "ChimIntegrate step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
-	printHeader "Chimeric junction matrix with PE information already exists... skipping step"
+	printHeader "ChimIntegrate output file already exists... skipping step"
 fi
 
-# 2.8) Compute the gene similarity matrix in case the user does not provide it
-############################################################################
+# 2.4) Compute the gene similarity matrix in case the user does not provide it
+###############################################################################
+# Output:
+# - $genePairSimDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
+# - $outDir/chimeric_spliceJunctions_candidates_${lid}.txt
 
 if [ ! -e "$simGnPairs" ]
 then
     if [[ ! -d $genePairSimDir ]]; then mkdir $genePairSimDir; fi
     cd $genePairSimDir
-    step="PRE-SIM"
+    printHeader "Executing ChimSimilarity"
+    step="CHIMSIM"
     startTime=$(date +%s)
     log "Computing similarity between annotated genes..." $step
     run "$sim $annot $genomeIndex" "$ECHO"
-    	
-    endTime=$(date +%s)
+    
     simGnPairs=$genePairSimDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
+    
+    if [ ! -s $simGnPairs ]; 
+	then
+        log "Error running ChimSim\n" "ERROR" 
+        exit -1
+    fi
+ 	
+    endTime=$(date +%s)
+    
     cd $outDir
     printHeader "Computing similarity between annotated gene step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+	printHeader "Similarity matrix already exists... skipping step"
 fi
 
-# 2.9) Add information regarding the sequence similarity between connected genes
-##############################################################################
-# - $outDir/distinct_junctions_nbstaggered_nbtotalsplimappings_withmaxbegandend_samechrstr_okgxorder_dist_ss1_ss2_gnlist1_gnlist2_gnname1_gnname2_bt1_bt2_PEinfo_maxLgalSim_maxLgal_from_split_mappings_part1overA_part2overB_only_A_B_indiffgn_and_inonegn.txt
+### Add information regarding the sequence similarity between connected genes 
+# to the chimeric junctions matrix
 
-chimJunctionsCandidates=$outDir/chimeric_junctions_candidates_${lid}.txt
+chimJuncCandidates=$outDir/chimericJunction_candidates_${lid}.txt
 
-if [  ! -e "$chimJunctionsSim" ]
+if [  ! -e "$chimJuncCandidates" ]
 then		
-    if [ -e "$simGnPairs" ]
-    then
 	step="SIM"
 	startTime=$(date +%s)
-	log "Adding sequence similarity between connected genes information to the chimeric junction matrix..." $step
-	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $chimJuncPEsupport > $chimJunctionsCandidates" "$ECHO"
+	log "Adding sequence similarity between connected genes information to the chimeric junction candidates..." $step
+	run "awk -v fileRef=$simGnPairs -f $AddSimGnPairs $ChimIntegrateOut > $chimJuncCandidates" "$ECHO"
 	
-	if [ ! -s $chimJunctionsSim ]
+	if [ ! -s $chimJuncCandidates ]
 	then
-	    log "Error adding similarity information, file is empty\n" "ERROR" 
+	    log "Error adding similarity information\n" "ERROR" 
 	    exit -1
 	fi
 	endTime=$(date +%s)
 	printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
-    else 
-	printHeader "Similarity information between the gene pairs in the annotation is not provided... skipping step"
-    fi
 else
-    printHeader "Chimeric junction matrix with similarity information already exists... skipping step"
+    printHeader "Similarity information already added to chimeric junctions... skipping step"
 fi
 
-
-# 2.10) Filter out chimera candidates to produce a final set of chimeric junctions
+# 2.5) Filter chimera candidates to produce a final set of chimeric junctions
 ################################################################################
 # - $outDir/chimeric_junctions.txt
 
-chimJunctions=$outDir/chimeric_junctions_${lid}.txt
+chimJuncCandidatesFiltered=$outDir/chimericJunction_candidates_filtered_${lid}.txt
+chimJunc=$outDir/chimericJunctions_${lid}.txt
+chimJuncFiltered=$outDir/chimericJunctions_filtered_${lid}.txt
 
-if [ ! -s "$chimJunctions" ]; 
+if [ ! -s "$chimJunc" ]; 
 then
-	step="FILTERING MODULE"
+	step="CHIMFILTER"
 	startTime=$(date +%s)
-	log "Filtering out chimera candidates to produce a final set of chimeric junctions..." $step
-	awk -v filterConf=$filterConf -f $juncFilter $chimJunctionsCandidates > $chimJunctions
+	printHeader "Executing ChimFilter"
+	log "Filtering chimera candidates..." $step	
+	run "awk -v minTotalNbPE=$minTotalNbPE -v minNbSpanningPE=$minNbSpanningPE -v minNbDiscordantPE=$minNbDiscordantPE -v minPercStaggered=$minPercStaggered -v maxPercMultimaps=$maxPercMultimaps -v maxPercInconsistentPE=$maxPercInconsistentPE -v maxDistExonBoundary=$maxDistExonBoundary -f $ChimFilter $chimJuncCandidates > $chimJuncCandidatesFiltered" "$ECHO"
 	
-	if [ ! -s $chimJunction ]; 
+	## Make one file with filtered chimeras and another one with the ones that pass the filtering
+	awk '(NR==1) || ($2=="0")' $chimJuncCandidatesFiltered > $chimJunc
+	awk '(NR==1) || ($2=="1")' $chimJuncCandidatesFiltered > $chimJuncFiltered
+	
+	if [ ! -s $chimJuncCandidatesFiltered ]; 
 	then
 		log "Error filtering chimeric junction candidates\n" "ERROR" 
     	exit -1
 	fi
-	
 	endTime=$(date +%s)
-	printHeader "Filtering module step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+	printHeader "ChimFilter completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else 
 	printHeader "Chimeric junction candidates already filtered... skipping step"
 fi
@@ -1354,14 +1474,14 @@ fi
 # 3) CLEANUP AND END #
 ######################
 
-rm $filteredBamFirstMap
+rm -r $annotDir $ChimIntegrateOut $chimJuncCandidatesFiltered
 
 if [[ "$cleanup" == "TRUE" ]]; 
 then 
 	step="CLEAN-UP"
 	startTime=$(date +%s)
 	log "Removing intermediate files..." $step
-	rm -r $chimeraDetPhaseDir $firstMappingDir/*firstMap.map* $firstMappingDir/*filtered_firstMap.bam* $firstMappingDir/${lid}_map2bam_conversion.log $secondMappingDir/*reads2remap* $chimJunctionsSim $chimJunctionsCandidates
+	rm -r $chimeraDetPhaseDir $firstMappingDir/*firstMap.map* $firstMappingDir/${lid}_map2bam_conversion.log $secondMappingDir/*reads2remap*
 	log "done\n" 
 	endTime=$(date +%s)
 	printHeader "Clean up step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
@@ -1369,9 +1489,8 @@ else
 	printHeader "No clean up mode... skipping step"
 fi	
 
-
 pipelineEnd=$(date +%s)
-printHeader "Chimera Mapping pipeline for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
+printHeader "ChimPipe for $lid completed in $(echo "($pipelineEnd-$pipelineStart)/60" | bc -l | xargs printf "%.2f\n") min "
 
 # disable extglob
 shopt -u extglob
