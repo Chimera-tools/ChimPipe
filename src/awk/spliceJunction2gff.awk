@@ -28,10 +28,10 @@
 
 # Takes as input a file with splice junctions produced with "make_spliceJunctions.sh" and produce for each junction two gff features (one for each junction side).
 
-# input
-# chr3_182637125_+:chr3_182637126_+ 1 1 1 0 182637098 182637150 GT AG SRR201779.3607803_PATHBIO-SOLEXA2_30TUEAAXX:3:56:1701:1083_length=53#0/1,
-# chr4_71629386_+:chr4_71630192_+ 2 2 2 0 71629354 71630235 GT AG SRR201779.54315_PATHBIO-SOLEXA2_30TUEAAXX:3:1:1271:382_length=53#0/1,SRR201779.1335758_PATHBIO-SOLEXA2_30TUEAAXX:3:20:515:1865_length=53#0/1,
-# chr20_6855539_+:chr20_24943838_+ 1 1 0 1 6855536 24943886 GC AG SRR201779.5539015_PATHBIO-SOLEXA2_30TUEAAXX:3:86:392:198_length=53#0/2,
+# input (spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_donor_acceptor_beg_end_sameChrStr_okGxOrder_dist_readIds.txt)
+#chr3_182637125_+:chr3_182637126_+	1	1	1	0	GT	AG	182637098	182637150	1	1	1SRR201779.3607803_PATHBIO-SOLEXA2_30TUEAAXX:3:56:1701:1083_length=53#0/1,
+#chr4_71629386_+:chr4_71630192_+	2	2	2	0	GT	AG	71629354	71630235	1	1	806	SRR201779.54315_PATHBIO-SOLEXA2_30TUEAAXX:3:1:1271:382_length=53#0/1,SRR201779.1335758_PATHBIO-SOLEXA2_30TUEAAXX:3:20:515:1865_length=53#0/1,
+#chr20_6855539_+:chr20_24943838_+	1	1	0	1	GC	AG	6855536	24943886	1	1	18088299SRR201779.5539015_PATHBIO-SOLEXA2_30TUEAAXX:3:86:392:198_length=53#0/2,
 
 # output (GFF)
 # chr3	ChimPipe	spliceJunc1	182637098	182637125	.	+	.	JuncId: "chr3_182637125_+:chr3_182637126_+";
@@ -47,18 +47,24 @@
 # awk -f spliceJunction2gff.awk spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_ss1_ss2_sameChrStr_okGxOrder_dist_readIds.txt
 
 {
-	split($1,a,":"); 
+	## Get input information:
+	spliceJunc=$1;
+	beg=$8;
+	end=$9;
+		
+		
+	split(spliceJunc,a,":"); 
 	split(a[1],b1,"_"); 
 	split(a[2],b2,"_"); 
 	
 	chrA=b1[1]; 
 	coordA1=b1[2]; 
-	coordA2=$6; 
+	coordA2=beg; 
 	strandA=b1[3]; 
 	
 	chrB=b2[1]; 
 	coordB1=b2[2]; 
-	coordB2=$7; 
+	coordB2=end; 
 	strandB=b2[3]; 
 	
 	### Write junction blocks coordinates in such way the begining is lower than the end
@@ -87,8 +93,8 @@
 	}
 	
 	### Make a gff feature for each splice junction staggered block 
-	part1=chrA"\tChimPipe\tspliceJunc1\t"begA"\t"endA"\t.\t"strandA"\t.\tJuncId: \""$1"\"\;"; 
-	part2=chrB"\tChimPipe\tspliceJunc2\t"begB"\t"endB"\t.\t"strandB"\t.\tJuncId: \""$1"\"\;"; 
+	part1=chrA"\tChimPipe\tspliceJunc1\t"begA"\t"endA"\t.\t"strandA"\t.\tJuncId: \""spliceJunc"\"\;"; 
+	part2=chrB"\tChimPipe\tspliceJunc2\t"begB"\t"endB"\t.\t"strandB"\t.\tJuncId: \""spliceJunc"\"\;"; 
 
 	print part1; 
 	print part2;
