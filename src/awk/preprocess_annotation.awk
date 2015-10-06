@@ -28,9 +28,13 @@
 
 # Takes as input a file 
 
-# input
+### input
+# chr1	HAVANA	exon	11869	12227	.	+	.	gene_id "ENSG00000223972.4"; transcript_id "ENST00000456328.2"; gene_type "pseudogene"; gene_status "KNOWN"; gene_name "DDX11L1"; transcript_type "processed_transcript"; transcript_status "KNOWN"; transcript_name "DDX11L1-002"; exon_number 1; exon_id "ENSE00002234944.1"; level 2; tag "basic"; havana_gene "OTTHUMG00000000961.2"; havana_transcript "OTTHUMT00000362751.1";
+# chr1	HAVANA	exon	12613	12721	.	+	.	gene_id "ENSG00000223972.4"; transcript_id "ENST00000456328.2"; gene_type "pseudogene"; gene_status "KNOWN"; gene_name "DDX11L1"; transcript_type "processed_transcript"; transcript_status "KNOWN"; transcript_name "DDX11L1-002"; exon_number 2; exon_id "ENSE00003582793.1"; level 2; tag "basic"; havana_gene "OTTHUMG00000000961.2"; havana_transcript "OTTHUMT00000362751.1";
 
-# output
+### output
+# chr1	HAVANA	exon	11869	12227	.	+	.	gene_id "ENSG00000223972.4"; gene_name "DDX11L1";  gene_type "pseudogene"; 
+# chr1	ENSEMBL	exon	12613	12721	.	+	.	gene_id "ENSG00000223972.4"; gene_name "DDX11L1"; gene_type "pseudogene"; 
 
 # Usage example:
 ################
@@ -137,7 +141,7 @@ END{
 			gene_type[exon]="NA";
 		}
 			
-		printf chr"\t"source[exon]"\texon\t"beg"\t"end"\t"score[exon]"\t"strand"\t"frame[exon]"\tgene_name ""\""gene_name[exon]"\";"" gene_id ""\""gene_id[exon]"\";"" gene_type ""\""gene_type[exon]"\";"" transcript_id ""\""transcript_id[exon]"\";\n"; 
+		printf chr"\t"source[exon]"\texon\t"beg"\t"end"\t"score[exon]"\t"strand"\t"frame[exon]"\tgene_id ""\""gene_id[exon]"\"; gene_name ""\""gene_name[exon]"\";"" gene_type ""\""gene_type[exon]"\";"" transcript_id ""\""transcript_id[exon]"\";\n"; 
 	}
 }
 
