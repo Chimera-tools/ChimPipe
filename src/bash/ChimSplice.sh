@@ -131,22 +131,24 @@ then
   exit 1  # fail
 fi
 
-## Set bash and awk scripts directories
+## Set bin and bash and awk scripts directories
 awkDir=$rootDir/../awk
 bashDir=$rootDir
 
-# Scripts
-###########
+# Programs and scripts
+########################
+
 ## Bash
 MAKE_SPLICEJUNC=$bashDir/make_spliceJunctions.sh
 
 ## Awk
-GFF2GFF=$awkDir/gff2gff.awk
 SPLICEJUNC2GFF=$awkDir/spliceJunction2gff.awk
+GFF2GFF=$awkDir/gff2gff.awk
 JUNC_OVERLAP_DIST=$awkDir/compute_juncPercOverlap2Exon_juncDist2ExonSS.awk
-SELECT_OVERLAPPING_EXONS=$awkDir/select_overlappingExons.awk
+SELECT_OVERLAPPING_EXONS=$awkDir/select_overlappingExons_spliceSide.awk
 ADD_ANNOT_INFO=$awkDir/addAnnotInfo2spliceJunctions.awk
 CLASSIFY_SPLICEJUNC=$awkDir/classifySpliceJunctions.awk
+
 
 #################################################
 # 1) MAKE SPLICE JUNCTIONS WITH INFO ASSOCIATED #
@@ -158,74 +160,84 @@ echo "1. Make splice junctions associated with their number of supporting reads,
 bash -f $MAKE_SPLICEJUNC $input $genome $readDirectionality $spliceSites $outDir 
 
 ################################
-# 2) Annotate splice junctions #
+# 2) ANNOTATE SPLICE JUNCTIONS #
 ################################
 
 echo "2. Annotate splice junctions" >&2
 
 # 2.1) Make gff containing both parts of the junction
 #####################################################
-# - $outDir/spliceJunctions_2parts_beg_end.gff
+# - $outDir/spliceJunctions_2parts_beg_end.gff.gz
 
 echo "2.1. Make a gff where each junction side correspond to an entry" >&2
 
-awk -v OFS='\t' -f $SPLICEJUNC2GFF $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_sameChrStr_okGxOrder_dist_ss1_ss2_readIds.txt > $outDir/spliceJunctions_2parts_beg_end.gff
+awk -v OFS='\t' -f $SPLICEJUNC2GFF $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_donor_acceptor_beg_end_sameChrStr_okGxOrder_dist_readIds.txt | awk -f $GFF2GFF | gzip > $outDir/spliceJunctions_2parts_beg_end.gff.gz
 
 # 2.2) Intersect with the annotated exons
 ##########################################
-# - $outDir/spliceJunctions_2parts_beg_end_intersected.txt
+# - $outDir/spliceJunctions_2parts_beg_end_intersected.txt.gz
 
 echo "2.2. Intersect each junction side with the annotated exons using bedtools" >&2
 
-bedtools intersect -wao -a $outDir/spliceJunctions_2parts_beg_end.gff -b $annot > $outDir/spliceJunctions_2parts_beg_end_intersected.txt
+bedtools intersect -wao -a $outDir/spliceJunctions_2parts_beg_end.gff.gz -b $annot | gzip > $outDir/spliceJunctions_2parts_beg_end_intersected.txt.gz
 
 # 2.3) For each intersection add the percentage of overlap between 
 ###################################################################
 # block/exon and the distance to the exon boundary 
 ####################################################
-# - $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt
+# - $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt.gz
 
 echo "2.3. For each intersection add the percentage of overlap between block/exon and the distance between the junction site and the exon boundary" >&2
 
-awk -f $JUNC_OVERLAP_DIST $outDir/spliceJunctions_2parts_beg_end_intersected.txt > $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt
-
+awk -f $JUNC_OVERLAP_DIST <( gzip -dc $outDir/spliceJunctions_2parts_beg_end_intersected.txt.gz) | gzip > $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt.gz
+ 
 # 2.4) Merge intersections
 ###########################
 
 echo "2.4. For each splice junction side select those overlaping exons which maximize the percentage of overlap and minimize the distance to the exon boundary" >&2
 
-awk -f $SELECT_OVERLAPPING_EXONS $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt > $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt
+awk -f $SELECT_OVERLAPPING_EXONS <( gzip -dc $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt.gz) > $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt
 
 # 2.5) Add annotation info to the splice junctions file with 
 ###############################################################
 
-echo "2.5. Add annotation info to the splice junctions file generated in 2)" >&2
+echo "2.5. Add annotation info to the splice junctions file generated in 2" >&2
 
-awk -v juncAnnotated=$outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt -f $ADD_ANNOT_INFO $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_sameChrStr_okGxOrder_dist_ss1_ss2_readIds.txt > $outDir/spliceJunctions_annotated.txt
+awk -v juncAnnotated=$outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt -f $ADD_ANNOT_INFO $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_donor_acceptor_beg_end_sameChrStr_okGxOrder_dist_readIds.txt > $outDir/spliceJunctions_annotated.txt
 
-####################################################################
-# 3) MAKE TWO GROUPS OF SPLICE JUNCTIONS: CHIMERIC AND NORMAL ONES #
-####################################################################
-# chr20_33524566_-:chr20_33523445_-	17	37	28	9	33524613	33523395	GT	AG	1	1	1121	100	100	0	0
-#	ENSG00000100983.5	ENSG00000100983.5	GSS	GSS	protein_coding	protein_codin
 
-echo "3. Classify splice junctions in two group: chimeric and normal" >&2
- 
-# 3.1) Select chimeric junctions
-#################################
-# Note: second awk filters out chimeric junctions do not overlapping exons or only supported by multimapped reads. This will be removed, I will use it just to reproduce output from previous version
-awk -v chimera="1" -f $CLASSIFY_SPLICEJUNC $outDir/spliceJunctions_annotated.txt | awk '$3!=$5 && $13!="unannotated" && $14!="unannotated"' > $outDir/chimJunctions_chimSplice.txt
+##################################################################################################
+# 3) CLASSIFY SPLICE JUNCTIONS INTO: 															 #
+#     A) NORMAL:  BOTH MATES MAPPING IN ONLY ONE GENE										     #
+#     B) CHIMERIC:  BOTH MATES MAPPING IN DIFFERENT GENES										 #
+#     C) UNANNOTATED: BOTH MATES MAP AND AT LEAST ONE OF THEM DO NOT OVERLAP ANY ANNOTATED GENE  #
+##################################################################################################
+# - $outDir/spliceJunctions_classified.txt
+# - $outDir/normal_spliceJunctions.txt
+# - $outDir/chimeric_spliceJunctions.txt
+# - $outDir/unannotated_spliceJunctions.txt
 
-# 3.2) Select normal junctions
-##############################
-# Note: second awk filters out chimeric junctions do not overlapping exons or only supported by multimapped reads. This will be removed, I will use it just to reproduce output from previous version
-awk -v chimera="0" -f $CLASSIFY_SPLICEJUNC $outDir/spliceJunctions_annotated.txt | awk '$3!=$5 && $17!="unannotated" && $18!="unannotated"' > $outDir/normalJunctions_chimSplice.txt
+echo "3. Classify splice junctions in normal, chimeric and unannotated" >&2
+
+awk -v OFS='\t' -f $CLASSIFY_SPLICEJUNC $outDir/spliceJunctions_annotated.txt > $outDir/spliceJunctions_classified.txt
+
+### Make a different file for each type of splice junction:
+
+## A) NORMAL
+awk '($2=="NORMAL")||(NR==1)' $outDir/spliceJunctions_classified.txt > $outDir/normal_spliceJunctions.txt
+
+## B) CHIMERIC
+awk '($2=="CHIMERIC")||(NR==1)' $outDir/spliceJunctions_classified.txt > $outDir/chimeric_spliceJunctions.txt
+
+## C) UNANNOTATED
+awk '($2=="UNANNOTATED")||(NR==1)' $outDir/spliceJunctions_classified.txt > $outDir/unannotated_spliceJunctions.txt
+
 
 ######################
 # 4) CLEANUP AND END #
 ######################
 echo "4. Cleanup and end" >&2
-rm $outDir/spliceJunctions_2parts_beg_end.gff $outDir/spliceJunctions_2parts_beg_end_intersected.txt $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt $outDir/spliceJunctions_annotated.txt
+rm $outDir/spliceJunctions_2parts_beg_end.gff.gz $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_donor_acceptor_beg_end_sameChrStr_okGxOrder_dist_readIds.txt $outDir/spliceJunctions_2parts_beg_end_intersected.txt.gz $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt.gz $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS_merged.txt $outDir/spliceJunctions_annotated.txt $outDir/spliceJunctions_classified.txt
 
 
 
