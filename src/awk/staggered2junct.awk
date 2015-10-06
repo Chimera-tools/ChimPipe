@@ -370,7 +370,7 @@ END{
 		dist=((okGxOrder==1) ? ((a1[3]=="+") ? (a2[2]-a1[2]) : (a1[2]-a2[2])) : "na")
 		
 		## Print splice junctions and assotiated info to standard output
-		row=spliceJunc"\t"nbStag[spliceJunc]"\t"totalNb[spliceJunc]"\t"nbUnique[spliceJunc]"\t"nbMulti[spliceJunc]"\t"maxBeg[spliceJunc]"\t"maxEnd[spliceJunc]"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"juncDonors[spliceJunc]"\t"juncAcceptors[spliceJunc]"\t"supportingReads[spliceJunc]; 
+		row=spliceJunc"\t"nbStag[spliceJunc]"\t"totalNb[spliceJunc]"\t"nbUnique[spliceJunc]"\t"nbMulti[spliceJunc]"\t"juncDonors[spliceJunc]"\t"juncAcceptors[spliceJunc]"\t"maxBeg[spliceJunc]"\t"maxEnd[spliceJunc]"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"supportingReads[spliceJunc]; 
 		
 		print row;
 	}
