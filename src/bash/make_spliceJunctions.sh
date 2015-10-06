@@ -149,7 +149,11 @@ RETRIEVER=$binDir/gemtools-1.7.1-i3/gem-retriever
 ################################################################################
 # - $outDir/spliceAlignments_2blocks.gff.gz
 
-nbFiles=1; # Count files
+# Remove if previously generated file
+if [ -s $outDir/spliceAlignments_2blocks.gff ];
+then
+	rm $outDir/spliceAlignments_2blocks.gff;
+fi
 
 ### Iterate reading a BAM or GEM file in each iteration and saving junction blocks into a GFF
 cat $input | while read file
@@ -157,37 +161,18 @@ do
 	fileName=$(basename "$file")
 	extension="${fileName##*.}"
 	
-	## A) First file, create output gff file
-	if [[ "$nbFiles" == "1" ]];
-    then
-		case $extension in
-    	"bam")
-       		samtools view -bF 4 $file | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($10==2) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -v rev='1' -f $BED2BEDPE | awk -v readDirectionality=$readDirectionality -f $BEDPE_CORRECTSTRAND | awk -f $BEDPE2GFF | awk -f $GFF2GFF  > $outDir/spliceAlignments_2blocks.gff
-        	;;	    
-    	"map")
-    	    awk -v readDirectionality=$readDirectionality -f $GEM_CORRECT_STRAND $file | awk '($5 !~ /M/) && ($5 !~ /Mt/) && ($5 !~ /MT/)' | awk -v rev="0" -f $GEM2GFF | awk -f $GFF2GFF > $outDir/spliceAlignments_2blocks.gff
-            ;;    
-   		 esac
-   	
-   	## B) Not first file, append to already created output gff file
-	else
-		case $extension in
-    	"bam")
-       		samtools view -bF 4 $file | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($10==2) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -v rev='1' -f $BED2BEDPE | awk -v readDirectionality=$readDirectionality -f $BEDPE_CORRECTSTRAND | awk -f $BEDPE2GFF | awk -f $GFF2GFF  >> $outDir/spliceAlignments_2blocks.gff
-        	;;	    
-    	"map")
-    	    awk -v readDirectionality=$readDirectionality -f $GEM_CORRECT_STRAND $file | awk '($5 !~ /M/) && ($5 !~ /Mt/) && ($5 !~ /MT/)' | awk -v rev="0" -f $GEM2GFF | awk -f $GFF2GFF >> $outDir/spliceAlignments_2blocks.gff
-            ;;
-         esac
-	fi
-	
-	# Update counter 
-	let nbFiles=nbFiles+1;
+	case $extension in
+   	"bam")
+    	samtools view -bF 4 $file | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($10==2) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -v rev='1' -f $BED2BEDPE | awk -v readDirectionality=$readDirectionality -f $BEDPE_CORRECTSTRAND | awk -f $BEDPE2GFF | awk -f $GFF2GFF  >> $outDir/spliceAlignments_2blocks.gff
+       	;;	    
+    "map")
+        awk -v readDirectionality=$readDirectionality -f $GEM_CORRECT_STRAND $file | awk '($5 !~ /M/) && ($5 !~ /Mt/) && ($5 !~ /MT/)' | awk -v rev="0" -f $GEM2GFF | awk -f $GFF2GFF >> $outDir/spliceAlignments_2blocks.gff
+        ;;
+    esac
 done 
 
 ### Compress gff file
 gzip $outDir/spliceAlignments_2blocks.gff
-
 
 # 2. Make the staggered reads from gff containing split-mapping blocks
 ######################################################################## 
@@ -202,12 +187,13 @@ paste <(cat $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt) <(awk -v OFS
 ########################################################################################################
 # the consensus splice sites,  the maximum beginning and end plus some further info..
 #######################################################################################
-awk -v strandedness=$stranded -v CSS=$spliceSites -f $MAKE_JUNCTIONS $outDir/staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt > $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_sameChrStr_okGxOrder_dist_ss1_ss2_readIds.txt
+awk -v strandedness=$stranded -v CSS=$spliceSites -f $MAKE_JUNCTIONS $outDir/staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt > $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nbMulti_donor_acceptor_beg_end_sameChrStr_okGxOrder_dist_readIds.txt
 
 
 # Cleaning. 
 ###########
-rm $outDir/spliceAlignments_2blocks.gff.gz $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt $outDir/staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt 
+
+rm $outDir/spliceAlignments_2blocks.gff $outDir/spliceAlignments_2blocks.gff.gz $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt $outDir/staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt 
 
 
 
