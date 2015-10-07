@@ -193,7 +193,7 @@ awk -v strandedness=$stranded -v CSS=$spliceSites -f $MAKE_JUNCTIONS $outDir/sta
 # Cleaning. 
 ###########
 
-rm $outDir/spliceAlignments_2blocks.gff $outDir/spliceAlignments_2blocks.gff.gz $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt $outDir/staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt 
+rm $outDir/spliceAlignments_2blocks.gff.gz $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt $outDir/staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt 
 
 
 
