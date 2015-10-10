@@ -127,6 +127,7 @@ awkDir=$rootDir/../awk
 GEMINFO=$binDir/gemtools-1.7.1-i3/gem-info
 
 ## Awk
+HEADER2GENOME=$awkDir/bamHeader2genomeFile.awk
 BED2GFF=$awkDir/bed2gff.awk
 GFF_CORRECT_STRAND=$awkDir/gffCorrectStrand.awk
 GFF2GFF=$awkDir/gff2gff.awk
@@ -140,7 +141,7 @@ DETECT_DISCORDANT=$awkDir/detect_discordantPEs_1mateSplitmap_1mateMapContiguousl
 ###########################
 # - $outDir/chromosomes_length.txt
 
-$GEMINFO $genome | awk -v OFS='\t' '$1 ~ /^#/ && ($2 !~ /M/) && ($2 !~ /Mt/) && ($2 !~ /MT/) && ($3 ~ /F/) {split($5,lengths,"@"); chrLengths[$2]=lengths[2];}END{for (chr in chrLengths){print chr, chrLengths[chr]+1;}}' | tr -d \'\" | sort -V -k1,1 > $outDir/chromosomes_length.txt
+samtools view -H $bam | awk -f $HEADER2GENOME | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)'  > $outDir/chromosomes_length.txt
 
 
 #####################################################
