@@ -55,7 +55,7 @@ set -e -o pipefail
 if [[ ! -e "$1" ]] || [[ ! -e "$2" ]] || [[ ! -e "$3" ]]
 then
     echo "" >&2
-    echo "*** ChimPE V0.9.0 ***" >&2
+    echo "*** ChimPE V0.9.1 ***" >&2
     echo "" >&2
     echo "Usage:    bash ChimPE.sh alignments.bam genome_index.gem annot.gtf normalJunctions_ChimSplice readDirectionality outDir" >&2
     echo "" >&2

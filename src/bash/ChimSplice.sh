@@ -60,7 +60,7 @@ set -e -o pipefail
 if [[ ! -e "$1" ]] || [[ ! -e "$2" ]] || [[ ! -e "$3" ]]
 then
     echo "" >&2
-    echo "*** ChimSplice V0.9.0 ***" >&2
+    echo "*** ChimSplice V0.9.1 ***" >&2
     echo "" >&2
     echo "Usage:    bash ChimSplice.sh alignment_files_paths.txt genome_index.gem annot.gtf readDirectionality consensusSS outDir" >&2
     echo "" >&2
