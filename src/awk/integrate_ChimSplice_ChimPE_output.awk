@@ -28,12 +28,13 @@
 
 # Inputs:
 ##########
-## 1) ChimSplice output file: chimJunctions_chimSplice.txt 
-# chr21_42880008_-:chr21_39817544_-       32      126     90      36      42880059        39817494        1       1       3062464 GT      AG      ENSG00000184012.7ENSG00000157554.14      TMPRSS2 ERG     protein_coding  protein_coding  100     100     0       0       SRR201779.1051866_PATHBIO-SOLEXA2_30TUEAAXX:3:16:280:588_length=53#0/1,SRR201779.5826734_PATHBIO-SOLEXA2_30TUEAAXX:3:90:623:449_length=53#0/1,......
+## 1) ChimSplice output file: chimeric_spliceJunctions.txt
+# chr21_42880008_-:chr21_39817544_-       CHIMERIC        126     32      25.3968 36      28.5714 100     100     0       0       GT      AG      42880059        39817494        1       1   3062464  ENSG00000184012.7       ENSG00000157554.14      TMPRSS2 ERG     protein_coding  protein_coding
 
-## 2) ChimPE output file: discordantPE.txt
-# SRR201779.4055200_PATHBIO-SOLEXA2_30TUEAAXX:3:64:710:1926_length=53#0 chr21_42880015_42880067_- chr21_39817381_39817433_+ 100 100 ENSG00000184012.7 ENSG00000157554.14 TMPRSS2 ERG
-# SRR201779.3464122_PATHBIO-SOLEXA2_30TUEAAXX:3:53:1026:188_length=53#0 chr21_42879883_42879935_- chr21_39817389_39817441_+ 100 100 ENSG00000184012.7 ENSG00000157554.14 TMPRSS2 ERG
+## 2) ChimPE output file: discordant_readPairs.txt
+# SRR201779.6360963_PATHBIO-SOLEXA2_30TUEAAXX:3:98:699:447_length=53#0    DISCORDANT      chr21_39817369_39817421_+       chr21_42880008_42880060_-       ENSG00000157554.14      ENSG00000184012.7
+# SRR201779.6043897_PATHBIO-SOLEXA2_30TUEAAXX:3:93:627:338_length=53#0    DISCORDANT      chr21_39817370_39817422_+       chr21_42880014_42880066_-       ENSG00000157554.14      ENSG00000184012.7
+# SRR201779.1492533_PATHBIO-SOLEXA2_30TUEAAXX:3:22:1310:1233_length=53#0  DISCORDANT      chr21_39817374_39817426_+       chr21_42880014_42880066_-       ENSG00000157554.14      ENSG00000184012.7
 
 ## output:
 
@@ -122,11 +123,11 @@ function discordantPEsupport(pairId, donorGene, acceptorGene, mapCoordMateSupDon
    	# For each splice junction check if the discordant paired-end map trully flank the junction or not       		
    	nbChimJunc=split(chimJunctions, chimJuncList, ",")
         		
-    for (i=1;i<=nbChimJunc;i++)
+    for (k=1;k<=nbChimJunc;k++)
     {
-     	if (chimJuncList[i] != "")
+     	if (chimJuncList[k] != "")
      	{
-        	chimJunc=chimJuncList[i];
+        	chimJunc=chimJuncList[k];
         				
         	split(chimJunc, chimJunctionSplit, ":");
         				
@@ -161,9 +162,9 @@ function chimJuncFlankingPE(pairId, coordDonor, strandDonor, coordAcceptor, stra
 				nbSupportingPairs[donorGene"-"acceptorGene"::"chimJunc]++;
 				supportingPairsIds[donorGene"-"acceptorGene"::"chimJunc]=pairId","supportingPairsIds[donorGene"-"acceptorGene"::"chimJunc];	
         				
-				#print "junc_con", coordDonor, strandDonor, coordAcceptor, strandAcceptor;
-        		#print "mates_con", begMateSupDonor, endMateSupDonor, begMateSupAcceptor, endMateSupAcceptor;
-        		#print "nb supporting", nbSupportingPairs[donorGene"-"acceptorGene"::"chimJunc];
+				# print "junc_con", coordDonor, strandDonor, coordAcceptor, strandAcceptor;
+        		# print "mates_con", begMateSupDonor, endMateSupDonor, begMateSupAcceptor, endMateSupAcceptor;
+        		# print "nb supporting", nbSupportingPairs[donorGene"-"acceptorGene"::"chimJunc];
         	}
         	## B) Discordant paired-end do not flanking chimeric splice junction
         	else
@@ -261,6 +262,7 @@ BEGIN{
 	{	
 		## Get all relevant information about a chimeric junction and save into variables or dictionaries
 		
+		#print $0;
 		chimJunc=$1;
 		chimJunctionsDic[chimJunc]="1";
 		nbSpanningPE[chimJunc]=$3;
@@ -322,30 +324,30 @@ BEGIN{
 }
 
 {
-	#print $0	
-	
+	# print $0	
+
 	## Get all relevant information about a discordant read pair and save into variables 
 	pairId=$1;
 	mapCoordMate1=$3;
 	mapCoordMate2=$4;
 	
-	nbGnA=split($7, gnListA, ",");
-    nbGnB=split($8,gnListB, ",");
+	nbGnA=split($5, gnListA, ",");
+    nbGnB=split($6, gnListB, ",");
     
-    # print "numbers: "nbGnA, nbGnB;
+    # print "numbers: ", nbGnA, nbGnB;
     
     # Do all the possible gene pair ids between the 2 list of genes 
     # overlapping discordant mate1 and mate2 respectivelly
     for (i=1;i<=nbGnA;i++)
     {
-     	#print nbGnA;
-     	#print "counter i: ", i;
+     	# print "number A: ", nbGnA;
+     	# print "counter i: ", i;
     	for (j=1;j<=nbGnB;j++)
         {
-        	#print nbGnB;
-        	#print "counter j: ", j;
+        	# print "number B: ", nbGnB;
+        	# print "counter j: ", j;
         	
-        	#print gnListA[i]"-"gnListB[j];
+        	# print gnListA[i]"-"gnListB[j];
         	
         	gnA=gnListA[i];
         	gnB=gnListB[j];
