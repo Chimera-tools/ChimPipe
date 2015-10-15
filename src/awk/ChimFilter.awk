@@ -134,28 +134,28 @@ NR>1{
 	reason="";
 	
 	## Filter 1: Minimum number of total paired-ends (staggered + discordant)
-	if (totalNbPE <= minTotalNbPE)
+	if (totalNbPE < minTotalNbPE)
 	{
 		filtered=1;
 		reason="totalPE,"reason
 	}
 	
 	## Filter 2: Minimum number of spanning paired-ends 
-	if (nbSpanningPE <= minNbSpanningPE)
+	if (nbSpanningPE < minNbSpanningPE)
 	{
 		filtered=1;
 		reason="spanningPE,"reason
 	}
 	
 	## Filter 3: Minimum number of discordant paired-ends 
-	if (nbDiscordantPE <= minNbDiscordantPE)
+	if (nbDiscordantPE < minNbDiscordantPE)
 	{
 		filtered=1;
 		reason="discordantPE,"reason
 	}
 	
 	## Filter 4: Minimum percentage of staggered reads
-	if (percStaggered <= minPercStaggered) 
+	if (percStaggered < minPercStaggered) 
 	{
 		filtered=1;
 		reason="percStag,"reason
