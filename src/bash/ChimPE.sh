@@ -131,8 +131,8 @@ HEADER2GENOME=$awkDir/bamHeader2genomeFile.awk
 BED2GFF=$awkDir/bed2gff.awk
 GFF_CORRECT_STRAND=$awkDir/gffCorrectStrand.awk
 GFF2GFF=$awkDir/gff2gff.awk
-PERC_OVERLAP=$awkDir/compute_mappedReadPercOverlap2Exon.awk
-SELECT_OVERLAPPING_EXONS=$awkDir/select_overlappingExons_contiguousMapping.awk
+SELECT_OVERLAPPING_GENE=$awkDir/select_overlappingGene_contiguousMapping_intersection.awk
+MAKE_LIST_OVERLAPPING_GENES=$awkDir/makeList_overlappingGenes_contiguousMapping.awk
 CLASSIFY_PE=$awkDir/classifyPairedEnds.awk
 DETECT_DISCORDANT=$awkDir/detect_discordantPEs_1mateSplitmap_1mateMapContiguously.awk
 
@@ -166,78 +166,89 @@ echo "2. Intersect read alignments with the annotated exons" >&2
 
 bedtools intersect -wao -a $outDir/contiguousAlignments.gff.gz -b $annot -sorted -g $outDir/chromosomes_length.txt | gzip > $outDir/contiguousAlignments_intersected.txt.gz
 
+# Remove intermediate files:
+rm $outDir/chromosomes_length.txt
+rm $outDir/contiguousAlignments.gff.gz
+
 ###########################################################
-# 3) FOR EACH INTERSECTION ADD THE PERCENTAGE OF OVERLAP  #
-# BETWEEN THE MAPPED READ AND THE OVERLAPPING EXON        #
+# 3) FOR EACH MAPPED READ MAKE LIST OF OVERLAPPING GENES  #
 ###########################################################
-# - $outDir/spliceJunctions_2parts_beg_end_intersected_percOverlap_distExonSS.txt.gz
+# - $outDir/contiguousAlignments_gnList.txt.gz
 
-echo "3. For each intersection add the percentage of overlap between the mapped read and the overlapping exon " >&2
+echo "3. For each mapped read make list of overlapping genes" >&2
 
-awk -f $PERC_OVERLAP <( gzip -dc $outDir/contiguousAlignments_intersected.txt.gz ) | gzip > $outDir/contiguousAlignments_intersected_percOverlap.txt.gz
+awk -f $SELECT_OVERLAPPING_GENE <( gzip -dc $outDir/contiguousAlignments_intersected.txt.gz ) | uniq | gzip > $outDir/contiguousAlignments_intersected_tmp.txt.gz
 
+awk -f $MAKE_LIST_OVERLAPPING_GENES <( gzip -dc $outDir/contiguousAlignments_intersected_tmp.txt.gz ) | gzip > $outDir/contiguousAlignments_gnList.txt.gz
 
-#########################################################################
-# 4) FOR EACH MAPPED READ SELECT THE OVERLAPPING EXONS WHICH BETTER FIT #
-#########################################################################
-# - $outDir/contiguousAlignments_intersected_percOverlap_exonsBetterFit.txt.gz
-
-echo "4. For each mapped read select those overlaping exons which maximize the percentage of overlap" >&2
-
-awk -f $SELECT_OVERLAPPING_EXONS <( gzip -dc $outDir/contiguousAlignments_intersected_percOverlap.txt.gz ) | gzip > $outDir/contiguousAlignments_intersected_percOverlap_exonsBetterFit.txt.gz
-
+# Remove intermediate files:
+rm $outDir/contiguousAlignments_intersected.txt.gz
+rm $outDir/contiguousAlignments_intersected_tmp.txt.gz
 
 #################################################################################################
-# 5) CLASSIFY READ PAIRS INTO: 																	#
-#     A) CONCORDANT:  BOTH MATES MAPPING IN ONLY ONE GENE										#
+# 4) CLASSIFY READ PAIRS INTO: 																	#
 #     B) DISCORDANT:  BOTH MATES MAPPING IN DIFFERENT GENES										#
 #     C) UNANNOTATED: BOTH MATES MAP AND AT LEAST ONE OF THEM DO NOT OVERLAP ANY ANNOTATED GENE #
 #     D) UNPAIRED:    ONLY ONE PAIR MAPPING														#
 #################################################################################################
-# - $outDir/discordantPE.txt
+# - $outDir/discordant_contiguousMapped_readPairs.txt
+# - $outDir/unannotated_contiguousMapped_readPairs.txt
+# - $outDir/unpaired_contiguousMapped_reads.txt
 
-echo "5. Classify read pairs in concordant, discordant, unannotated or unpaired" >&2
+echo "4. Classify read pairs in discordant, unannotated or unpaired" >&2
 
-awk -v OFS='\t' -f $CLASSIFY_PE <( gzip -dc $outDir/contiguousAlignments_intersected_percOverlap_exonsBetterFit.txt.gz ) > $outDir/readPairs_classified.txt
+### 4.1 Split file in mate one and two files:
+# Mate 1:
+awk '$1 ~ /\/1$/' <( gzip -dc $outDir/contiguousAlignments_gnList.txt.gz ) > $outDir/contiguousAlignments_gnList_mate1.txt 
 
-### Make a different file for each type of read pair:
+# Mate 2:
+awk '$1 ~ /\/2$/' <( gzip -dc $outDir/contiguousAlignments_gnList.txt.gz ) > $outDir/contiguousAlignments_gnList_mate2.txt
 
-## A) CONCORDANT
-awk '($2=="CONCORDANT") || (NR==1)' $outDir/readPairs_classified.txt > $outDir/concordant_contiguousMapped_readPairs.txt
+### 4.2 Classify them
+awk -v OFS='\t' -v fileRef=$outDir/contiguousAlignments_gnList_mate2.txt -f $CLASSIFY_PE $outDir/contiguousAlignments_gnList_mate1.txt  | gzip > $outDir/readPairs_classified.txt.gz
 
-## B) DISCORDANT
-awk '($2=="DISCORDANT") || (NR==1)' $outDir/readPairs_classified.txt > $outDir/discordant_contiguousMapped_readPairs.txt
+### 4.3 Make a different file for each type of read pair:
+# Concordant not considered
 
-## C) UNANNOTATED
-awk '($2=="UNANNOTATED") || (NR==1)' $outDir/readPairs_classified.txt > $outDir/unannotated_contiguousMapped_readPairs.txt
+## A) DISCORDANT
+awk '($2=="DISCORDANT") || (NR==1)' <( gzip -dc $outDir/readPairs_classified.txt.gz ) > $outDir/discordant_contiguousMapped_readPairs.txt
 
-## D) UNPAIRED
-awk '($2=="UNPAIRED") || (NR==1)' $outDir/readPairs_classified.txt > $outDir/unpaired_contiguousMapped_reads.txt
+## B) UNANNOTATED
+awk '($2=="UNANNOTATED") || (NR==1)' <( gzip -dc $outDir/readPairs_classified.txt.gz ) > $outDir/unannotated_contiguousMapped_readPairs.txt
+
+## C) UNPAIRED
+awk '($2=="UNPAIRED") || (NR==1)' <( gzip -dc $outDir/readPairs_classified.txt.gz ) > $outDir/unpaired_contiguousMapped_reads.txt
+
+# Remove intermediate files:
+rm $outDir/contiguousAlignments_gnList.txt.gz
+rm $outDir/contiguousAlignments_gnList_mate1.txt
+rm $outDir/contiguousAlignments_gnList_mate2.txt
+rm $outDir/readPairs_classified.txt.gz
 
 
 #####################################################################
-# 6) FIND READ PAIRS WHERE ONE OF THE MATES MAPS CONTIGUOUSLY AND    #
+# 5) FIND READ PAIRS WHERE ONE OF THE MATES MAPS CONTIGUOUSLY AND    #
 # THE OTHER ONE SPANS A SPLICE JUNCTION (SPLIT-MAPS). CLASSIFY THEM #
 #####################################################################
 
-echo "6. Detect additional discordant pairs where one maps contiguously and the other one split-map" >&2
+echo "5. Detect additional discordant pairs where one maps contiguously and the other one split-map" >&2
 
 awk -v OFS='\t' -v fileRef=$normalJunc -f $DETECT_DISCORDANT $outDir/unpaired_contiguousMapped_reads.txt > $outDir/discordant_contiguousAndSplitMapped_readPairs.txt
 
 #######################################################################
-## 7) PRODUCE THE FINAL DISCORDANT OUTPUT FILE COMBINING 5.B) AND 6)  #
+## 6) PRODUCE THE FINAL DISCORDANT OUTPUT FILE COMBINING 5.B) AND 6)  #
 #######################################################################
 
-echo "7. Produce a final discordant pairs output file" >&2
+echo "6. Produce a final discordant pairs output file" >&2
 
 cat $outDir/discordant_contiguousMapped_readPairs.txt $outDir/discordant_contiguousAndSplitMapped_readPairs.txt > $outDir/discordant_readPairs.txt
 
 
 ######################
-# 8) CLEANUP AND END #
+# 7) CLEANUP AND END #
 ######################
 echo "8. Cleanup and end" >&2
-rm $outDir/chromosomes_length.txt $outDir/contiguousAlignments.gff.gz $outDir/contiguousAlignments_intersected.txt.gz $outDir/contiguousAlignments_intersected_percOverlap.txt.gz $outDir/contiguousAlignments_intersected_percOverlap_exonsBetterFit.txt.gz $outDir/readPairs_classified.txt $outDir/discordant_contiguousMapped_readPairs.txt $outDir/discordant_contiguousAndSplitMapped_readPairs.txt
+rm  $outDir/discordant_contiguousMapped_readPairs.txt $outDir/discordant_contiguousAndSplitMapped_readPairs.txt
 
 
 

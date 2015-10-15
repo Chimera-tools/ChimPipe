@@ -27,11 +27,20 @@
 ###############
 # ........
 
-### input
-# SRR201779.3622811_PATHBIO-SOLEXA2_30TUEAAXX:3:56:1614:1647_length=53#0/1 100 ENSG00000184012.7:chr21_42842575_42842670 ENSG00000184012.7 TMPRSS2 protein_coding
-# SRR201779.243167_PATHBIO-SOLEXA2_30TUEAAXX:3:4:1747:316_length=53#0/1 100 ENSG00000184012.7:chr21_42836480_42838080,ENSG00000184012.7:chr21_42836478_42838080 ENSG00000184012.7 TMPRSS2 protein_coding
+### input 
+# Mate 1 file
+# SRR201779.4894699_PATHBIO-SOLEXA2_30TUEAAXX:3:76:10:1139_length=53#0/1  chr1_565366_565418_+    ENSG00000225630.1
+# ..
+
+# Mate2 file
+# SRR201779.4894699_PATHBIO-SOLEXA2_30TUEAAXX:3:76:10:1139_length=53#0/2  chr1_150280531_150280583_-      ENSG00000187145.10
+# ..
 
 ### output
+# SRR201779.4894699_PATHBIO-SOLEXA2_30TUEAAXX:3:76:10:1139_length=53#0    DISCORDANT      chr1_565366_565418_+    chr1_150280531_150280583_-      ENSG00000225630.1       ENSG00000187145.10
+# SRR201779.5549320_PATHBIO-SOLEXA2_30TUEAAXX:3:86:252:328_length=53#0    CONCORDANT      chr1_17483_17535_-      chr1_17321_17373_+      ENSG00000227232.4       ENSG00000227232.4
+# SRR201779.4899422_PATHBIO-SOLEXA2_30TUEAAXX:3:76:831:388_length=53#0    UNANNOTATED     chr1_17606_17658_-      chr1_17444_17496_+      ENSG00000227232.4       unannotated
+# SRR201779.2689262_PATHBIO-SOLEXA2_30TUEAAXX:3:41:1598:622_length=53#0/1 UNPAIRED        chr1_139561_139613_+    unannotated
 
 
 # Usage example:
@@ -39,77 +48,54 @@
 
 BEGIN{
 	## print header
-
-	header="pairId\ttype\tmapCoordsA\tmapCoordsB\tgnIdA\tgnIdB\tgnNameA\tgnNameB\toverlapA\toverlapB";	
+	header="pairId\ttype\tmapCoordsA\tmapCoordsB\tgnIdA\tgnIdB";	
 	print header
+	
+	while (getline < fileRef > 0)
+	{
+		readId=$1;
+		split(readId,readIdList,"/"); 
+		pairId=readIdList[1]; 
+	
+		mapCoords2=$2;
+		geneId2=$3;
+		
+		mate2[pairId]=mapCoords2"|"geneId2"|1";
+	}
 }
 {
-	split($1,readId,"/"); 
+	#print "classifying..";
+	readId=$1;
+	split(readId,readIdList,"/"); 
+	pairId=readIdList[1]; 
 	
-	pairId=readId[1]; 
-	mate=readId[2]; 
-
-
-	if (mate=="1")
-	{
-		#print "eii 1", $0;
-		mapCoords1[pairId]=$2;		
-		percOverlap1[pairId]=$3; 
-		geneId1[pairId]=$4; 
-		geneName1[pairId]=$5; 
-		pairIds[pairId]="1";
-	}
-	else
-	{
-		#print "eii 2", $0;
-		mapCoords2[pairId]=$2;
-		percOverlap2[pairId]=$3; 
-		geneId2[pairId]=$4; 
-		geneName2[pairId]=$5;
-		pairIds[pairId]="1";
-	}
-}
-END{
-	for (pairId in pairIds)
-	{		
-		# Set DISCORDANT pair as default
-		type="DISCORDANT";
+	mapCoords1=$2;		
+	geneId1=$3; 
+	
+	
+	# Set DISCORDANT pair as default
+	type="DISCORDANT";
 		
-		# A) One of the mates is not mapping 
-		if ((geneId1[pairId]=="") || (geneId2[pairId]=="")) 
+	# A) Both mates mapping
+	if ( mate2[pairId] != "")
+	{
+		split(mate2[pairId],mate2List,"|");
+		
+		mapCoords2=mate2List[1];
+		geneId2=mate2List[2];
+		
+		mate2[pairId]=geneId2"|"mapCoords2"|0";
+		
+		# A.A) Both mates mapping and at least one of them do not overlap any annotated gene 
+		if ((geneId1 == "unannotated") || (geneId2 == "unannotated"))
 		{
-			if (geneId1[pairId]=="")
-			{
-				mateId=pairId"/2";
-				# print "mate 2", mateId;
-			}
-			else
-			{
-				mateId=pairId"/1";
-				# print "mate 1", mateId;
-			}
-			type="UNPAIRED";
-		}	
-		# B) Both mates mapping and at least one of them do not overlap any annotated gene 
-		else if ((geneId1[pairId] == "unannotated") || (geneId2[pairId] == "unannotated"))
-		{	
 			type="UNANNOTATED";
 		}
 		# C) Both mates mapping and both overlap an annotated gene
 		else
 		{
-		    # If gene name available use gene name (better, since for gencode there are several different gene ids for some gene within the same annotation)
-		    if ((geneName1[pairId]!="na")&&(geneName2[pairId]!="na"))
-		    {
-		    	nb1=split(geneName1[pairId], gnList1, ","); 
-		    	nb2=split(geneName2[pairId], gnList2, ",");
-			}
-			# If not, use gene id
-			else
-			{
-				nb1=split(geneId1[pairId], gnList1, ","); 
-		    	nb2=split(geneId2[pairId], gnList2, ",");
-			}
+		    nb1=split(geneId1, gnList1, ","); 
+		    nb2=split(geneId2, gnList2, ",");
 			
 		    # Do all the possible gene pairs comparisons between the 2 list of genes overlapping each mate. 
 		    # If both mates overlap the same gene, set type to concordant. 
@@ -117,8 +103,6 @@ END{
 		    {
 				for (j=1;j<=nb2;j++)
 				{
-			    	#print gnList1[i],  gnList2[j]; 
-			
 			    	if (gnList1[i]==gnList2[j])
 			    	{
 						type="CONCORDANT";
@@ -126,26 +110,38 @@ END{
 				}
 		   	} 
 		}
-
-		# Report classified read pairs 
-		if (type=="UNPAIRED")
-		{
-			if (mapCoords1[pairId] != "")
-			{
-				row=mateId"\t"type"\t"mapCoords1[pairId]"\t"percOverlap1[pairId]"\t"geneId1[pairId]"\t"geneName1[pairId];
-			}
-			else
-			{
-				row=mateId"\t"type"\t"mapCoords2[pairId]"\t"percOverlap2[pairId]"\t"geneId2[pairId]"\t"geneName2[pairId];
-			}
-			
-		}
-		else
-		{
-			row=pairId"\t"type"\t"mapCoords1[pairId]"\t"mapCoords2[pairId]"\t"percOverlap1[pairId]"\t"percOverlap2[pairId]"\t"geneId1[pairId]"\t"geneId2[pairId]"\t"geneName1[pairId]"\t"geneName2[pairId];
-		}
 		
-		print row;
+		row=pairId"\t"type"\t"mapCoords1"\t"mapCoords2"\t"geneId1"\t"geneId2;
 	}
+	# B) Mate two do not mapping
+	else
+	{
+		type="UNPAIRED";
+		row=readId"\t"type"\t"mapCoords1"\t"geneId1;
+	}
+		
+	print row;
+}
+END{
+	for (pairId in mate2) 
+	{	
+		split(mate2[pairId],mate2List,"|");
+		
+		boolean=mate2List[3];
+		
+		if (boolean == "1" )
+		{
+			mapCoords2=mate2List[1];
+			geneId2=mate2List[2];
+		
+			type="UNPAIRED";
+			readId=pairId"/2";
+			
+			row=readId"\t"type"\t"mapCoords2"\t"geneId2;
+			
+			print row;			
+		}
+	}
+		
 } 
 
