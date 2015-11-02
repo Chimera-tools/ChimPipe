@@ -132,6 +132,7 @@ awkDir=$rootDir/../awk
 # Programs
 ###########
 ## Awk
+HEADER2GENOME=$awkDir/bamHeader2genomeFile.awk
 BED2BEDPE=$awkDir/bed2bedPE.awk
 BEDPE_CORRECTSTRAND=$awkDir/bedPECorrectStrand.awk
 BEDPE2GFF=$awkDir/bedPE2gff.awk
@@ -139,11 +140,21 @@ GFF2GFF=$awkDir/gff2gff.awk
 GEM_CORRECT_STRAND=$awkDir/gemCorrectStrand.awk
 GEM2GFF=$awkDir/gemsplit2gff.awk
 MAKE_STAGGERED=$awkDir/make_staggeredSplitMappings.awk
-
+MAKE_5MER_COORDS=$awkDir/extract_5mers_splitMappedBlocks.awk
 MAKE_JUNCTIONS=$awkDir/staggered2junct.awk
 
 ## Bin
 RETRIEVER=$binDir/gemtools-1.7.1-i3/gem-retriever
+
+
+# 0) GENERATE GENOME FILE # 
+###########################
+# - $outDir/chromosomes_length.txt
+
+bam=`cat $input | grep '.bam' | head -1`
+
+samtools view -H $bam | awk -f $HEADER2GENOME | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)'  > $outDir/chromosomes_length.txt
+
 
 # 1. Make a gff with splice junction blocks from BAM and GEM alignment files
 ################################################################################
@@ -179,9 +190,9 @@ gzip $outDir/spliceAlignments_2blocks.gff
 zcat $outDir/spliceAlignments_2blocks.gff.gz | awk -f $MAKE_STAGGERED > $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt
 
 
-# 3. Subtract for each staggered the first 8 flanking nucleotides in each side (this makes a total of 4 8-mers). 
+# 3. Subtract for each staggered the first 5 flanking nucleotides in each side (this makes a total of 4 5-mers). 
 ###############################################################################################################
-paste <(cat $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt) <(awk -v OFS='\t' '{split($1,a,":"); split(a[1],a1,"_"); chrA=a1[1]; begA=a1[2]; endA=a1[3]; strA=a1[4]; split(a[2],a2,"_"); chrB=a2[1]; begB=a2[2]; endB=a2[3]; strB=a2[4]; print chrA, strA, (begA-8), (begA-1); print chrA, strA, (endA+1), (endA+8); print chrB, strB, (begB-8), (begB-1); print chrB, strB, (endB+1), (endB+8)}' $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt | $RETRIEVER $genome | sed 's/.*/\U&/' | awk 'BEGIN{counter=1;key=1;}{seq[key]=seq[key]" "$1; counter++; if (counter==5) {counter=1; key++}}END{for (i=1;i<key;i++){print seq[i]}}') | awk '{print $1, $2, $3, $4, $6, $7, $8, $9, $5;}' | awk -f $GFF2GFF > $outDir/staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt
+paste <(cat $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt) <(awk -v fileRef=$outDir/chromosomes_length.txt -f $MAKE_5MER_COORDS $outDir/staggered_nbTotal_nbUnique_nbMulti_readIds.txt | $RETRIEVER $genome | sed 's/.*/\U&/' | awk 'BEGIN{counter=1;key=1;}{seq[key]=seq[key]" "$1; counter++; if (counter==5) {counter=1; key++}}END{for (i=1;i<key;i++){print seq[i]}}') | awk '{print $1, $2, $3, $4, $6, $7, $8, $9, $5;}' | awk -f $GFF2GFF > $outDir/staggered_nbTotal_nbUnique_nbMulti_nts_readIds.txt
 
 # 4. Make the splice junctions, compute the number of staggered and total reads supporting the junctions,  
 ########################################################################################################
