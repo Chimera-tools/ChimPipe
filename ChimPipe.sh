@@ -112,11 +112,11 @@ cat <<help
   Filters:
 	--total-support 		<INTEGER> 	Minimum number of total supporting evidences (spanning reads + consistent paired-ends). Default 4.
 	--spanning-reads		<INTEGER>  	Minimum number of junction spanning reads. Default 1.
-	--consistent-pairs		<INTEGER>	Minimum number of consistent paired-ends. Default 0.
+	--consistent-pairs		<INTEGER>	Minimum number of consistent paired-ends. Default 2.
 	
-	--total-support-novel-ss 	<INTEGER> 	Minimum number of total supporting evidence if novel splice-sites. Default 6.
-	--spanning-reads-novel-ss	<INTEGER>  	Minimum number of junction spanning reads if novel splice-sites. Default 3.
-	--consistent-pairs-novel-ss	<INTEGER>	Minimum number of consistent paired-ends if novel splice-sites. Default 3.
+	--total-support-novel-ss 	<INTEGER> 	Minimum number of total supporting evidence if novel splice-sites. Default 8.
+	--spanning-reads-novel-ss	<INTEGER>  	Minimum number of junction spanning reads if novel splice-sites. Default 2.
+	--consistent-pairs-novel-ss	<INTEGER>	Minimum number of consistent paired-ends if novel splice-sites. Default 4.
 	
 	--perc-staggered		<PERCENTAGE>	Minimum percentage of staggered reads. Default 0 (not enabled).
 	--perc-multimappings		<PERCENTAGE>	Maximum percentage of multimapped spanning reads. Default 100 (not enabled).
@@ -899,7 +899,7 @@ fi
 # Minimum number of consistent paired-ends
 if [[ "$minNbConsistentPE" == "" ]];
 then 
-    minNbConsistentPE=0;
+    minNbConsistentPE=2;
 else
 	if [[ ! "$minNbConsistentPE" =~ ^[0-9]+$ ]]; 
     then
@@ -912,7 +912,7 @@ fi
 # Minimum number of total supporting evidences for novel splice-sites (spanning reads + discordant PE)
 if [[ "$minNbTotalNovelSS" == "" ]];
 then 
-    minNbTotalNovelSS=6;
+    minNbTotalNovelSS=8;
 else
 	if [[ ! "$minNbTotalNovelSS" =~ ^[0-9]+$ ]]; 
     then
@@ -925,7 +925,7 @@ fi
 # Minimum number of spanning reads for novel splice-sites
 if [[ "$minNbSpanningNovelSS" == "" ]];
 then 
-    minNbSpanningNovelSS=3;
+    minNbSpanningNovelSS=2;
 else
 	if [[ ! "$minNbSpanningNovelSS" =~ ^[0-9]+$ ]]; 
     then
@@ -938,7 +938,7 @@ fi
 # Minimum number of consistent paired-ends for novel splice-sites
 if [[ "$minNbConsistentPENovelSS" == "" ]];
 then 
-    minNbConsistentPENovelSS=3;
+    minNbConsistentPENovelSS=4;
 else
 	if [[ ! "$minNbConsistentPENovelSS" =~ ^[0-9]+$ ]]; 
     then

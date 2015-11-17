@@ -58,26 +58,26 @@ BEGIN{
 	# A.3. Minimum number of consistent paired-ends 
 	if (minNbConsistentPE == "")
 	{
-		minNbConsistentPE=0;
+		minNbConsistentPE=2;
 	}
 	
 	# B) Junction not in exon boundaries (at least one novel splice-sites)
 	# B.1. Minimum number of total supporting evidences (spanning reads + consistent PE)
 	if (minNbTotalNovelSS == "")
 	{
-		minNbTotalNovelSS=6;
+		minNbTotalNovelSS=8;
 	}
 	
 	# B.2. Minimum number of spanning reads 
 	if (minNbSpanningNovelSS == "")
 	{
-		minNbSpanningNovelSS=3;
+		minNbSpanningNovelSS=2;
 	}
 	
 	# B.3. Minimum number of consistent paired-ends 
 	if (minNbConsistentPENovelSS == "")
 	{
-		minNbConsistentPENovelSS=3;
+		minNbConsistentPENovelSS=4;
 	}
 	
 	### 2. Filters based on percentages
