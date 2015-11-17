@@ -38,80 +38,108 @@
 
 BEGIN{
 	
-	## Set default filtering parameters configuration in case they do not have been set by the user
+	#### Set default filtering parameters configuration in case they do not have been set by the user
 	
-	# 1. Minimum number of total paired-ends (staggered + discordant)
+	### 1. Filters based on the number of supporting reads
+	# A) Junction in exon boundaries (annotated splice-sites)
+	# A.1. Minimum number of total supporting evidences (spanning reads + consistent PE)
 	
-	if (minTotalNbPE == "")
+	if (minNbTotal == "")
 	{
-		minTotalNbPE=3;
+		minNbTotal=4;
 	}
 	
-	# 2. Minimum number of spanning paired-ends 
-	
-	if (minNbSpanningPE == "")
+	# A.2. Minimum number of spanning reads 
+	if (minNbSpanning == "")
 	{
-		minNbSpanningPE=1;
+		minNbSpanning=1;
 	}
 	
-	# 3. Minimum number of discordant paired-ends 
-	
-	if (minNbDiscordantPE == "")
+	# A.3. Minimum number of consistent paired-ends 
+	if (minNbConsistentPE == "")
 	{
-		minNbDiscordantPE=1;
+		minNbConsistentPE=0;
 	}
 	
-	# 4. Minimum percentage of staggered reads
+	# B) Junction not in exon boundaries (at least one novel splice-sites)
+	# B.1. Minimum number of total supporting evidences (spanning reads + consistent PE)
+	if (minNbTotalNovelSS == "")
+	{
+		minNbTotalNovelSS=6;
+	}
 	
+	# B.2. Minimum number of spanning reads 
+	if (minNbSpanningNovelSS == "")
+	{
+		minNbSpanningNovelSS=3;
+	}
+	
+	# B.3. Minimum number of consistent paired-ends 
+	if (minNbConsistentPENovelSS == "")
+	{
+		minNbConsistentPENovelSS=3;
+	}
+	
+	### 2. Filters based on percentages
+	# 2.1. Minimum percentage of staggered reads
 	if (minPercStaggered == "")
 	{
 		minPercStaggered=0;
 	}
 	
-	# 5. Maximum percentage of multimapped spanning reads
-	
+	# 2.2. Maximum percentage of multimapped spanning reads
 	if (maxPercMultimaps == "")
 	{
-		maxPercMultimaps=95;
+		maxPercMultimaps=100;
 	}
 	
-	# 6. Maximum percentage of inconsistent paired ends
-	
+	# 2.3. Maximum percentage of inconsistent paired ends
 	if (maxPercInconsistentPE == "")
 	{
-		maxPercInconsistentPE=50;
+		maxPercInconsistentPE=100;
 	}
 	
-	# 7. Maximum distance to exon boundary
-	
-	if (maxDistExonBoundary == "")
+	### 3. Similarity based filter
+	# A) Filtering configuration not provided
+	if (similarityConf == "")
 	{
-		maxDistExonBoundary="-1";
+		maxAlignLen=30;
+		maxSimPerc=90;
 	}
+	# B) Filtering configuration provided
+	else
+	{
+		split(similarityConf, similarityConfList, "+");
+		maxAlignLen=similarityConfList[1];
+		maxSimPerc=similarityConfList[2];
+	} 
 	
+		
 	## Print header:
-	header="juncCoord\tfiltered\treason\ttotalNbPE\tnbSpanningPE\tnbStag\tpercStag\tnbMulti\tpercMulti\tnbDiscordantPE\tnbInconsistentPE\tpercInconsistentPE\toverlapA\toverlapB\tdistExonBoundaryA\tdistExonBoundaryB\tmaxBLastAlignLen\tblastAlignSim\tdonorSS\tacceptorSS\tbeg\tend\tsameChrStr\tokGxOrder\tdist\tgnIdA\tgnIdB\tgnNameA\tgnNameB\tgnTypeA\tgnTypeB\tjuncSpanningReadIds\tsupportingPairsIds\tinconsistentPairsIds";
+	header="juncCoord\tfiltered\treason\tnbTotal(spanning+consistent)\tnbSpanningReads\tnbStaggered\tpercStaggered\tnbMulti\tpercMulti\tnbConsistentPE\tnbInconsistentPE\tpercInconsistentPE\toverlapA\toverlapB\tdistExonBoundaryA\tdistExonBoundaryB\tblastAlignLen\tblastAlignSim\tdonorSS\tacceptorSS\tbeg\tend\tsameChrStr\tokGxOrder\tdist\tgnIdsA\tgnIdsB\tgnNamesA\tgnNamesB\tgnTypesA\tgnTypesB\tjuncSpanningReadsIds\tconsistentPEIds\tinconsistentPEIds";
 	
 	print header;
 }
 
 NR>1{
+	
 	# Get input information
+	########################
 	juncCoord=$1;	
-	totalNbPE=$2;	
-	nbSpanningPE=$3;	
-	nbStag=$4;	
+	nbTotal=$2;	
+	nbSpanning=$3;	
+	nbStaggered=$4;	
 	percStaggered=$5;	
 	nbMultimaps=$6;	
 	percMultimaps=$7;	
-	nbDiscordantPE=$8;	
+	nbConsistentPE=$8;	
 	nbInconsistentPE=$9;	
 	percInconsistentPE=$10;	
 	overlapA=$11;	
 	overlapB=$12;	
 	distExonBoundaryA=$13;	
 	distExonBoundaryB=$14;	
-	maxBLastAlignLen=$15;	
+	blastAlignLen=$15;	
 	blastAlignSim=$16;
 	donorSS=$17;	
 	acceptorSS=$18;	
@@ -120,75 +148,108 @@ NR>1{
 	sameChrStr=$21;	
 	okGxOrder=$22;	
 	dist=$23;	
-	gnIdA=$24;	
-	gnIdB=$25;	
-	gnNameA=$26;	
-	gnNameB=$27;	
-	gnTypeA=$28;	
-	gnTypeB=$29;	
-	juncSpanningReadIds=$30;	
-	supportingPairsIds=$31;	
-	inconsistentPairsIds=$32;
+	gnIdsA=$24;	
+	gnIdsB=$25;	
+	gnNamesA=$26;	
+	gnNamesB=$27;	
+	gnTypesA=$28;	
+	gnTypesB=$29;	
+	juncSpanningReadsIds=$30;	
+	consistentPEIds=$31;	
+	inconsistentPEIds=$32;
 	
-	filtered=0;
+	filtered="0";
 	reason="";
 	
-	## Filter 1: Minimum number of total paired-ends (staggered + discordant)
-	if (totalNbPE < minTotalNbPE)
-	{
-		filtered=1;
-		reason="totalPE,"reason
+	
+	# Apply filters
+	################
+	### 1. Filters based on the number of supporting reads
+	## A) Junction in exon boundaries (annotated splice-sites)
+	if ((distExonBoundaryA == "0") && (distExonBoundaryB == "0"))  
+	{		
+		# A.1. Minimum number of total supporting evidences (spanning reads + consistent PE)
+		if (nbTotal < minNbTotal)
+		{
+			reason="totalSupport,"reason
+		}
+	
+		# A.2. Minimum number of spanning reads
+		if (nbSpanning < minNbSpanning)
+		{
+			reason="spanningReads,"reason
+		}
+	
+		# A.3. Minimum number of consistent paired-ends 
+		if (nbConsistentPE < minNbConsistentPE)
+		{
+			reason="consistentPE,"reason
+		}
+	}	
+	## B) Junction not in exon boundaries (at least one novel splice-sites)
+	else
+	{	
+		# B.1. Minimum number of total supporting evidences (spanning reads + consistent PE)
+		if (nbTotal < minNbTotalNovelSS)
+		{
+			reason="totalSupport,"reason
+		}
+	
+		# B.2. Minimum number of spanning reads
+		if (nbSpanning < minNbSpanningNovelSS)
+		{
+			reason="spanningReads,"reason
+		}
+		
+		# B.3. Minimum number of consistent paired-ends 
+		if (nbConsistentPE < minNbConsistentPENovelSS)
+		{
+			reason="consistentPE,"reason
+		}
 	}
 	
-	## Filter 2: Minimum number of spanning paired-ends 
-	if (nbSpanningPE < minNbSpanningPE)
-	{
-		filtered=1;
-		reason="spanningPE,"reason
-	}
-	
-	## Filter 3: Minimum number of discordant paired-ends 
-	if (nbDiscordantPE < minNbDiscordantPE)
-	{
-		filtered=1;
-		reason="discordantPE,"reason
-	}
-	
-	## Filter 4: Minimum percentage of staggered reads
+	### 2. Filters based on percentages
+	## 2.1 Minimum percentage of staggered reads
 	if (percStaggered < minPercStaggered) 
 	{
-		filtered=1;
 		reason="percStag,"reason
 	}	
 	
-	## Filter 5: Maximum percentage of multimapped spanning reads
+	## 2.2 Maximum percentage of multimapped spanning reads
 	if (percMultimaps > maxPercMultimaps)
 	{
-		filtered=1;
 		reason="percMulti,"reason
 	}
 	
-	## Filter 6: Maximum percentage of inconsistent paired ends
+	## 2.3 Maximum percentage of inconsistent paired ends
 	if ((percInconsistentPE > maxPercInconsistentPE) && (percInconsistentPE != "na"))
 	{
-		filtered=1;
 		reason="percInconsistentPE,"reason
 	}
 	
-	## Filter 7: Maximum distance to exon boundary
-	if (((distExonBoundaryA > maxDistExonBoundary) || (distExonBoundaryB > maxDistExonBoundary)) && (maxDistExonBoundary != "-1"))
+	### 3. Similarity based filter	
+	if ((blastAlignLen > maxAlignLen) && (blastAlignSim > maxSimPerc) && (blastAlignLen != "na"))
 	{
-		filtered=1;
-		reason="distExonBoundary,"reason
+		reason="similarity,"reason
 	}
+
+	# Set flags according filtering outcome
+	########################################
 	
+	# A) Junction pass all the filters
 	if (reason == "")
 	{
 		reason="na";
 	}
+	# B) Junction do not pass any filter
+	else
+	{
+		filtered="1";
+	}
 	
-	## Print output
-row=juncCoord"\t"filtered"\t"reason"\t"totalNbPE"\t"nbSpanningPE"\t"nbStag"\t"percStaggered"\t"nbMultimaps"\t"percMultimaps"\t"nbDiscordantPE"\t"nbInconsistentPE"\t"percInconsistentPE"\t"overlapA"\t"overlapB"\t"distExonBoundaryA"\t"distExonBoundaryB"\t"maxBLastAlignLen"\t"blastAlignSim"\t"donorSS"\t"acceptorSS"\t"beg"\t"end"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"gnIdA"\t"gnIdB"\t"gnNameA"\t"gnNameB"\t"gnTypeA"\t"gnTypeB"\t"juncSpanningReadIds"\t"supportingPairsIds"\t"inconsistentPairsIds;		
+	# Print output
+	###############
+row=juncCoord"\t"filtered"\t"reason"\t"nbTotal"\t"nbSpanning"\t"nbStaggered"\t"percStaggered"\t"nbMultimaps"\t"percMultimaps"\t"nbConsistentPE"\t"nbInconsistentPE"\t"percInconsistentPE"\t"overlapA"\t"overlapB"\t"distExonBoundaryA"\t"distExonBoundaryB"\t"blastAlignLen"\t"blastAlignSim"\t"donorSS"\t"acceptorSS"\t"beg"\t"end"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"gnIdsA"\t"gnIdsB"\t"gnNamesA"\t"gnNamesB"\t"gnTypesA"\t"gnTypesB"\t"juncSpanningReadsIds"\t"consistentPEIds"\t"inconsistentPEIds;		
 	print row; 
 
 }

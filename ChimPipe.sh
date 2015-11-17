@@ -70,7 +70,6 @@ BAM:
 *** [OPTIONS] can be:
 
 * General: 
-	--log				<STRING>	Log level [error | warn | info | debug]. Default warn.
 	--threads			<INTEGER>	Number of threads to use. Default 1.
 	-o|--output-dir			<PATH>		Output directory. Default current working directory. 
 	--tmp-dir			<PATH>		Temporary directory. Default /tmp.	
@@ -95,7 +94,7 @@ cat <<help
 * Mapping phase 
                         				
   First mapping:
-	-C|--consensus-ss-fm		<(couple_1)>, ... ,<(couple_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
+	-C|--consensus-ss-fm		<(COUPLE_1)>, ... ,<(COUPLE_s)>	with <couple> := <donor_consensus>+<acceptor_consensus>
                                  			List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG,GC+AG,ATATC+A.,GTATC+AT'
 	-S|--min-split-size-fm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--refinement-step-size-fm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
@@ -103,7 +102,7 @@ cat <<help
 	--no-stats					Disable mapping statistics. Default enabled.
 
   Second Mapping:
-	-c|--consensus-ss-sm		<(couple_1)>, ... ,<(couple_s)>	List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
+	-c|--consensus-ss-sm		<(COUPLE_1)>, ... ,<(COUPLE_s)>	List of couples of donor/acceptor splice site consensus sequences. Default='GT+AG'
 	-s|--min-split-size-sm		<INTEGER>	Minimum split size for the segmental mapping steps. Default 15.
 	--refinement-step-size-sm   	<INTEGER>   	If not mappings are found a second attempt is made by eroding "N" bases toward the ends of the read. 
 							A value of 0 disables it. Default 2. 
@@ -111,14 +110,19 @@ cat <<help
 * Chimera detection phase 
 	
   Filters:
-	--total-pairs			<INTEGER>	Minimum number of total paired-ends (spanning + discordant). Default 3.
-	--spanning-pairs		<INTEGER>  	Minimum number of spanning paired-ends. Default 1.
-	--discordant-pairs		<INTEGER>	Minimum number of discordant paired-ends. Default 1.
-	--perc-staggered		<PERCENTAGE>	Minimum percentage of staggered reads. A value of 0 disables it. Default 0.
-	--perc-multimappings		<PERCENTAGE>	Maximum percentage of multimapped spanning reads. Default 95.
-	--perc-inconsistent-pairs	<PERCENTAGE>	Maximum percentage of inconsistent paired ends. Default 50.
-	--dist-exonBoundaries		<INTEGER>	Maximum distance of donor and acceptor splice junction coordinates to exon boundary. 
-							A value of -1 disables it. Default -1.
+	--total-support 		<INTEGER> 	Minimum number of total supporting evidences (spanning reads + consistent paired-ends). Default 4.
+	--spanning-reads		<INTEGER>  	Minimum number of junction spanning reads. Default 1.
+	--consistent-pairs		<INTEGER>	Minimum number of consistent paired-ends. Default 0.
+	
+	--total-support-novel-ss 	<INTEGER> 	Minimum number of total supporting evidence if novel splice-sites. Default 6.
+	--spanning-reads-novel-ss	<INTEGER>  	Minimum number of junction spanning reads if novel splice-sites. Default 3.
+	--consistent-pairs-novel-ss	<INTEGER>	Minimum number of consistent paired-ends if novel splice-sites. Default 3.
+	
+	--perc-staggered		<PERCENTAGE>	Minimum percentage of staggered reads. Default 0 (not enabled).
+	--perc-multimappings		<PERCENTAGE>	Maximum percentage of multimapped spanning reads. Default 100 (not enabled).
+	--perc-inconsistent-pairs	<PERCENTAGE>	Maximum percentage of inconsistent paired ends. Default 100 (not enabled).
+	
+	--similarity			<COUPLE>	Couple "maximum alignment length" / "maximum similarity percentage" for gene pair similarity based filtering. Default='30+90'.   	
 
   Files:	
 	--similarity-gene-pairs		<TEXT>		Text file with similarity information between the gene pairs in the annotation.
@@ -329,7 +333,7 @@ function firstMapping_FASTQinput {
 # Function 9. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,total-pairs:,spanning-pairs:,discordant-pairs:,perc-staggered:,perc-multimappings:,perc-inconsistent-pairs:,dist-exonBoundaries:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,total-support:,spanning-reads:,consistent-pairs:,total-support-novel-ss:,spanning-reads-novel-ss:,consistent-pairs-novel-ss:,perc-staggered:,perc-multimappings:,perc-inconsistent-pairs:,similarity:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 
 #Bad arguments
@@ -522,24 +526,45 @@ do
 	
 	# Chimera detection phase parameters 
   	# Filters:
-  	  --total-pairs)
+  	  --total-support)
 	  if [ -n "$2" ];
 	  then
-	      minTotalNbPE=$2
+	      minNbTotal=$2
 	  fi
 	  shift 2;;
 	  
-	  --spanning-pairs)
+	  --spanning-reads)
 	  if [ -n "$2" ];
 	  then
-	      minNbSpanningPE=$2
+	      minNbSpanning=$2
 	  fi
 	  shift 2;;
 	  
-	  --discordant-pairs)
+	  --consistent-pairs)
 	  if [ -n "$2" ];
 	  then
-	      minNbDiscordantPE=$2
+	      minNbConsistentPE=$2
+	  fi
+	  shift 2;;
+	  
+	  --total-support-novel-ss)
+	  if [ -n "$2" ];
+	  then
+	      minNbTotalNovelSS=$2
+	  fi
+	  shift 2;;
+	  
+	  --spanning-reads-novel-ss)
+	  if [ -n "$2" ];
+	  then
+	      minNbSpanningNovelSS=$2
+	  fi
+	  shift 2;;
+	  
+	  --consistent-pairs-novel-ss)
+	  if [ -n "$2" ];
+	  then
+	      minNbConsistentPENovelSS=$2
 	  fi
 	  shift 2;;
 	  
@@ -564,13 +589,13 @@ do
 	  fi
 	  shift 2;;
 	  
-	  --dist-exonBoundaries)
+	  --similarity)
 	  if [ -n "$2" ];
 	  then
-	      maxDistExonBoundary=$2
+	      similarityConf=$2
 	  fi
 	  shift 2;;
-	  
+	  	
 	  # Files:	
       --similarity-gene-pairs)
 	  if [ -n $2 ];
@@ -843,45 +868,86 @@ fi
 # Chimera detection phase parameters:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Minimum number of total paired-ends (staggered + discordant)
-if [[ "$minTotalNbPE" == "" ]];
+### Filters configuration	
+	      
+# Minimum number of total supporting evidences (spanning reads + discordant PE)
+if [[ "$minNbTotal" == "" ]];
 then 
-    minTotalNbPE='3';
+    minNbTotal=4;
 else
-	if [[ ! "$minTotalNbPE" =~ ^[0-9]+$ ]]; 
+	if [[ ! "$minNbTotal" =~ ^[0-9]+$ ]]; 
     then
-	log "Please specify a proper minimum number of total paired-ends. Option --total-pairs\n" "ERROR" >&2;
+	log "Please specify a proper minimum supporting evidence. Option --total-support\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi
+
+# Minimum number of spanning reads
+if [[ "$minNbSpanning" == "" ]];
+then 
+    minNbSpanning=1;
+else
+	if [[ ! "$minNbSpanning" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper minimum number of spanning reads. Option --spanning-reads\n" "ERROR" >&2;
 	usagelongdoc; 
 	exit -1; 
     fi
 fi
 	
-# Minimum number of spanning paired-ends 
-if [[ "$minNbSpanningPE" == "" ]];
+# Minimum number of consistent paired-ends
+if [[ "$minNbConsistentPE" == "" ]];
 then 
-    minNbSpanningPE=1;
+    minNbConsistentPE=0;
 else
-	if [[ ! "$minNbSpanningPE" =~ ^[0-9]+$ ]]; 
+	if [[ ! "$minNbConsistentPE" =~ ^[0-9]+$ ]]; 
     then
-	log "Please specify a proper minimum number of spanning paired-ends. Option --spanning-pairs\n" "ERROR" >&2;
+	log "Please specify a proper minimum number of consistent paired-ends . Option \n" "ERROR" >&2;
 	usagelongdoc; 
 	exit -1; 
     fi
 fi
 	
-# Minimum number of discordant paired-ends 
-if [[ "$minNbDiscordantPE" == "" ]];
+# Minimum number of total supporting evidences for novel splice-sites (spanning reads + discordant PE)
+if [[ "$minNbTotalNovelSS" == "" ]];
 then 
-    minNbDiscordantPE=1;
+    minNbTotalNovelSS=6;
 else
-	if [[ ! "$minNbDiscordantPE" =~ ^[0-9]+$ ]]; 
+	if [[ ! "$minNbTotalNovelSS" =~ ^[0-9]+$ ]]; 
     then
-	log "Please specify a proper minimum number of discordant paired-ends . Option --discordant-pairs\n" "ERROR" >&2;
+	log "Please specify a proper minimum supporting evidence for novel splice-sites. Option --total-support-novel-ss\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi
+
+# Minimum number of spanning reads for novel splice-sites
+if [[ "$minNbSpanningNovelSS" == "" ]];
+then 
+    minNbSpanningNovelSS=3;
+else
+	if [[ ! "$minNbSpanningNovelSS" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper minimum number of spanning reads for novel splice-sites. Option --spanning-reads-novel-ss\n" "ERROR" >&2;
 	usagelongdoc; 
 	exit -1; 
     fi
 fi
 	
+# Minimum number of consistent paired-ends for novel splice-sites
+if [[ "$minNbConsistentPENovelSS" == "" ]];
+then 
+    minNbConsistentPENovelSS=3;
+else
+	if [[ ! "$minNbConsistentPENovelSS" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper minimum number of consistent paired-ends for novel splice-sites. Option --consistent-pairs-novel-ss\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi	
+	  
 # Minimum percentage of staggered reads
 if [[ "$minPercStaggered" == "" ]];
 then 
@@ -894,11 +960,11 @@ else
 	exit -1; 
     fi
 fi
-	
-# Maximum percentage of multimapped spanning reads
+		      
+# Maximum percentage of multimapped spanning reads  
 if [[ "$maxPercMultimaps" == "" ]];
 then 
-    maxPercMultimaps=95;
+    maxPercMultimaps=100;
 else
 	if [[ ! "$maxPercMultimaps" =~ ^[0-9]+$ ]]; 
     then
@@ -911,7 +977,7 @@ fi
 # Maximum percentage of inconsistent paired ends
 if [[ "$maxPercInconsistentPE" == "" ]];
 then 
-    maxPercInconsistentPE=50;
+    maxPercInconsistentPE=100;
 else
 	if [[ ! "$maxPercInconsistentPE" =~ ^[0-9]+$ ]]; 
     then
@@ -921,18 +987,19 @@ else
     fi
 fi
 	
-# Maximum distance to exon boundary
-if [[ "$maxDistExonBoundary" == "" ]];
+# Similarity filter configuration
+if [[ "$similarityConf" == "" ]];
 then 
-	maxDistExonBoundary="-1"; 
+    similarityConf='30+90';
 else
-	if [[ ! "$maxDistExonBoundary" =~ ^[0-9]+$ ]]; 
+	if [[ ! "$similarityConf" =~ ^([0-9]+\+[0-9]+)$ ]]; 
     then
-	log "Please specify a proper maximum distance to exon boundary. Option --dist-exonBoundaries\n" "ERROR" >&2;
+	log "Please specify a proper similarity filter configuration. Option --similarity\n" "ERROR" >&2;
 	usagelongdoc; 
 	exit -1; 
     fi
 fi
+
 
 # Similarity between gene pairs file
 if [[ "$simGnPairs" == "" ]]
@@ -1053,13 +1120,17 @@ printf "  %-34s %s\n" "min-split-size-fm:" "$splitSizeSM"
 printf "  %-34s %s\n\n" "refinement-step-size-fm (0:disabled):" "$refinementSM"	
 printf "  %-34s %s\n" "***** CHIMERA DETECTION PHASE *****"
 printf "  %-34s %s\n" "** Filters **"
-printf "  %-34s %s\n" "total-pairs:" "$minTotalNbPE"
-printf "  %-34s %s\n" "spanning-pairs:" "$minNbSpanningPE"
-printf "  %-34s %s\n" "discordant-pairs:" "$minNbDiscordantPE"
-printf "  %-34s %s\n" "perc-staggered (0:disabled):" "$minPercStaggered"
-printf "  %-34s %s\n" "perc-multimappings:" "$maxPercMultimaps"
-printf "  %-34s %s\n" "perc-inconsistent-pairs:" "$maxPercInconsistentPE"
-printf "  %-34s %s\n\n" "dist-exonBoundaries (-1:disabled):" "$maxDistExonBoundary"
+printf "  %-34s %s\n" "total-support:" "$minNbTotal"
+printf "  %-34s %s\n" "spanning-reads:" "$minNbSpanning"
+printf "  %-34s %s\n" "consistent-pairs:" "$minNbConsistentPE"
+printf "  %-34s %s\n" "total-support-novel-ss:" "$minNbTotalNovelSS"
+printf "  %-34s %s\n" "spanning-reads-novel-ss:" "$minNbSpanningNovelSS"
+printf "  %-34s %s\n" "consistent-pairs-novel-ss:" "$minNbConsistentPENovelSS"
+printf "  %-34s %s\n" "perc-staggered (disabled:0):" "$minPercStaggered"
+printf "  %-34s %s\n" "perc-multimappings (disabled:100):" "$maxPercMultimaps"
+printf "  %-34s %s\n" "perc-inconsistent-pairs (disabled:100):" "$maxPercInconsistentPE"
+printf "  %-34s %s\n" "similarity:" "$similarityConf"
+
 printf "  %-34s %s\n" "** Files **"
 printf "  %-34s %s\n\n" "similarity-gene-pairs:" "$simGnPairs"
 
@@ -1453,7 +1524,7 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing ChimFilter"
 	log "Filtering chimera candidates..." $step	
-	run "awk -v minTotalNbPE=$minTotalNbPE -v minNbSpanningPE=$minNbSpanningPE -v minNbDiscordantPE=$minNbDiscordantPE -v minPercStaggered=$minPercStaggered -v maxPercMultimaps=$maxPercMultimaps -v maxPercInconsistentPE=$maxPercInconsistentPE -v maxDistExonBoundary=$maxDistExonBoundary -f $ChimFilter $chimJuncCandidates > $chimJuncCandidatesFiltered" "$ECHO"
+	run "awk -v minNbTotal=$minNbTotal -v minNbSpanning=$minNbSpanning -v minNbConsistentPE=$minNbConsistentPE -v minNbTotalNovelSS=$minNbTotalNovelSS -v minNbSpanningNovelSS=$minNbSpanningNovelSS -v minNbConsistentPENovelSS=$minNbConsistentPENovelSS -v minPercStaggered=$minPercStaggered -v maxPercMultimaps=$maxPercMultimaps -v maxPercInconsistentPE=$maxPercInconsistentPE -v similarityConf=$similarityConf -f $ChimFilter $chimJuncCandidates > $chimJuncCandidatesFiltered" "$ECHO"
 	
 	## Make one file with filtered chimeras and another one with the ones that pass the filtering
 	awk '(NR==1) || ($2=="0")' $chimJuncCandidatesFiltered > $chimJunc
