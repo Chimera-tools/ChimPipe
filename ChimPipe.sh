@@ -65,7 +65,7 @@ BAM:
 	--bam				<BAM>		Mapped reads in BAM format. A splicing aware aligner is needed to map the reads. 
 	-g|--genome-index		<GEM>		Reference genome index in GEM format.
 	-a|--annotation			<GTF>		Reference genome annotation file in GTF format.
-	--sample-id			<STRING>	Sample identifier (the output files will be named according to this id).  
+	--sample-id			<STRING>	Sample identifier (the output files are named according to this id).  
 	
 *** [OPTIONS] can be:
 
@@ -108,13 +108,17 @@ cat <<help
 							A value of 0 disables it. Default 2. 
     
 * Chimera detection phase 
+
+  Classification:
+    --readthrough-max-dist 		<INTEGER> 	Maximum distance between donor and acceptor sites to classify a chimeric junction as readthrought. 
+    							Default 150000.
 	
   Filters:
 	--total-support 		<INTEGER> 	Minimum number of total supporting evidences (spanning reads + consistent paired-ends). Default 4.
 	--spanning-reads		<INTEGER>  	Minimum number of junction spanning reads. Default 1.
 	--consistent-pairs		<INTEGER>	Minimum number of consistent paired-ends. Default 2.
 	
-	--total-support-novel-ss 	<INTEGER> 	Minimum number of total supporting evidence if novel splice-sites. Default 8.
+	--total-support-novel-ss 	<INTEGER> 	Minimum number of total supporting evidences if novel splice-sites. Default 8.
 	--spanning-reads-novel-ss	<INTEGER>  	Minimum number of junction spanning reads if novel splice-sites. Default 2.
 	--consistent-pairs-novel-ss	<INTEGER>	Minimum number of consistent paired-ends if novel splice-sites. Default 4.
 	
@@ -122,7 +126,8 @@ cat <<help
 	--perc-multimappings		<PERCENTAGE>	Maximum percentage of multimapped spanning reads. Default 100 (not enabled).
 	--perc-inconsistent-pairs	<PERCENTAGE>	Maximum percentage of inconsistent paired ends. Default 100 (not enabled).
 	
-	--similarity			<COUPLE>	Couple "maximum alignment length" / "maximum similarity percentage" for gene pair similarity based filtering. Default='30+90'.   	
+	--similarity			<COUPLE>	Couple "maximum alignment length" / "maximum similarity percentage" for gene pair similarity based filtering. 
+							Default='30+90'.   	
 
   Files:	
 	--similarity-gene-pairs		<TEXT>		Text file with similarity information between the gene pairs in the annotation.
@@ -333,7 +338,7 @@ function firstMapping_FASTQinput {
 # Function 9. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,total-support:,spanning-reads:,consistent-pairs:,total-support-novel-ss:,spanning-reads-novel-ss:,consistent-pairs-novel-ss:,perc-staggered:,perc-multimappings:,perc-inconsistent-pairs:,similarity:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,readthrough-max-dist:,total-support:,spanning-reads:,consistent-pairs:,total-support-novel-ss:,spanning-reads-novel-ss:,consistent-pairs-novel-ss:,perc-staggered:,perc-multimappings:,perc-inconsistent-pairs:,similarity:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 
 #Bad arguments
@@ -525,6 +530,14 @@ do
 	  shift 2;;
 	
 	# Chimera detection phase parameters 
+  	# Classification:
+  	  --readthrough-max-dist)
+  	  if [ -n "$2" ];
+	  then
+	      readthroughMaxDist=$2
+	  fi
+	  shift 2;;
+  	
   	# Filters:
   	  --total-support)
 	  if [ -n "$2" ];
@@ -868,6 +881,19 @@ fi
 # Chimera detection phase parameters:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+### Classification:
+if [[ "$readthroughMaxDist" == "" ]];
+then 
+    readthroughMaxDist=150000;
+else
+	if [[ ! "$readthroughMaxDist" =~ ^[0-9]+$ ]]; 
+    then
+	log "Please specify a proper readthrough maximum distance. Option --readthrough-max-dist\n" "ERROR" >&2;
+	usagelongdoc; 
+	exit -1; 
+    fi
+fi
+ 
 ### Filters configuration	
 	      
 # Minimum number of total supporting evidences (spanning reads + discordant PE)
@@ -1066,13 +1092,14 @@ addMateInfoSam=$awkDir/add_mateInfo_SAM.awk
 gff2Gff=$awkDir/gff2gff.awk
 ChimIntegrate=$awkDir/integrate_ChimSplice_ChimPE_output.awk
 AddSimGnPairs=$awkDir/add_sim_bt_gnPairs.awk
+ChimClassifier=$awkDir/ChimClassifier.awk
 ChimFilter=$awkDir/ChimFilter.awk
 
 
 ## DISPLAY PIPELINE CONFIGURATION  
 ##################################
 printf "\n"
-header="PIPELINE CONFIGURATION FOR $lid"
+header="CHIMPIPE CONFIGURATION FOR $lid"
 echo $header
 eval "for i in {1..${#header}};do printf \"-\";done"
 printf "\n\n"
@@ -1119,6 +1146,8 @@ printf "  %-34s %s\n" "consensus-ss-fm:" "$spliceSitesSM"
 printf "  %-34s %s\n" "min-split-size-fm:" "$splitSizeSM"
 printf "  %-34s %s\n\n" "refinement-step-size-fm (0:disabled):" "$refinementSM"	
 printf "  %-34s %s\n" "***** CHIMERA DETECTION PHASE *****"
+printf "  %-34s %s\n" "** Classification **"
+printf "  %-34s %s\n\n" "readthrough-max-dist:" "$readthroughMaxDist"
 printf "  %-34s %s\n" "** Filters **"
 printf "  %-34s %s\n" "total-support:" "$minNbTotal"
 printf "  %-34s %s\n" "spanning-reads:" "$minNbSpanning"
@@ -1129,8 +1158,7 @@ printf "  %-34s %s\n" "consistent-pairs-novel-ss:" "$minNbConsistentPENovelSS"
 printf "  %-34s %s\n" "perc-staggered (disabled:0):" "$minPercStaggered"
 printf "  %-34s %s\n" "perc-multimappings (disabled:100):" "$maxPercMultimaps"
 printf "  %-34s %s\n" "perc-inconsistent-pairs (disabled:100):" "$maxPercInconsistentPE"
-printf "  %-34s %s\n" "similarity:" "$similarityConf"
-
+printf "  %-34s %s\n\n" "similarity:" "$similarityConf"
 printf "  %-34s %s\n" "** Files **"
 printf "  %-34s %s\n\n" "similarity-gene-pairs:" "$simGnPairs"
 
@@ -1294,6 +1322,7 @@ then
         log "Error in the second mapping\n" "ERROR" 
         exit -1
     fi
+    
     endTime=$(date +%s)
 	printHeader "Unmapped reads mapping step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
@@ -1352,6 +1381,7 @@ then
 		usagelongdoc
 		exit -1	
     fi
+    
     log "Sequencing library type: $readDirectionality\n" $step 
     log "Strand aware protocol (1: yes, 0: no): $stranded\n" $step 
     endTimeLibrary=$(date +%s)
@@ -1393,6 +1423,7 @@ then
         log "Error running ChimSplice\n" "ERROR" 
         exit -1
     fi
+    
     endTime=$(date +%s)
 	printHeader "ChimSplice step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
@@ -1422,6 +1453,7 @@ then
         log "Error running ChimPE\n" "ERROR" 
         exit -1
     fi
+    
     endTime=$(date +%s)
 	printHeader "ChimPE step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
@@ -1449,6 +1481,7 @@ then
         log "Error running ChimIntegrate\n" "ERROR" 
         exit -1
     fi
+    
     endTime=$(date +%s)
 	printHeader "ChimIntegrate step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
@@ -1510,7 +1543,32 @@ else
     printHeader "Similarity information already added to chimeric junctions... skipping step"
 fi
 
-# 2.5) Filter chimera candidates to produce a final set of chimeric junctions
+
+# 2.5) Classify chimera candidates 
+###################################
+# - $outDir/chimericJunction_candidates_classified_${lid}.txt
+
+classifiedCandidates=$outDir/chimericJunction_candidates_classified_${lid}.txt
+
+if [  ! -e "$classifiedCandidates" ]
+then		
+	step="CLASSIFY"
+	startTime=$(date +%s)
+	log "Classifying chimera candidates..." $step
+	run "awk -v readthroughMaxDist=$readthroughMaxDist -f $ChimClassifier $chimJuncCandidates > $classifiedCandidates" "$ECHO"
+	
+	if [ ! -s $classifiedCandidates ]
+	then
+	    log "Error classifying candidates\n" "ERROR" 
+	    exit -1
+	fi
+	endTime=$(date +%s)
+	printHeader "Classifying chimeric junction candidates step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+else
+    printHeader "Chimeric junction candidates already classified... skipping step"
+fi
+
+# 2.6) Filter chimera candidates to produce a final set of chimeric junctions
 ################################################################################
 # - $outDir/chimeric_junctions.txt
 
@@ -1524,11 +1582,11 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing ChimFilter"
 	log "Filtering chimera candidates..." $step	
-	run "awk -v minNbTotal=$minNbTotal -v minNbSpanning=$minNbSpanning -v minNbConsistentPE=$minNbConsistentPE -v minNbTotalNovelSS=$minNbTotalNovelSS -v minNbSpanningNovelSS=$minNbSpanningNovelSS -v minNbConsistentPENovelSS=$minNbConsistentPENovelSS -v minPercStaggered=$minPercStaggered -v maxPercMultimaps=$maxPercMultimaps -v maxPercInconsistentPE=$maxPercInconsistentPE -v similarityConf=$similarityConf -f $ChimFilter $chimJuncCandidates > $chimJuncCandidatesFiltered" "$ECHO"
+	run "awk -v minNbTotal=$minNbTotal -v minNbSpanning=$minNbSpanning -v minNbConsistentPE=$minNbConsistentPE -v minNbTotalNovelSS=$minNbTotalNovelSS -v minNbSpanningNovelSS=$minNbSpanningNovelSS -v minNbConsistentPENovelSS=$minNbConsistentPENovelSS -v minPercStaggered=$minPercStaggered -v maxPercMultimaps=$maxPercMultimaps -v maxPercInconsistentPE=$maxPercInconsistentPE -v similarityConf=$similarityConf -f $ChimFilter $classifiedCandidates > $chimJuncCandidatesFiltered" "$ECHO"
 	
 	## Make one file with filtered chimeras and another one with the ones that pass the filtering
-	awk '(NR==1) || ($2=="0")' $chimJuncCandidatesFiltered > $chimJunc
-	awk '(NR==1) || ($2=="1")' $chimJuncCandidatesFiltered > $chimJuncFiltered
+	awk '(NR==1) || ($3=="0")' $chimJuncCandidatesFiltered > $chimJunc
+	awk '(NR==1) || ($3=="1")' $chimJuncCandidatesFiltered > $chimJuncFiltered
 	
 	if [ ! -s $chimJuncCandidatesFiltered ]; 
 	then
@@ -1545,7 +1603,7 @@ fi
 # 3) CLEANUP AND END #
 ######################
 
-rm -r $annotDir $ChimIntegrateOut $chimJuncCandidatesFiltered
+rm -r $annotDir $ChimIntegrateOut $classifiedCandidates $chimJuncCandidatesFiltered 
 
 if [[ "$cleanup" == "TRUE" ]]; 
 then 

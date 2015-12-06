@@ -33,8 +33,9 @@
 # awk -f chimjunc_filter.awk chimeric_junctions_candidates.txt
 
 # Input:
-# juncCoord	totalNbPE	nbSpanningPE	nbStag	percStag	nbMulti	percMulti	nbDiscordantPE	nbInconsistentPE	percInconsistentPE	overlapA	overlapB	distExonBoundaryA	distExonBoundaryB	maxBLastAlignLen	blastAlignSim	donorSS	acceptorSS	beg	end	sameChrStr	okGxOrder	dist	gnIdA	 gnIdB	gnNameA	gnNameB	gnTypeA	gnTypeB	juncSpanningReadIds	supportingPairsIds	inconsistentPairsIds
-#chr21_42880008_-:chr21_39817544_-	200	126	32	25.3968	36	28.5714	74	14	15.9091	100	100	0	0	na	na	GT	AG	42880059	39817494	1	1	3062464	ENSG00000184012.7	ENSG00000157554.14	TMPRSS2	ERG	protein_coding	protein_coding
+# juncCoord	type	nbTotal(spanning+consistent)	nbSpanningReads	nbStaggered	percStaggered	nbMulti	percMulti	nbConsistentPE	nbInconsistentPE	percInconsistentPE	overlapA	overlapB	distExonBoundaryA	distExonBoundaryB	blastAlignLen	blastAlignSim	donorSS	acceptorSS	beg	end	sameChrStr	okGxOrder	dist	gnIdsA	gnIdsB	gnNamesA	gnNamesB	gnTypesA	gnTypesB	juncSpanningReadsIds	consistentPEIds	inconsistentPEIds
+# chr19_57176129_+:chr19_58879504_+	intrachromosomal	2	2	2	100	2	100	0	0	na	100	100484	514	133	81.95	GC	AG	57176088	58879518	1	1	1703375	ENSG00000127903.12	ENSG00000152475.6	ZNF835	ZNF837	protein_coding	protein_coding	SRR201779.989833_PATHBIO-SOLEXA2_30TUEAAXX:3:15:325:1075_length=53#0/1,SRR201779.3705596_PATHBIO-SOLEXA2_30TUEAAXX:3:57:1642:1097_length=53#0/2,	na	na
+
 
 BEGIN{
 	
@@ -116,47 +117,49 @@ BEGIN{
 	
 		
 	## Print header:
-	header="juncCoord\tfiltered\treason\tnbTotal(spanning+consistent)\tnbSpanningReads\tnbStaggered\tpercStaggered\tnbMulti\tpercMulti\tnbConsistentPE\tnbInconsistentPE\tpercInconsistentPE\toverlapA\toverlapB\tdistExonBoundaryA\tdistExonBoundaryB\tblastAlignLen\tblastAlignSim\tdonorSS\tacceptorSS\tbeg\tend\tsameChrStr\tokGxOrder\tdist\tgnIdsA\tgnIdsB\tgnNamesA\tgnNamesB\tgnTypesA\tgnTypesB\tjuncSpanningReadsIds\tconsistentPEIds\tinconsistentPEIds";
+	header="juncCoord\ttype\tfiltered\treason\tnbTotal(spanning+consistent)\tnbSpanningReads\tnbStaggered\tpercStaggered\tnbMulti\tpercMulti\tnbConsistentPE\tnbInconsistentPE\tpercInconsistentPE\toverlapA\toverlapB\tdistExonBoundaryA\tdistExonBoundaryB\tblastAlignLen\tblastAlignSim\tdonorSS\tacceptorSS\tbeg\tend\tsameChrStr\tokGxOrder\tdist\tgnIdsA\tgnIdsB\tgnNamesA\tgnNamesB\tgnTypesA\tgnTypesB\tjuncSpanningReadsIds\tconsistentPEIds\tinconsistentPEIds";
 	
 	print header;
 }
 
-NR>1{
+
+NR>1{	
 	
 	# Get input information
 	########################
 	juncCoord=$1;	
-	nbTotal=$2;	
-	nbSpanning=$3;	
-	nbStaggered=$4;	
-	percStaggered=$5;	
-	nbMultimaps=$6;	
-	percMultimaps=$7;	
-	nbConsistentPE=$8;	
-	nbInconsistentPE=$9;	
-	percInconsistentPE=$10;	
-	overlapA=$11;	
-	overlapB=$12;	
-	distExonBoundaryA=$13;	
-	distExonBoundaryB=$14;	
-	blastAlignLen=$15;	
-	blastAlignSim=$16;
-	donorSS=$17;	
-	acceptorSS=$18;	
-	beg=$19;	
-	end=$20;	
-	sameChrStr=$21;	
-	okGxOrder=$22;	
-	dist=$23;	
-	gnIdsA=$24;	
-	gnIdsB=$25;	
-	gnNamesA=$26;	
-	gnNamesB=$27;	
-	gnTypesA=$28;	
-	gnTypesB=$29;	
-	juncSpanningReadsIds=$30;	
-	consistentPEIds=$31;	
-	inconsistentPEIds=$32;
+	type=$2;
+	nbTotal=$3;	
+	nbSpanning=$4;	
+	nbStaggered=$5;	
+	percStaggered=$6;	
+	nbMultimaps=$7;	
+	percMultimaps=$8;	
+	nbConsistentPE=$9;	
+	nbInconsistentPE=$10;	
+	percInconsistentPE=$11;	
+	overlapA=$12;	
+	overlapB=$13;	
+	distExonBoundaryA=$14;	
+	distExonBoundaryB=$15;	
+	blastAlignLen=$16;	
+	blastAlignSim=$17;
+	donorSS=$18;	
+	acceptorSS=$19;	
+	beg=$20;	
+	end=$21;	
+	sameChrStr=$22;	
+	okGxOrder=$23;	
+	dist=$24;	
+	gnIdsA=$25;	
+	gnIdsB=$26;	
+	gnNamesA=$27;	
+	gnNamesB=$28;	
+	gnTypesA=$29;	
+	gnTypesB=$30;	
+	juncSpanningReadsIds=$31;	
+	consistentPEIds=$32;	
+	inconsistentPEIds=$33;
 	
 	filtered="0";
 	reason="";
@@ -249,7 +252,7 @@ NR>1{
 	
 	# Print output
 	###############
-row=juncCoord"\t"filtered"\t"reason"\t"nbTotal"\t"nbSpanning"\t"nbStaggered"\t"percStaggered"\t"nbMultimaps"\t"percMultimaps"\t"nbConsistentPE"\t"nbInconsistentPE"\t"percInconsistentPE"\t"overlapA"\t"overlapB"\t"distExonBoundaryA"\t"distExonBoundaryB"\t"blastAlignLen"\t"blastAlignSim"\t"donorSS"\t"acceptorSS"\t"beg"\t"end"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"gnIdsA"\t"gnIdsB"\t"gnNamesA"\t"gnNamesB"\t"gnTypesA"\t"gnTypesB"\t"juncSpanningReadsIds"\t"consistentPEIds"\t"inconsistentPEIds;		
+row=juncCoord"\t"type"\t"filtered"\t"reason"\t"nbTotal"\t"nbSpanning"\t"nbStaggered"\t"percStaggered"\t"nbMultimaps"\t"percMultimaps"\t"nbConsistentPE"\t"nbInconsistentPE"\t"percInconsistentPE"\t"overlapA"\t"overlapB"\t"distExonBoundaryA"\t"distExonBoundaryB"\t"blastAlignLen"\t"blastAlignSim"\t"donorSS"\t"acceptorSS"\t"beg"\t"end"\t"sameChrStr"\t"okGxOrder"\t"dist"\t"gnIdsA"\t"gnIdsB"\t"gnNamesA"\t"gnNamesB"\t"gnTypesA"\t"gnTypesB"\t"juncSpanningReadsIds"\t"consistentPEIds"\t"inconsistentPEIds;		
 	print row; 
 
 }
