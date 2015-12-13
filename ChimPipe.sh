@@ -290,32 +290,38 @@ function firstMapping_FASTQinput {
     	printHeader "First mapping GEM file already exists... skipping first mapping step"
 	fi
 		
-	# 1.2) Produce a filtered SAM file with the aligments
+	# 1.2) Produce a filtered GEM file with the aligments
 	####################################################
 	gemFirstMapFiltered=$firstMappingDir/${lid}_firstMap_filtered.map.gz
 		
 	if [ ! -s $gemFirstMapFiltered ];
 	then
-		step="FIRST-MAP.FILTERMAP"
+		step="FILTER"
 		startTime=$(date +%s)
-		printSubHeader "Executing conversion GEM to BAM step"
-		run "$gtFilterRemove -i $gemFirstMap --max-matches 10 --max-levenshtein-error 4 -t $hthreads | $pigz -p $hthreads > $gemFirstMapFiltered" "$ECHO"
+		printSubHeader "Executing filtering GEM alignments step"
+		
+		## Compute the maximum number of mismatches for mapping filtering 
+		# based on the average read-pair length and a given percentage of mismatches
+		read nbMism <<<$(bash $nbMismLen $fastq1 $fastq2 '4')
+		
+		## Apply the filtering
+		run "$gtFilterRemove -i $gemFirstMap --max-matches 10 --max-levenshtein-error $nbMism -t $hthreads | $pigz -p $hthreads > $gemFirstMapFiltered" "$ECHO"
 		
 		if [ -s $gemFirstMapFiltered ];
 		then
 			endTime=$(date +%s)
-			printSubHeader "Conversion step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
+			printSubHeader "Filtering step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 		else
-			log "Error producing the bam file\n" "ERROR"
+			log "Error doing the filtering\n" "ERROR"
 			exit -1
 		fi
 	else
-		printSubHeader "First mapping BAM file already exists... skipping conversion step"
+		printSubHeader "Filtered GEM file already exist... skipping filtering step"
 	fi
 	
 	# 1.3) Convert the SAM into a sortered BAM file
 	#################################################	
-	step="FIRST-MAP.CONVERT2BAM"
+	step="GEM2BAM"
 	startTime=$(date +%s)
 	printSubHeader "Executing conversion GEM to BAM step"
 
@@ -1079,6 +1085,7 @@ pigz=$binDir/pigz
 
 # Bash 
 qual=$bashDir/detect.fq.qual.sh
+nbMismLen=$bashDir/nbMismatchesReadLen.sh
 addXS=$bashDir/sam2cufflinks.sh
 infer_library=$bashDir/infer_library_type.sh
 ChimSplice=$bashDir/ChimSplice.sh
