@@ -1468,7 +1468,7 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing ChimPE"
 	log "Finding discordant read pairs connecting exons from two different genes..." $step
-	run "$chimPE $bamFirstMap $genomeIndex $annotDir/annotatedExons.gff.gz $chimSpliceDir/normal_spliceJunctions.txt $readDirectionality $chimPEDir 1> $chimPEDir/ChimPE.out 2> $chimPEDir/ChimPE.err" "$ECHO"
+	run "$chimPE $bamFirstMap $annotDir/annotatedExons.gff.gz $chimSpliceDir/normal_spliceJunctions.txt $readDirectionality $chimPEDir 1> $chimPEDir/ChimPE.out 2> $chimPEDir/ChimPE.err" "$ECHO"
 	
 	if [ ! -s $chimPEOut ]; 
 	then

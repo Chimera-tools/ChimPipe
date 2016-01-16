@@ -30,16 +30,15 @@ authors
 
 # usage
 #######
-# bash ChimPE.sh alignments.bam genome_index.gem annot.gtf normalJunctions_ChimSplice readDirectionality outDir
+# bash ChimPE.sh alignments.bam annot.gtf normalJunctions_ChimSplice readDirectionality outDir
 
 # Input
 ########
 # 1) BAM file. Mandatory
-# 2) GEM indexed genome. Mandatory
-# 3) reference annotation. Mandatory
-# 4) normal splice junctions produced by ChimSplice. Mandatory 
-# 5) readDirectionality (MATE1_SENSE|MATE2_SENSE|UNSTRANDED). Default: UNSTRANDED
-# 6) Output directory. Default: current working directory
+# 2) reference annotation. Mandatory
+# 3) normal splice junctions produced by ChimSplice. Mandatory 
+# 4) readDirectionality (MATE1_SENSE|MATE2_SENSE|UNSTRANDED). Default: UNSTRANDED
+# 5) Output directory. Default: current working directory
 
 # Output
 ###########
@@ -57,20 +56,19 @@ then
     echo "" >&2
     echo "*** ChimPE ***" >&2
     echo "" >&2
-    echo "Usage:    bash ChimPE.sh alignments.bam genome_index.gem annot.gtf normalJunctions_ChimSplice readDirectionality outDir" >&2
+    echo "Usage:    bash ChimPE.sh alignments.bam annot.gtf normalJunctions_ChimSplice readDirectionality outDir" >&2
     echo "" >&2
-    echo "Example:  bash ChimPE.sh vcap.bam Homo_sapiens.GRCh37.chromosomes.chr.gem gencode.v7.annotation_exons.gtf normal_spliceJunctions.txt UNSTRANDED ~brodriguez/projects/VcaP" >&2
+    echo "Example:  bash ChimPE.sh vcap.bam gencode.v7.annotation_exons.gtf normal_spliceJunctions.txt UNSTRANDED ~brodriguez/projects/VcaP" >&2
     echo "" >&2
     echo "" >&2
     echo "" >&2
     echo "" >&2
     echo "Input:" >&2
     echo "1) BAM file. Mandatory" >&2
-    echo "2) GEM indexed genome. Mandatory" >&2
-    echo "3) reference annotation. Mandatory" >&2
-    echo "4) normal splice junctions produced by ChimSplice. Mandatory" >&2
-    echo "5) readDirectionality (MATE1_SENSE|MATE2_SENSE|UNSTRANDED). Default: UNSTRANDED"  >&2
-    echo "6) Output directory. Default: current working directory"  >&2
+    echo "2) reference annotation. Mandatory" >&2
+    echo "3) normal splice junctions produced by ChimSplice. Mandatory" >&2
+    echo "4) readDirectionality (MATE1_SENSE|MATE2_SENSE|UNSTRANDED). Default: UNSTRANDED"  >&2
+    echo "5) Output directory. Default: current working directory"  >&2
     echo "" >&2
     echo "Output:" >&2 
     echo "1) discordant_readPairs.txt" >&2
@@ -83,21 +81,20 @@ fi
 # file or output dir or strandedness we provide default values
 ##############################################################
 bam=$1;
-genome=$2;
-annot=$3;
-normalJunc=$4
+annot=$2;
+normalJunc=$3
 
-if [ ! -n "$5" ]
+if [ ! -n "$4" ]
 then
 	readDirectionality="UNSTRANDED"
 	outDir=.
 else
-	readDirectionality=$5
-	if [ ! -n "$6" ]
+	readDirectionality=$4
+	if [ ! -n "$5" ]
 	then
 		outDir=.
 	else
-		outDir=$6
+		outDir=$5
 	fi
 fi	
 
@@ -123,11 +120,7 @@ awkDir=$rootDir/../awk
 # Programs and scripts
 ########################
 
-## Bin
-GEMINFO=$binDir/gemtools-1.7.1-i3/gem-info
-
 ## Awk
-HEADER2GENOME=$awkDir/bamHeader2genomeFile.awk
 BED2GFF=$awkDir/bed2gff.awk
 GFF_CORRECT_STRAND=$awkDir/gffCorrectStrand.awk
 GFF2GFF=$awkDir/gff2gff.awk
@@ -135,13 +128,6 @@ SELECT_OVERLAPPING_GENE=$awkDir/select_overlappingGene_contiguousMapping_interse
 MAKE_LIST_OVERLAPPING_GENES=$awkDir/makeList_overlappingGenes_contiguousMapping.awk
 CLASSIFY_PE=$awkDir/classifyPairedEnds.awk
 DETECT_DISCORDANT=$awkDir/detect_discordantPEs_1mateSplitmap_1mateMapContiguously.awk
-
-
-# 0) GENERATE GENOME FILE # 
-###########################
-# - $outDir/chromosomes_length.txt
-
-samtools view -H $bam | awk -f $HEADER2GENOME | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)'  > $outDir/chromosomes_length.txt
 
 
 #####################################################
@@ -164,10 +150,9 @@ samtools view -bF 4 $bam | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($5=
 
 echo "2. Intersect read alignments with the annotated exons" >&2
 
-bedtools intersect -wao -a $outDir/contiguousAlignments.gff.gz -b $annot -sorted -g $outDir/chromosomes_length.txt | gzip > $outDir/contiguousAlignments_intersected.txt.gz
+bedtools intersect -wao -a $outDir/contiguousAlignments.gff.gz -b $annot | gzip > $outDir/contiguousAlignments_intersected.txt.gz
 
 # Remove intermediate files:
-rm $outDir/chromosomes_length.txt
 rm $outDir/contiguousAlignments.gff.gz
 
 ###########################################################
