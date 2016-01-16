@@ -115,6 +115,11 @@ BEGIN{
 		maxSimPerc=similarityConfList[2];
 	} 
 	
+	### 4. Biotype blacklist filter
+	if (biotype == "")
+	{
+		biotype="pseudogene";
+	}
 		
 	## Print header:
 	header="juncCoord\ttype\tfiltered\treason\tnbTotal(spanning+consistent)\tnbSpanningReads\tnbStaggered\tpercStaggered\tnbMulti\tpercMulti\tnbConsistentPE\tnbInconsistentPE\tpercInconsistentPE\toverlapA\toverlapB\tdistExonBoundaryA\tdistExonBoundaryB\tblastAlignLen\tblastAlignSim\tdonorSS\tacceptorSS\tbeg\tend\tsameChrStr\tokGxOrder\tdist\tgnIdsA\tgnIdsB\tgnNamesA\tgnNamesB\tgnTypesA\tgnTypesB\tjuncSpanningReadsIds\tconsistentPEIds\tinconsistentPEIds";
@@ -236,6 +241,48 @@ NR>1{
 		reason="similarity,"reason
 	}
 
+	### 4. Biotype blacklist filter
+	
+	nb=split(biotype, biotypeBlackList, ",");
+	
+	nbA=split(gnTypesA, biotypesListA, ",");
+	nbB=split(gnTypesB, biotypesListB, ",");
+	
+	
+	## A) Iterate over the biotype of the genes with exons overlapping the junction donor side
+	for (i=1;i<=nbA;i++)
+	{
+		if (biotypesListA[i] != "")
+		{
+			# Iterate over the biotypes in the black list
+			for (j=1;j<=nb;j++)
+			{
+				# Discard the junction if it involves genes with a biotypes in the black list
+				if (biotypesListA[i] == biotypeBlackList[j])
+				{
+					reason="biotype,"reason
+				}
+			}	
+		}
+	}
+	
+	## B) Iterate over the biotype of the genes with exons overlapping the junction acceptor side
+	for (i=1;i<=nbB;i++)
+	{
+		if (biotypesListB[i] != "")
+		{
+			# Iterate over the biotypes in the black list
+			for (j=1;j<=nb;j++)
+			{
+				# Discard the junction if it involves genes with a biotypes in the black list
+				if (biotypesListB[i] == biotypeBlackList[j])
+				{
+					reason="biotype,"reason
+				}
+			}	
+		}
+	}
+	
 	# Set flags according filtering outcome
 	########################################
 	

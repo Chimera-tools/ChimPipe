@@ -60,7 +60,7 @@ set -e -o pipefail
 if [[ ! -e "$1" ]] || [[ ! -e "$2" ]] || [[ ! -e "$3" ]]
 then
     echo "" >&2
-    echo "*** ChimSplice V0.9.1 ***" >&2
+    echo "*** ChimSplice ***" >&2
     echo "" >&2
     echo "Usage:    bash ChimSplice.sh alignment_files_paths.txt genome_index.gem annot.gtf readDirectionality consensusSS outDir" >&2
     echo "" >&2
@@ -176,6 +176,7 @@ awk -v OFS='\t' -f $SPLICEJUNC2GFF $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nb
 # 2.2) Intersect with the annotated exons
 ##########################################
 # - $outDir/spliceJunctions_2parts_beg_end_intersected.txt.gz
+# Note: intersection is done requiring the exons and junctions to be in the same strand
 
 echo "2.2. Intersect each junction side with the annotated exons using bedtools" >&2
 

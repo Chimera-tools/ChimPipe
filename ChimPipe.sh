@@ -111,16 +111,16 @@ cat <<help
 
   Classification:
     --readthrough-max-dist 		<INTEGER> 	Maximum distance between donor and acceptor sites to classify a chimeric junction as readthrought. 
-    							Default 150000.
+    							Default 100000.
 	
   Filters:
-	--total-support 		<INTEGER> 	Minimum number of total supporting evidences (spanning reads + consistent paired-ends). Default 4.
+	--total-support 		<INTEGER> 	Minimum number of total supporting evidences (spanning reads + consistent paired-ends). Default 3.
 	--spanning-reads		<INTEGER>  	Minimum number of junction spanning reads. Default 1.
-	--consistent-pairs		<INTEGER>	Minimum number of consistent paired-ends. Default 2.
+	--consistent-pairs		<INTEGER>	Minimum number of consistent paired-ends. Default 1.
 	
-	--total-support-novel-ss 	<INTEGER> 	Minimum number of total supporting evidences if novel splice-sites. Default 8.
-	--spanning-reads-novel-ss	<INTEGER>  	Minimum number of junction spanning reads if novel splice-sites. Default 2.
-	--consistent-pairs-novel-ss	<INTEGER>	Minimum number of consistent paired-ends if novel splice-sites. Default 4.
+	--total-support-novel-ss 	<INTEGER> 	Minimum number of total supporting evidences if novel splice-sites. Default 6.
+	--spanning-reads-novel-ss	<INTEGER>  	Minimum number of junction spanning reads if novel splice-sites. Default 3.
+	--consistent-pairs-novel-ss	<INTEGER>	Minimum number of consistent paired-ends if novel splice-sites. Default 3.
 	
 	--perc-staggered		<PERCENTAGE>	Minimum percentage of staggered reads. Default 0 (not enabled).
 	--perc-multimappings		<PERCENTAGE>	Maximum percentage of multimapped spanning reads. Default 100 (not enabled).
@@ -129,6 +129,8 @@ cat <<help
 	--similarity			<COUPLE>	Couple "maximum alignment length" / "maximum similarity percentage" for gene pair similarity based filtering. 
 							Default='30+90'.   	
 
+	--biotype			<STRING>,...,<STRING>	Black list of gene biotypes. Chimeric junctions involving genes with their biotype in the list will be discared. Default: 'pseudogene,polymorphic_pseudogene'  
+	
   Files:	
 	--similarity-gene-pairs		<TEXT>		Text file with similarity information between the gene pairs in the annotation.
 							Needed for the filtering module to discard chimeric junctions connecting highly similar genes. 
@@ -344,7 +346,7 @@ function firstMapping_FASTQinput {
 # Function 9. Parse user's input
 ################################
 function getoptions {
-ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,readthrough-max-dist:,total-support:,spanning-reads:,consistent-pairs:,total-support-novel-ss:,spanning-reads-novel-ss:,consistent-pairs-novel-ss:,perc-staggered:,perc-multimappings:,perc-inconsistent-pairs:,similarity:,similarity-gene-pairs:" \
+ARGS=`$getopt -o "g:a:t:k:o:hfl:C:S:c:s:" -l "fastq_1:,fastq_2:,bam:,genome-index:,annotation:,transcriptome-index:,transcriptome-keys:,sample-id:,log:,threads:,output-dir:,tmp-dir:,no-cleanup,dry,help,full-help,max-read-length:,seq-library:,consensus-ss-fm:,min-split-size-fm:,refinement-step-size-fm:,no-stats,consensus-ss-sm:,min-split-size-sm:,refinement-step-size-sm:,readthrough-max-dist:,total-support:,spanning-reads:,consistent-pairs:,total-support-novel-ss:,spanning-reads-novel-ss:,consistent-pairs-novel-ss:,perc-staggered:,perc-multimappings:,perc-inconsistent-pairs:,similarity:,biotype:,similarity-gene-pairs:" \
       -n "$0" -- "$@"`
 
 #Bad arguments
@@ -614,6 +616,14 @@ do
 	      similarityConf=$2
 	  fi
 	  shift 2;;
+	  
+	  --biotype)
+	  if [ -n "$2" ];
+	  then
+	      biotype=$2
+	  fi
+	  shift 2;;
+	  	
 	  	
 	  # Files:	
       --similarity-gene-pairs)
@@ -635,7 +645,7 @@ done
 ############################
 
 # ChimPipe version 
-version=v0.9.1
+version=v0.9.3
 
 # Enable extended pattern matching 
 shopt -s extglob
@@ -890,7 +900,7 @@ fi
 ### Classification:
 if [[ "$readthroughMaxDist" == "" ]];
 then 
-    readthroughMaxDist=150000;
+    readthroughMaxDist=100000;
 else
 	if [[ ! "$readthroughMaxDist" =~ ^[0-9]+$ ]]; 
     then
@@ -905,7 +915,7 @@ fi
 # Minimum number of total supporting evidences (spanning reads + discordant PE)
 if [[ "$minNbTotal" == "" ]];
 then 
-    minNbTotal=4;
+    minNbTotal=3;
 else
 	if [[ ! "$minNbTotal" =~ ^[0-9]+$ ]]; 
     then
@@ -931,7 +941,7 @@ fi
 # Minimum number of consistent paired-ends
 if [[ "$minNbConsistentPE" == "" ]];
 then 
-    minNbConsistentPE=2;
+    minNbConsistentPE=1;
 else
 	if [[ ! "$minNbConsistentPE" =~ ^[0-9]+$ ]]; 
     then
@@ -944,7 +954,7 @@ fi
 # Minimum number of total supporting evidences for novel splice-sites (spanning reads + discordant PE)
 if [[ "$minNbTotalNovelSS" == "" ]];
 then 
-    minNbTotalNovelSS=8;
+    minNbTotalNovelSS=6;
 else
 	if [[ ! "$minNbTotalNovelSS" =~ ^[0-9]+$ ]]; 
     then
@@ -957,7 +967,7 @@ fi
 # Minimum number of spanning reads for novel splice-sites
 if [[ "$minNbSpanningNovelSS" == "" ]];
 then 
-    minNbSpanningNovelSS=2;
+    minNbSpanningNovelSS=3;
 else
 	if [[ ! "$minNbSpanningNovelSS" =~ ^[0-9]+$ ]]; 
     then
@@ -970,7 +980,7 @@ fi
 # Minimum number of consistent paired-ends for novel splice-sites
 if [[ "$minNbConsistentPENovelSS" == "" ]];
 then 
-    minNbConsistentPENovelSS=4;
+    minNbConsistentPENovelSS=3;
 else
 	if [[ ! "$minNbConsistentPENovelSS" =~ ^[0-9]+$ ]]; 
     then
@@ -1032,6 +1042,11 @@ else
     fi
 fi
 
+# Biotype black list
+if [[ "$biotype" == "" ]];
+then 
+	biotype='pseudogene,polymorphic_pseudogene';
+fi
 
 # Similarity between gene pairs file
 if [[ "$simGnPairs" == "" ]]
@@ -1165,7 +1180,8 @@ printf "  %-34s %s\n" "consistent-pairs-novel-ss:" "$minNbConsistentPENovelSS"
 printf "  %-34s %s\n" "perc-staggered (disabled:0):" "$minPercStaggered"
 printf "  %-34s %s\n" "perc-multimappings (disabled:100):" "$maxPercMultimaps"
 printf "  %-34s %s\n" "perc-inconsistent-pairs (disabled:100):" "$maxPercInconsistentPE"
-printf "  %-34s %s\n\n" "similarity:" "$similarityConf"
+printf "  %-34s %s\n" "similarity:" "$similarityConf"
+printf "  %-34s %s\n\n" "biotype:" "$biotype"
 printf "  %-34s %s\n" "** Files **"
 printf "  %-34s %s\n\n" "similarity-gene-pairs:" "$simGnPairs"
 
@@ -1175,7 +1191,6 @@ printf "  %-34s %s\n" "tmp-dir:" "$TMPDIR"
 printf "  %-34s %s\n" "threads:" "$threads"
 printf "  %-34s %s\n" "log:" "$logLevel"
 printf "  %-34s %s\n\n" "cleanup:" "$cleanup"
-
 
 ###################
 ## START CHIMPIPE #
@@ -1589,7 +1604,7 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing ChimFilter"
 	log "Filtering chimera candidates..." $step	
-	run "awk -v minNbTotal=$minNbTotal -v minNbSpanning=$minNbSpanning -v minNbConsistentPE=$minNbConsistentPE -v minNbTotalNovelSS=$minNbTotalNovelSS -v minNbSpanningNovelSS=$minNbSpanningNovelSS -v minNbConsistentPENovelSS=$minNbConsistentPENovelSS -v minPercStaggered=$minPercStaggered -v maxPercMultimaps=$maxPercMultimaps -v maxPercInconsistentPE=$maxPercInconsistentPE -v similarityConf=$similarityConf -f $ChimFilter $classifiedCandidates > $chimJuncCandidatesFiltered" "$ECHO"
+	run "awk -v minNbTotal=$minNbTotal -v minNbSpanning=$minNbSpanning -v minNbConsistentPE=$minNbConsistentPE -v minNbTotalNovelSS=$minNbTotalNovelSS -v minNbSpanningNovelSS=$minNbSpanningNovelSS -v minNbConsistentPENovelSS=$minNbConsistentPENovelSS -v minPercStaggered=$minPercStaggered -v maxPercMultimaps=$maxPercMultimaps -v maxPercInconsistentPE=$maxPercInconsistentPE -v similarityConf=$similarityConf -v biotype=$biotype -f $ChimFilter $classifiedCandidates > $chimJuncCandidatesFiltered" "$ECHO"
 	
 	## Make one file with filtered chimeras and another one with the ones that pass the filtering
 	awk '(NR==1) || ($3=="0")' $chimJuncCandidatesFiltered > $chimJunc
