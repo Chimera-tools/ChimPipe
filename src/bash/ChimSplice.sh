@@ -180,7 +180,7 @@ awk -v OFS='\t' -f $SPLICEJUNC2GFF $outDir/spliceJunc_nbStag_nbtotal_NbUnique_nb
 
 echo "2.2. Intersect each junction side with the annotated exons using bedtools" >&2
 
-bedtools intersect -wao -a $outDir/spliceJunctions_2parts_beg_end.gff.gz -b $annot | gzip > $outDir/spliceJunctions_2parts_beg_end_intersected.txt.gz
+bedtools intersect -wao -s -a $outDir/spliceJunctions_2parts_beg_end.gff.gz -b $annot | gzip > $outDir/spliceJunctions_2parts_beg_end_intersected.txt.gz
 
 # 2.3) For each intersection add the percentage of overlap between 
 ###################################################################
