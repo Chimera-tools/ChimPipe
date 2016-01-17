@@ -14,7 +14,7 @@ Mandatory:
 
 * :ref:`Paired-end (PE) RNA-seq reads (FASTQ or BAM) <input-reads>`
 * :ref:`Genome index <input-genome-index>` 
-* :ref:`Genome annotation <input-annot>`
+* :ref:`Reference annotation <input-annot>`
 * :ref:`Transcriptome index <input-annot-index>`
 
 Optional:
@@ -125,13 +125,21 @@ Executing ChimPipe
 
 1. Setting up the environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-As explained in the :ref:`installation` section, you need to have BEDtools, SAMtools and Blast installed on your system to execute ChimPipe. In case you do not have them, you can download and install them from their web pages. Once they are installed, you have to export the path to their binaries. 
+As explained in the :ref:`installation` section, you need to have BEDtools, SAMtools and Blast installed on your system to execute ChimPipe. In case you do not have them, you can download and install them from their web pages. 
 
-Please check out our :ref:`FAQ <faq-dependencies>` section in case you have any problem.  
+Once they are installed, you can export the path to their binaries with a simple bash command:
+
+.. code-block:: bash
+
 	
+	$ export PATH=<BEDTOOLS_BINARIES_PATH>:<SAMTOOLS_BINARIES_PATH><BLAST_BINARIES_PATH>:$PATH
+	$ # E.g. export bedtools and samtools on my system
+	$ export PATH=~/bin/bedtools2-2.20.1/bin:~/bin/samtools-0.1.19:$PATH
+
+
 2. Running ChimPipe
 ~~~~~~~~~~~~~~~~~~~
-Once you have generated the genome and the transcriptome indices you can run ChimPipe. There are two different running modes depending if what you will provide FASTQ or BAM files:
+There are two different running modes depending if what you will provide FASTQ or BAM files:
 
 A) FASTQ
 ---------
@@ -166,68 +174,130 @@ B) BAM
         -a|--annotation                 <GTF>           Reference genome annotation file in GTF format.
         --sample-id                     <STRING>        Sample identifier (the output files will be named according to this id).  
 
+.. warning:: ChimPipe results are highly dependent on the mapping step. BAM files should have been generated with a mapper able to align read-pairs across different chromosomes and strands. If you are unsure about that, please convert your BAM file to FASTQ and run ChimPipe in FASTQ as input mode. 
 								 
-**Optional arguments.** Please do ``ChimPipe.sh -h or --help`` to see a short help with the main options. You can also do ``ChimPipe.sh --full-help`` to see the all the possible options. 
+**Optional arguments.** Do ``ChimPipe.sh -h or --help`` to see a short help with the main options. You can also do ``ChimPipe.sh --full-help`` to see the all the possible 
+options. 
 
-.. tip:: If your machine has more than one CPU it is recommended to run ChimPipe with multiple threads (at least 4). It will speed up the mapping steps a lot. Use the option ``-t|--threads <threads>``, where **threads** is the number of CPUs available. 
+.. tip:: If your machine has more than one CPU it is recommended to **run ChimPipe with multiple threads** (at least 4). It will speed up the mapping steps a lot. Use the option ``-t|--threads <threads>``, where threads is the number of CPUs available. 
 
-.. note:: The pipeline is restartable: this means that if ChimPipe fails and you run it again, it will skip the steps that have been already completed. You just need to make sure that you removed the files generated in the step where the pipeline failed. 
+.. note:: The **pipeline is restartable**: this means that if ChimPipe fails and you run it again, it will skip the steps that have been already completed. You just need to make sure that you removed the files generated in the step where the pipeline failed. 
 
 Output
 ======
 
-By default, ChimPipe produces 3 output files:
+By default, ChimPipe produces 4 main output files:
 
-* :ref:`First mapping BAM file <output-bam>` 
-* :ref:`Second mapping MAP file <output-map>` 
-* :ref:`Chimeric junctions file <output-chimeras>` 
+* :ref:`First mapping BAM <output-bam>` (MappingPhase/FirstMapping/[sample_id]_firstMap.bam).
+* :ref:`Second mapping MAP <output-map>` (MappingPhase/SecondMapping/[sample_id]_secondMap.map).
+* :ref:`Final chimeric junctions <output-chimeras>` (chimericJunctions_[sample_id].txt).
+* :ref:`Discarded chimeric junctions <output-chimeras>` (chimericJunctions_filtered_[sample_id].txt).
 
 .. tip:: If you want to keep intermediate output files, run ChimPipe with the ``--no-cleanup`` option. 
-
-.. _output-bam:
 
 First mapping BAM file
 ~~~~~~~~~~~~~~~~~~~~~~
 `BAM`_ file containing the reads mapped in the genome, transcriptome and *de novo* transcriptome with the `GEMtools RNA-seq pipeline`_. 
 
-This is the standard format for next-generation sequencing, meaning that most analysis tools work with this format. The bam file produced can therefore be used to do other downstream analyses such as gene and transcript quantification or differential gene expression analysis.
+This is the standard format for next-generation sequencing, meaning that most analysis tools work with this format. The bam file produced can therefore be used to do other downstream analyses such as gene and transcript expression quantification.
 
 .. _BAM: http://samtools.github.io/hts-specs/SAMv1.pdf
 .. _GEMtools RNA-seq pipeline: http://gemtools.github.io/
-
-.. _output-map:
 
 Second mapping MAP file
 ~~~~~~~~~~~~~~~~~~~~~~~
 MAP file containing reads segmentally mapped in the genome allowing for interchromosomal, different strand and unexpected genomic order mappings. 
 
-.. _output-chimeras:
+Final and filtered chimeric junction files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Two tabular text files with the detected and discarded chimeric splice junctions from your RNA-seq dataset. They consist on rows of 35 fields, where each row corresponds to a chimeric junction and each field contains a piece of information about the chimera. Here is a brief description of the 35 fields (most relevant fields highlighted in bold):
 
-Chimeric junction file
-~~~~~~~~~~~~~~~~~~~~~~
-Tabular text file containing the detected chimeric junctions in your RNA-seq dataset. It has rows of 19 fields, where each row corresponds to a chimeric junction and the fields contains information about it. Here is a brief description of the 19 fields:
+1. **juncCoord** - Position of the chimeric splice junction in the genome described as follows: chrA"_"coordA"_"strandA":"chrB"_"coordB"_"strandB. E. g., "chr4_90653092_+:chr17_22023757_-" is a chimeric junction between the position 90653092 of chromosome 4 in plus strand, and the position 22023757 of chromosome chr17 in minus strand. Junction coordinates defined using 1-based system.
 
-1. **juncId** - Chimeric junction identifier. It is an string encoding the position of the chimeric junction in the genome as follows: chrA"_"breakpointA"_"strandA":"chrB"_"breakpointB"_"strandB. E. g., "chr4_90653092_+:chr17_22023757_+" is a chimeric junction between the position 90653092 of the chromosome 4 in the plus strand, and the position 22023757 of the chromosome chr17 in the plus strand. 
-2. **nbstag** - Number of staggered reads supporting the chimera.
-3. **nbtotal** - Total number of reads supporting the chimera.
-4. **maxbeg** - Maximum 5' coordinates for the chimeric junction. 
-5. **maxEnd** - Maximum 3' coordinates for the chimeric junction. 
-6. **samechrstr** - Flag to specify if the connected gene pairs are in the same cromosome and strand (1) or not (0).
-7. **okgxorder** - Flag to specify if the connected gene pairs are in genomic order (1) or not (0). NA in case the samechrstr field was 0 (with being in genomic order we mean that the donor gene is located in the genome in 5' while the acceptor in 3'. This means that if both genes are in the plus strand, the genomic coordinates of the first gene are lower than the ones for the second one. For genes in the minus it is the opposite).
-8. **dist** - Distance between the two breakpoints, NA in case the “samestr” field was 0.
-9. **ss1** - Splice donor site sequence.
-10. **ss2**	- Splice acceptor site sequence.
-11. **gnlist1** - List of genes overlapping the first part of the chimera. 	
-12. **gnlist2**	- List of genes overlapping the second part of the chimera. 
-13. **gnname1** - Name of the genes in the field *gnlist1*, "." if unknown. 
-14. **gnname2**	- Name of the genes in the field *gnlist1*, "." if unknown.
-15. **bt1** - Biotype of the genes in the field *gnlist1*, "." if unknown. 
-16. **bt2**	- Biotype of the genes in the field *gnlist2*, "." if unknown.
-17. **PEsupport** - Total number of read pairs supporting the chimera, "." if not Paired-end support. It is a string containing information about the number of read pairs supporting the connection between the involved gene pairs as follows: geneA1-GeneA2:nbReadPairs,geneB1-geneB2:nbReadPairs. E.g.: "1-1:1,3-1:2" means that the connection between the genes 1, in the *gnlist1* and *gnlist2* respectively, is supported by 1 read pair; and the connection between the gene 3 in the *gnlist1* and the gene 1 in the *gnlist2* is supported by 2 read pairs. 
-18. **maxSim** - Maximum percent of similarity in the BLAST alignment between the transcript with the longest BLAST alignment, "." if no blast hit found.
-19. **maxLgal** - Maximum length of the BLAST alignment between all the transcripts of the gene pairs connected by the chimeric junction, "." if no blast hit found. 
+2. **type** - Type of chimeric splice junction. Junctions classified in 5 different categories:
+	
+	- readthrough: donor and acceptor sites within the same chromosome, strand and within less than 100.000 base pairs.
+	- intrachromosomal: donor and acceptor sites within the same chromosome, strand and in separated by more than 100.000 base pairs.
+	- inverted: donor site downstream than acceptor site (opposite as expected) and both in the same chromosome.
+	- interstrand: donor and acceptor sites within the same chromosome but in different strand.
+	- interchromosomal: donor and acceptor sites in different chromosomes.
+	
+3. **filtered** - Flag to specify if the chimeric junction has been filtered out (1) or not (0).
 
-**Example**
+4. **reason** - List of filters the chimeric junction failed to pass. There is a tag per filter:
+	
+	- totalSupport.
+	- spanningReads.
+	- consistentPE.
+	- totalSupport.
+	- spanningReads.
+	- consistentPE.
+	- percStag.
+	- percMulti.
+	- percInconsistentPE.
+	- similarity.
+	- biotype.
+	
+5. **nbTotal(spanning+consistent)** - Total supporting evidences (spanning reads + consistent paired-ends).
 
-chr1_121115975_+:chr1_206566046_+	1	1	121115953	206566073	1	1	85450071	GC	AG	SRGAP2D,	SRGAP2,	SRGAP2D,	SRGAP2	.	.	1-1:2,	99.44	1067
+6. **nbSpanningReads** - Number of split-reads spanning the chimeric splice junction.  
+
+7. nbStaggered - Number of spanning split-reads aligning at different positions.
+
+8. percStaggered - Percentage of spanning split-reads that aligns at different positions.  
+
+9. nbMulti - Number of multimapped split-reads spanning the chimeric junction. 
+
+10. percMulti - Percentage of spanning split-reads mapping in multiple locations. 
+
+11. **nbConsistentPE** - Number of discordant paired-end consistent with the chimeric junction.
+
+12. nbInconsistentPE - Number of discordant paired-end inconsistent with the chimeric junction.
+
+13. percInconsistentPE - Percentage of discordant paired-end inconsistent with the chimeric junction. 
+
+14. overlapA - Percentage of overlap between the 5' split-read cluster and the annotated exon.
+
+15. overlapB - Percentage of overlap between the 3' split-read cluster and the annotated exon
+
+16. **distExonBoundaryA** - Distance between the chimeric junction donor site and the exon boundary (annotated donor). 
+
+17. **distExonBoundaryB** - Distance between the chimeric junction acceptor site and the exon boundary (annotated acceptor).
+
+18. blastAlignLen - Maximum length of the BLAST alignment between all the transcripts of the gene pairs connected by the chimeric junction. ”na” if no blast hit found. 
+
+19. blastAlignSim - Maximum percent of similarity in the BLAST alignment between the transcript with the longest BLAST alignment. ”na” if no blast hit found.
+
+20. **donorSS**	- Splice donor site sequence.
+
+21. **acceptorSS** - Slice acceptor site sequence.
+
+22.	beg	- Split-reads cluster 5' coordinates. 
+
+23. end	- Split-reads cluster 3' coordinates.
+
+24. sameChrStr - Flag to specify if the connected gene pairs are in the same cromosome and strand (1) or not (0).	
+
+25. okGxOrder -	Flag to specify if the connected gene pairs are in genomic order (1) or not (0). "na" in case the samechrstr field was 0 (being in genomic order means that the donor gene is located in 5' while the acceptor in 3'. This means that if both genes are in the plus strand, the genomic coordinates of the first gene are lower than the ones for the second one. For genes in the minus it is the opposite).
+
+26. dist -	Distance between the chimeric junction splice sites. "na" in case the “sameChrStr” field was 0.
+
+27. **gnIdsA** - 5' gene/s involved in the chimeric transcript. 	
+
+28. **gnIdsB** - 3' gene/s involved in the chimeric transcript. 		
+
+29. **gnNamesA** - Name of the genes in the field *gnIdsA*. "na" if unknown.
+
+30. **gnNamesB** - Name of the genes in the field *gnIdsB*. "na" if unknown.	
+
+31. **gnTypesA** - Biotype of the genes in the field *gnIdsA*. "na" if unknown. 	
+
+32. **gnTypesB** - Biotype of the genes in the field *gnIdsB*. "na" if unknown. 		
+
+33. juncSpanningReadsIds - Identifiers of the split-reads spanning the chimeric splice junction. 
+
+34. consistentPEIds	- Identifiers of the paired-ends consistent with  the chimeric splice junction. 
+
+35. inconsistentPEIds - Identifiers of the paired-ends inconsistent with  the chimeric splice junction. 
+
 
