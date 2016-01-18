@@ -129,7 +129,13 @@ cat <<help
 	--similarity			<COUPLE>	Couple "maximum alignment length" / "maximum similarity percentage" for gene pair similarity based filtering. 
 							Default='30+90'.   	
 
-	--biotype			<STRING>,...,<STRING>	Black list of gene biotypes. Chimeric junctions involving genes with their biotype in the list will be discared. Default: 'pseudogene,polymorphic_pseudogene'  
+	--biotype			<STRING>,...,<STRING>	Black list of gene biotypes. Chimeric junctions involving genes with their biotype in the list will be discared. Default: 'pseudogene,polymorphic_pseudogene,IG_C_pseudogene,IG_J_pseudogene,IG_V_pseudogene,TR_J_pseudogene,TR_V_pseudogene'  
+	
+	
+
+
+
+
 	
   Files:	
 	--similarity-gene-pairs		<TEXT>		Text file with similarity information between the gene pairs in the annotation.
@@ -1045,7 +1051,7 @@ fi
 # Biotype black list
 if [[ "$biotype" == "" ]];
 then 
-	biotype='pseudogene,polymorphic_pseudogene';
+	biotype='pseudogene,polymorphic_pseudogene,IG_C_pseudogene,IG_J_pseudogene,IG_V_pseudogene,TR_J_pseudogene,TR_V_pseudogene';
 fi
 
 # Similarity between gene pairs file
