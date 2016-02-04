@@ -1502,7 +1502,7 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing ChimIntegrate"
 	log "Integrate ChimSplice and ChimPE output files..." $step
-	run "awk -v ChimSplice=$chimSpliceOut -f $ChimIntegrate $chimPEOut > $ChimIntegrateOut" "$ECHO"
+	run "awk -v ChimSplice=<(awk 'NR>1' $chimSpliceOut) -f $ChimIntegrate $chimPEOut > $ChimIntegrateOut" "$ECHO"
 	
 	if [ ! -s $ChimIntegrateOut ]; 
 	then
