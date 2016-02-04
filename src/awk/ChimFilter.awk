@@ -241,15 +241,14 @@ NR>1{
 		reason="similarity,"reason
 	}
 
-	### 4. Biotype blacklist filter
-	
+	### 4. Biotype blacklist filter	
 	nb=split(biotype, biotypeBlackList, ",");
-	
 	nbA=split(gnTypesA, biotypesListA, ",");
 	nbB=split(gnTypesB, biotypesListB, ",");
 	
+	passBiotypeFilter = "1";
 	
-	## A) Iterate over the biotype of the genes with exons overlapping the junction donor side
+	## A) Iterate over the biotype of the genes with exons overlapping the junction donor side	 
 	for (i=1;i<=nbA;i++)
 	{
 		if (biotypesListA[i] != "")
@@ -257,29 +256,54 @@ NR>1{
 			# Iterate over the biotypes in the black list
 			for (j=1;j<=nb;j++)
 			{
-				# Discard the junction if it involves genes with a biotypes in the black list
+				# Discard the junction if it involves genes with a biotype in the black list
 				if (biotypesListA[i] == biotypeBlackList[j])
 				{
-					reason="biotype,"reason
+					reason="biotype,"reason;
+					passBiotypeFilter = "0";
+					
+					# Stop iteration if already match between gene biotype and black list biotype
+					break;
 				}
 			}	
 		}
+				
+		# Stop iteration if already match between gene biotype and black list biotype		
+		if (passBiotypeFilter == "0")
+		{
+			break
+		}
 	}
 	
-	## B) Iterate over the biotype of the genes with exons overlapping the junction acceptor side
-	for (i=1;i<=nbB;i++)
+	## B) If junction donor side do not overlap a gene with a biotype in the black list: 
+	# Iterate over the biotype of the genes with exons overlapping the junction acceptor side
+	
+	if (passBiotypeFilter == "1")
 	{
-		if (biotypesListB[i] != "")
+		for (i=1;i<=nbB;i++)
 		{
-			# Iterate over the biotypes in the black list
-			for (j=1;j<=nb;j++)
+			if (biotypesListB[i] != "")
 			{
-				# Discard the junction if it involves genes with a biotypes in the black list
-				if (biotypesListB[i] == biotypeBlackList[j])
+				# Iterate over the biotypes in the black list
+				for (j=1;j<=nb;j++)
 				{
-					reason="biotype,"reason
-				}
-			}	
+					# Discard the junction if it involves genes with a biotypes in the black list
+					if (biotypesListB[i] == biotypeBlackList[j])
+					{
+						reason="biotype,"reason;
+						passBiotypeFilter = "0";
+						
+						# Exit 
+						break;
+					}
+				}	
+			}
+			
+			# Stop iteration if already match between gene biotype and black list biotype	
+			if (passBiotypeFilter == "0")
+			{
+				break
+			}
 		}
 	}
 	
