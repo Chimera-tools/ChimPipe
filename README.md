@@ -38,6 +38,6 @@ Please check [ChimPipe's documentation] (https://chimpipe.readthedocs.org/) to f
 * How ChimPipe works
 * Install the pipeline
 * Run the pipeline
-* Contact with us
+* Contact us
 
 
