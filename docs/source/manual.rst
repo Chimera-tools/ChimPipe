@@ -6,8 +6,8 @@ Manual
 
 This section describes ChimPipe' input files, how to generate them, how to run ChimPipe, and how to interpret its outputs. 
 
-Input files
-===========
+Input 
+======
 ChimPipe takes as input 4 mandatory files and 1 optional file.  
 
 Mandatory:
@@ -120,8 +120,8 @@ Please check out our :ref:`FAQ <faq-similarity>` section for more information ab
 .. warning:: Make sure you run ChimPipe with a similarity matrix generated from the annotation and genome you are using.  
 
 
-Executing ChimPipe
-==================
+Execute ChimPipe
+================
 
 1. Setting up the environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
