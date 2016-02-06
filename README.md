@@ -1,13 +1,13 @@
-## Welcome to ChimPipe's repository!
+## ChimPipe
 
-ChimPipe is a pipeline for the detection of chimeric transcripts and gene fusions from Paired-End RNA-seq data developed at the Centre for Genomic Regulation (CRG) in Barcelona. 
+ChimPipe is a computational method for the detection of novel chimeric transcripts and fusion genes from Illumina Paired-End RNA-seq data. It combines junction spanning and paired-end read information to accurately detect chimeric splice junctions at base-pair resolution. ChimPipe have been developed at the Centre for Genomic Regulation (CRG) in Barcelona. 
 
-#### Download ChimPipe
+## Download 
 Two different ways:
 
 * Go to the releases tab and download the latest release. 
 
-* Clone ChimPipe's Git repository in case you want the latest version of the code (currently, it is not allowed to contribute to the project):
+* Clone ChimPipe's Git repository in case you want the latest version of the code:
 
 ```
 # Move into the folder in which you want to clone the repositoy.
@@ -16,9 +16,9 @@ $ cd ~/apps
 $ git clone https://github.com/Chimera-tools/ChimPipe.git
 ```
 
-ChimPipe does not require any installation step. It already comes with precompiled gemtools binaries. It is written in Bash and Awk and can be run as a standalone application on diverse Linux systems. 
+ChimPipe does not require any further installation step. It already comes with precompiled GEMtools binaries. It is written in Bash and Awk and can be run as a standalone application on diverse Linux systems. 
 
-#### System’s requirements
+## Requirements
 
 1. Hardware:
 
@@ -32,12 +32,15 @@ ChimPipe does not require any installation step. It already comes with precompil
     * Samtools v0.1.19 or higher
     * Blast v2.2.29+ or higher 
 
-#### ChimPipe's documentation
+## Documentation
 Please check [ChimPipe's documentation] (https://chimpipe.readthedocs.org/) to find detailed information about:
 
 * How ChimPipe works
-* Install the pipeline
-* Run the pipeline
+* Install ChimPipe
+* Execute ChimPipe
 * Contact with us
+
+## License
+ChimPipe is distributed under the GPLv3. Consult the [LICENSE] (https://github.com/Chimera-tools/ChimPipe/blob/master/LICENSE.txt) file for more information.
 
 
