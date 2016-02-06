@@ -1,13 +1,13 @@
 ## ChimPipe
 
-ChimPipe is a computational method for the detection of novel chimeric transcripts and fusion genes from Illumina Paired-End RNA-seq data. It combines junction spanning and paired-end read information to accurately detect chimeric splice junctions at base-pair resolution. ChimPipe have been developed at the [Computational Biology of RNA Processing group] (http://www.crg.eu/en/roderic_guigo) in Barcelona. 
+ChimPipe is a computational method for the detection of novel transcription-induced chimeric transcripts and fusion genes from Illumina Paired-End RNA-seq data. It combines junction spanning and paired-end read information to accurately detect chimeric splice junctions at base-pair resolution. ChimPipe have been developed at the [Computational Biology of RNA Processing group] (http://www.crg.eu/en/roderic_guigo) in Barcelona. 
 
 ## Download 
 Two different ways:
 
 * Go to the releases tab and download the latest release. 
 
-* Clone ChimPipe's Git repository in case you want the latest version of the code:
+* Clone the git repository in case you want the latest version of the code:
 
 ```
 # Move into the folder in which you want to clone the repositoy.
