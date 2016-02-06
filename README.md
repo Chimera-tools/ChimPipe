@@ -1,6 +1,6 @@
 ## ChimPipe
 
-ChimPipe is a computational method for the detection of novel chimeric transcripts and fusion genes from Illumina Paired-End RNA-seq data. It combines junction spanning and paired-end read information to accurately detect chimeric splice junctions at base-pair resolution. ChimPipe have been developed at the Centre for Genomic Regulation (CRG) in Barcelona. 
+ChimPipe is a computational method for the detection of novel chimeric transcripts and fusion genes from Illumina Paired-End RNA-seq data. It combines junction spanning and paired-end read information to accurately detect chimeric splice junctions at base-pair resolution. ChimPipe have been developed at the [Computational Biology of RNA Processing group] (http://www.crg.eu/en/roderic_guigo) in Barcelona. 
 
 ## Download 
 Two different ways:
@@ -36,9 +36,9 @@ ChimPipe does not require any further installation step. It already comes with p
 Please check [ChimPipe's documentation] (https://chimpipe.readthedocs.org/) to find detailed information about:
 
 * How ChimPipe works
-* Install ChimPipe
+* Installation
 * Execute ChimPipe
-* Contact with us
+* Contact us
 
 ## License
 ChimPipe is distributed under the GPLv3. Consult the [LICENSE] (https://github.com/Chimera-tools/ChimPipe/blob/master/LICENSE.txt) file for more information.
