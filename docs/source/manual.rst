@@ -4,47 +4,63 @@
 Manual
 ======
 
-This section describes ChimPipe' input files, how to generate them, how to run ChimPipe, and how to interpret its outputs. 
+This section describes ChimPipe input files, how to run ChimPipe and interpret the output files. 
 
 Input 
 ======
-ChimPipe takes as input 4 mandatory files and 1 optional file.  
+ChimPipe takes as input 3-4 mandatory files and 1 optional file.  
 
 Mandatory:
 
-* :ref:`Paired-end (PE) RNA-seq reads (FASTQ or BAM) <input-reads>`
+* :ref:`Paired-end RNA-seq reads<input-reads>`
 * :ref:`Genome index <input-genome-index>` 
 * :ref:`Reference annotation <input-annot>`
-* :ref:`Transcriptome index <input-annot-index>`
+* :ref:`Transcriptome index <input-annot-index>` (only in FASTQ as input mode)
 
 Optional:
 
-
-* :ref:`Gene pair similarity file <input-similarity>`
+* :ref:`Gene pair similarity <input-similarity>`
 
 .. _input-reads:
 
-Paired-end (PE) RNA-seq reads (FASTQ or BAM)
+Paired-end RNA-seq reads (FASTQ or BAM)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ChimPipe has been designed to deal with `Illumina paired-end`_ RNA sequencing data. It can take as input 2 `FASTQ`_ files (one for each member in the pair) or a single `BAM`_ file with already mapped reads.
+ChimPipe makes use of `Illumina`_ paired-end RNA sequencing data to identify chimeric transcripts. It can deal with both unaligned and pre-aligned reads in the standard formats:
 
-.. _Illumina paired-end: http://technology.illumina.com/technology/next-generation-sequencing/paired-end-sequencing_assay.ilmn
+A) **FASTQ**:
+-----------------
+
+* Two independent FASTQ files are required for mate 1 and 2 reads, respectively. 
+* The read identifiers should follow any of the 2 `Illumina conventions`_ to specify which member of the pair the reads are. Check our :ref:`FAQ` section for more information.
+
+B) **BAM**:  
+---------------
+
+* In BAM as input mode the first mapping step is skipped. 
+* A single BAM file with pre-aligned reads has to be given as input. 
+* The BAM file should contain unmapped reads. ChimPipe will attempt to split-map them across different chromosomes and strands to identify chimeric splice junctions in a second mapping step. 
+* The **NH** (Number of hits) and **NM** (Edit distance) fields are required. Most popular mappers provide this information. Check `SAM`_ specifications for more information. 
+
+
+For more information about the supported input RNA-seq data check our :ref:`FAQ` section. 
+
+.. note:: ChimPipe results are highly dependent on the mapping step. BAM files should have been generated with a mapper able to align read-pairs across different chromosomes and strands. If you are unsure about that, please convert your BAM file to FASTQ and run ChimPipe in FASTQ as input mode. 
+		
+.. _Illumina: http://technology.illumina.com/technology/next-generation-sequencing/paired-end-sequencing_assay.ilmn
 .. _FASTQ: http://maq.sourceforge.net/fastq.shtml
+.. _Illumina conventions: https://en.wikipedia.org/wiki/FASTQ_format
 .. _BAM: http://samtools.github.io/hts-specs/SAMv1.pdf
-
-.. warning:: **FASTQ as input.** The read identifier should follow Illumina convention to specify which member of the pair the read is. See our :ref:`FAQ <faq-reads>` section for more information. 
-
-.. warning:: **BAM as input.** Your BAM file should contain the **NH** (Number of hits in the reference) and **NM** (Edit distance to the reference) optional fields. Most popular mappers produce a BAM with these fields. Please check `SAM`_ specifications for more information. 
-
 .. _SAM: http://samtools.github.io/hts-specs/SAMv1.pdf
 
 .. _input-genome-index:
 
 Genome index
 ~~~~~~~~~~~~
-An indexed reference genome in GEM format has to be provided to do the mapping steps. 
+An indexed reference genome in GEM format is required for first and second mapping steps.
 
-We provide some **pre-generated genome indices** for human, mouse and drosophila in the :ref:`Downloads` section, however if you have a different genome, you just need to run the *GEMtools indexer* (at ``ChimPipe/bin/gemtools-1.7.1-i3/gemtools``) with your genome in FASTA format to produce it:
+We supply **pre-generated indices** for Human, Mouse and Drosophila in the :ref:`Downloads` section. 
+
+If you aim to execute ChimPipe with your own genome you just need to use the *GEMtools indexer* (at ``ChimPipe/bin/gemtools-1.7.1-i3/gemtools``):
 
 .. _FASTA:
  
@@ -52,11 +68,11 @@ We provide some **pre-generated genome indices** for human, mouse and drosophila
 
 	$ gemtools index -i genome.fa 
 
-It will produce 3 files in the directory where the genome fasta file is located:
+It will produce 3 files in the directory where your genome is located:
 
-* **genome.gem** – indexed genome file in GEM format (needed for running ChimPipe).   
-* genome.hash – hash table with the genome (not needed). 
-* genome.log – indexer log file (not needed).    
+* **genome.gem** – indexed genome in GEM format (mandatory).   
+* genome.hash – genome hash table. 
+* genome.log – log file.    
 
 .. tip:: If your machine has more than one CPU, it is recommended to run the indexer with multiple threads. Use the option ``-t <threads>``, where **threads** is the number of available CPUs. 
 
@@ -64,32 +80,40 @@ It will produce 3 files in the directory where the genome fasta file is located:
 
 Reference annotation
 ~~~~~~~~~~~~~~~~~~~~~
-ChimPipe also takes as input a reference annotation in `GTF`_ format (it has to include annotated exons). It can contain other features different from exons, i. e. introns or UTR, but they will not be considered by ChimPipe in the chimera detection process. This annotation needs to contain at least two (tag,value) pairs in the attribute field with the "gene_id" and the "transcript_id" tags. Two optional (tag,value) pairs will be taken into account by ChimPipe if they are provided: "gene_name" and "gene_type". e.g:
+ChimPipe requires a reference gene annotation in the standard `GTF`_ format:
 
-.. _GTF: http://www.ensembl.org/info/website/upload/gff.html
+* The annotation has to contain all the annotated exons for a given species. 
+* Any other feature is accepted, Introns, UTR.., but they will not be considered for chimera detection.
+* The gtf file has to be sorted by chr, then start and end.
+* The following mandatory tag,value pairs are required in the attribute field: gene_id "X"; transcript_id "Y";
+* Two optional tag,value pairs will be considered if provided: "gene_name" and "gene_type". There can be additional tag,value pairs, but they will not be taken into account.
+* The order of the pairs does not matter, but the tag ids have to be exactly the ones as described since they are used to parse the gtf and extract the information. 
+
+E.g:
 
 .. code-block:: bash
 	
-	# This is an example of an annotated exon with an appropiate format. 	
-	# The attributes are the gene_id, transcript_id (mandatory), the gene type and gene name (optional), 
-	# plus some additional (tag,value) pairs that will not be considered by ChimPipe.   
+	# Example of an annotated human exon in GTF format. 	
+	# The attributes are gene_id (mandatory), gene type and gene name (optional) 
+	# plus some additional "tag,value" pairs that will not be considered by ChimPipe.   
 	
-	chr1	HAVANA	exon	69091	70008	.	+	.	gene_id "ENSG00000186092.4"; transcript_id "ENST00000335137.3"; gene_type "protein_coding"; gene_status "KNOWN"; gene_name "OR4F5";
-	transcript_type "protein_coding"; transcript_status "KNOWN"; transcript_name "OR4F5-001"; exon_number 1; exon_id "ENSE00002319515.1"; level 2; tag "basic"; tag "appris_principal";
-	tag	"CCDS"; ccdsid "CCDS30547.1"; havana_gene "OTTHUMG00000001094.1"; havana_transcript "OTTHUMT00000003223.1";
+	chr1	HAVANA	exon	69091	70008	.	+	.	gene_id "ENSG00000186092.4"; gene_type "protein_coding"; gene_status "KNOWN"; gene_name "OR4F5";
+	transcript_type "protein_coding"; transcript_status "KNOWN"; transcript_name "OR4F5-001"; exon_number 1; exon_id "ENSE00002319515.1"; level 2; tag "basic"; tag "appris_principal"; tag	"CCDS"; ccdsid "CCDS30547.1"; havana_gene "OTTHUMG00000001094.1"; havana_transcript "OTTHUMT00000003223.1";
 
-.. note:: ChimPipe has been benchmarked with `Gencode v10`_ and `UCSC Known Genes`_  human gene annotations. It displayed a better sensitivity with Gencode v10 but a similar false positive rate with both annotations. It is advisable to use Gencode annotation, since it is a richer annotation which increases the sensitivity of the chimera detection process. 
+.. tip:: We have extensively tested and applied ChimPipe to analyse human and mouse RNA-seq data with `Gencode`_ annotations. So, we suggest to use Gencode if possible.   
 
-.. _Gencode v10: http://www.gencodegenes.org/releases/10.html
-.. _UCSC Known Genes: https://genome.ucsc.edu/cgi-bin/hgTables?command=start
+.. _GTF: http://www.ensembl.org/info/website/upload/gff.html
+.. _Gencode: http://www.gencodegenes.org/
 
 .. _input-annot-index:
 
-Transcriptome index
+Transcriptome index (only in FASTQ as input mode)
 ~~~~~~~~~~~~~~~~~~~
-A transcriptome index in GEM format has to be provided as input to ChimPipe to find reads spanning annotated splice junctions. 
+A transcriptome index containing all the annotated exon-exon junctions for each transcript is needed for the first mapping step. 
 
-We provide some **pre-generated transcriptome indices** for human, mouse and drosophila annotations in the :ref:`Downloads` section, however if your genome annotation or your genome is different, you will need to to run the *GEMtools transcriptome indexer* ((at ``ChimPipe/bin/gemtools-1.7.1-i3/gemtools``)) on your previously generated GEM indexed genome and your annotation in GTF format, as indicated below. 
+We supply **pre-generated transcriptome indices** for Human, Mouse and Drosophila annotations in the :ref:`Downloads` section.
+
+If you aim to execute ChimPipe with your own annotation you just need to use the *GEMtools transcriptome indexer* (at ``ChimPipe/bin/gemtools-1.7.1-i3/gemtools``) on your previously generated GEM indexed genome and annotation, as indicated below:
 
 .. code-block:: bash
 
@@ -97,11 +121,11 @@ We provide some **pre-generated transcriptome indices** for human, mouse and dro
 
 It will produce 5 files in your current working directory:
 
-* annotation.gtf.junctions – annotated splice junctions coordinates (not needed)
-* annotation.gtf.junctions.fa – annotated splice junctions sequence (not needed)
-* **annotation.gtf.junctions.gem** – transcriptome index in GEM format (needed)
-* **annotation.gtf.junctions.keys** – keys to convert from transcriptome to genome (needed)
-* annotation.gtf.junctions.log – indexer log file (not needed)
+* annotation.gtf.junctions – annotated splice junctions coordinates. 
+* annotation.gtf.junctions.fa – annotated splice junctions sequences. 
+* **annotation.gtf.junctions.gem** – transcriptome index in GEM format.
+* **annotation.gtf.junctions.keys** – keys to convert from transcriptome to genome coordinates. 
+* annotation.gtf.junctions.log – log file. 
 
 .. tip:: If your machine has more than one CPU it is recommended to run the indexer with multiple threads. Use the option ``-t <threads>``, where **threads** is the number of available CPUs. 
 
@@ -109,15 +133,18 @@ It will produce 5 files in your current working directory:
 
 Gene pair similarity file (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-One of ChimPipe's filtering steps to discard actefactual chimeras is to filter out those chimeric junctions connecting genes that encode transcripts with a high sequence homology. To do this ChimPipe produces a matrix with information about the sequence similarity between annotated gene pairs. This step is done internally and takes around 1:30h. So, in case you want to run many samples with the same annotation, it is recommended to provide the matrix with the option ``--similarity-gene-pairs <MATRIX TEXT FILE>``, to avoid recomputing it for every sample. 
 
-You can download our **pre-generated matrices** por human, mouse and drosophila annotations from :ref:`Downloads` section or you can produce your own matrix with the script ``ChimPipe/src/bash/similarity_bt_gnpairs.sh`` as follows:
+ChimPipe filters out artefactual chimeric junctions involving genes with high local sequence homology. These genes are prone to produce spurious misaligned split-reads connecting them. 
+
+Before applying this filter, ChimPipe has to compute a sequence similarity between every annotated gene pairs. This is a time consuming step that takes around 1:30h. 
+
+In case you plan to run many samples with the same annotation, it is strongly recommended to precompute the matrix and provide it with the option ``--similarity-gene-pairs <MATRIX TEXT FILE>``. Otherwise, ChimPipe will generate a matrix per each sample. You just need to execute ``ChimPipe/src/bash/similarity_bt_gnpairs.sh`` as follows:
 
         $ bash similarity_bt_gnpairs.sh annot.gtf genome.gem
 
-Please check out our :ref:`FAQ <faq-similarity>` section for more information about how the script works. 
+Note, we supply **pre-generated matrices** for Human, Mouse and Drosophila in the :ref:`Downloads` section. 
 
-.. warning:: Make sure you run ChimPipe with a similarity matrix generated from the annotation and genome you are using.  
+.. warning:: Make sure you run ChimPipe with a similarity matrix generated from the same reference annotation and genome you are using.  
 
 
 Execute ChimPipe
@@ -125,21 +152,17 @@ Execute ChimPipe
 
 1. Setting up the environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-As explained in the :ref:`installation` section, you need to have BEDtools, SAMtools and Blast installed on your system to execute ChimPipe. In case you do not have them, you can download and install them from their web pages. 
-
-Once they are installed, you can export the path to their binaries with a simple bash command:
+As explained in the :ref:`installation` section, to execute ChimPipe you need to have BEDtools, SAMtools and Blast binaries installed in your linux environment. 
 
 .. code-block:: bash
 
-	
+	$ # Example about how to export your binaries under your environmnet
 	$ export PATH=<BEDTOOLS_BINARIES_PATH>:<SAMTOOLS_BINARIES_PATH><BLAST_BINARIES_PATH>:$PATH
-	$ # E.g. export bedtools and samtools on my system
-	$ export PATH=~/bin/bedtools2-2.20.1/bin:~/bin/samtools-0.1.19:$PATH
-
+	$ export PATH=~/bin/bedtools2-2.20.1/bin:~/bin/samtools-0.1.19:~/bin/blastn:$PATH
 
 2. Running ChimPipe
 ~~~~~~~~~~~~~~~~~~~
-There are two different running modes depending if what you will provide FASTQ or BAM files:
+ChimPipe has two different running modes:
 
 A) FASTQ
 ---------
@@ -174,22 +197,21 @@ B) BAM
         -a|--annotation                 <GTF>           Reference genome annotation file in GTF format.
         --sample-id                     <STRING>        Sample identifier (the output files will be named according to this id).  
 
-.. warning:: ChimPipe results are highly dependent on the mapping step. BAM files should have been generated with a mapper able to align read-pairs across different chromosomes and strands. If you are unsure about that, please convert your BAM file to FASTQ and run ChimPipe in FASTQ as input mode. 
-								 
+						 
 **Optional arguments.** Do ``ChimPipe.sh -h or --help`` to see a short help with the main options. You can also do ``ChimPipe.sh --full-help`` to see the all the possible 
 options. 
 
-.. tip:: If your machine has more than one CPU it is recommended to **run ChimPipe with multiple threads** (at least 4). It will speed up the mapping steps a lot. Use the option ``-t|--threads <threads>``, where threads is the number of CPUs available. 
+.. tip:: If your machine has more than one CPU it is recommended to **run ChimPipe with multiple threads** (at least 4). It will speed up the mapping steps. Use the option ``-t|--threads <threads>``, where threads is the number of CPUs available. 
 
-.. note:: The **pipeline is restartable**: this means that if ChimPipe fails and you run it again, it will skip the steps that have been already completed. You just need to make sure that you removed the files generated in the step where the pipeline failed. 
+.. note:: **Checkpoints**: ChimPipe has a checkpoint in every step. So, in case the program fail at one step. You can restart the analysis from this step. You just need to make sure that you removed the files generated in the step where the pipeline failed. 
 
 Output
 ======
 
 By default, ChimPipe produces 4 main output files:
 
-* :ref:`First mapping BAM <output-bam>` (MappingPhase/FirstMapping/[sample_id]_firstMap.bam).
-* :ref:`Second mapping MAP <output-map>` (MappingPhase/SecondMapping/[sample_id]_secondMap.map).
+* :ref:`First mapping BAM <output-bam>`.
+* :ref:`Second mapping MAP <output-map>`.
 * :ref:`Final chimeric junctions <output-chimeras>` (chimericJunctions_[sample_id].txt).
 * :ref:`Discarded chimeric junctions <output-chimeras>` (chimericJunctions_filtered_[sample_id].txt).
 
@@ -197,20 +219,21 @@ By default, ChimPipe produces 4 main output files:
 
 First mapping BAM file
 ~~~~~~~~~~~~~~~~~~~~~~
-`BAM`_ file containing the reads mapped in the genome, transcriptome and *de novo* transcriptome with the `GEMtools RNA-seq pipeline`_. 
 
-This is the standard format for next-generation sequencing, meaning that most analysis tools work with this format. The bam file produced can therefore be used to do other downstream analyses such as gene and transcript expression quantification.
+`BAM`_ file (``$outDir/MappingPhase/FirstMapping/[sample_id]_firstMap.bam``) containing the reads mapped in the genome, transcriptome and *de novo* transcriptome with the `GEMtools RNA-seq pipeline`_. 
+
+BAM is the standandard format for aligned RNA-seq reads, meaning that most analysis tools work with this format. The bam file produced can therefore be used to do other downstream analyses such as gene and transcript expression quantification.
 
 .. _BAM: http://samtools.github.io/hts-specs/SAMv1.pdf
 .. _GEMtools RNA-seq pipeline: http://gemtools.github.io/
 
 Second mapping MAP file
 ~~~~~~~~~~~~~~~~~~~~~~~
-MAP file containing reads segmentally mapped in the genome allowing for interchromosomal, different strand and unexpected genomic order mappings. 
+MAP file (``$outDir/MappingPhase/SecondMapping/[sample_id]_secondMap.map``) containing the reads split-mapped in the genome allowing for interchromosomal, different strand and unexpected genomic order mappings. 
 
 Final and filtered chimeric junction files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Two tabular text files with the detected and discarded chimeric splice junctions from your RNA-seq dataset. They consist on rows of 35 fields, where each row corresponds to a chimeric junction and each field contains a piece of information about the chimera. Here is a brief description of the 35 fields (most relevant fields highlighted in bold):
+Two tabular text files with the detected (``$outDir/chimericJunctions_[sample_id].txt``) and filtered out (``$outDir/chimericJunctions_filtered_[sample_id].txt``) chimeric splice junctions from your RNA-seq dataset. They consist on rows of 35 fields, where each row corresponds to a chimeric junction and each field contains a piece of information about the chimera. Here is a brief description of the 35 fields (most relevant fields highlighted in bold):
 
 1. **juncCoord** - Position of the chimeric splice junction in the genome described as follows: chrA"_"coordA"_"strandA":"chrB"_"coordB"_"strandB. E. g., "chr4_90653092_+:chr17_22023757_-" is a chimeric junction between the position 90653092 of chromosome 4 in plus strand, and the position 22023757 of chromosome chr17 in minus strand. Junction coordinates defined using 1-based system.
 

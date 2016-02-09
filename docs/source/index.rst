@@ -23,6 +23,7 @@ Table of contents:
    installation 
    manual
    tutorial
+   FAQ
    downloads
    contact
 
