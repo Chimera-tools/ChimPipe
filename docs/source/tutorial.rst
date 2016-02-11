@@ -35,7 +35,7 @@ This package contains all the needed files for executing ChimPipe on MCF-7 RNA-s
 * Genome index: Homo_sapiens.GRCh37.chromosomes.chr.M.gem
 * Transcriptome index: gencode.v19.annotation.long.gtf.junctions.gem  
 * Transcriptome keys: gencode.v19.annotation.long.gtf.junctions.keys
-* Similarity matrix: similarity_matrix.txt
+* Similarity matrix: gencode.v19.annotation.long.similarity.txt
 
 Click here to download.
 
@@ -44,7 +44,7 @@ Click here to download.
 
 .. code-block:: bash
 	
-	ChimPipe.sh --fastq_1 MCF-7_1.fastq.gz --fastq_2 MCF-7_2.fastq.gz -g Homo_sapiens.GRCh37.chromosomes.chr.M.gem -a gencode.v19.annotation.long.gtf -t gencode.v19.annotation.long.gtf.junctions.gem -k gencode.v19.annotation.long.gtf.junctions.keys --sample-id MCF-7 --threads 4 --similarity-gene-pairs similarity_matrix.txt
+	ChimPipe.sh --fastq_1 MCF-7_1.fastq.gz --fastq_2 MCF-7_2.fastq.gz -g Homo_sapiens.GRCh37.chromosomes.chr.M.gem -a gencode.v19.annotation.long.gtf -t gencode.v19.annotation.long.gtf.junctions.gem -k gencode.v19.annotation.long.gtf.junctions.keys --sample-id MCF-7 --threads 4 --similarity-gene-pairs gencode.v19.annotation.long.similarity.txt
 	
 4. Examine your output
 =======================

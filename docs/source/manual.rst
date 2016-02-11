@@ -252,9 +252,6 @@ Two tabular text files with the detected (``$outDir/chimericJunctions_[sample_id
 	- totalSupport.
 	- spanningReads.
 	- consistentPE.
-	- totalSupport.
-	- spanningReads.
-	- consistentPE.
 	- percStag.
 	- percMulti.
 	- percInconsistentPE.
