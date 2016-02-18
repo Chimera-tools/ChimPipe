@@ -134,13 +134,19 @@ It will produce 5 files in your current working directory:
 Gene pair similarity file (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ChimPipe filters out artefactual chimeric junctions involving genes with high local sequence homology. These genes are prone to produce spurious misaligned split-reads connecting them. 
+ChimPipe filters out artefactual chimeric junctions involving genes with high exonic sequence homology. These genes are prone to produce spurious misaligned split-reads connecting them. 
 
-Before applying this filter, ChimPipe has to compute a sequence similarity between every annotated gene pairs. This is a time consuming step that takes around 1:30h. 
+Before applying this filter, ChimPipe has to compute a similarity matrix between every annotated gene pair. 
 
-In case you plan to run many samples with the same annotation, it is strongly recommended to precompute the matrix and provide it with the option ``--similarity-gene-pairs <MATRIX TEXT FILE>``. Otherwise, ChimPipe will generate a matrix per each sample. You just need to execute ``ChimPipe/src/bash/similarity_bt_gnpairs.sh`` as follows:
+This step takes around 45'-60' depending on the annotation. So, in case you plan to run many samples with the same annotation, it is recommended to choose one of these two options:
+
+**A)** Execute ChimPipe with a single sample and then reuse the generated matrix (``${outDir}/GnSimilarity/${annotation_id}.similarity.txt``) to run the other samples 
+
+**B)** Pre-compute the matrix executing ``ChimPipe/src/bash/similarity_bt_gnpairs.sh`` as follows and run all your samples:
 
         $ bash similarity_bt_gnpairs.sh annot.gtf genome.gem
+
+Either if you use A) or B) you can provide the matrix to ChimPipe with the option ``--similarity-gene-pairs <MATRIX TEXT FILE>``. Otherwise, ChimPipe will generate the same matrix per each sample.
 
 Note, we supply **pre-generated matrices** for Human, Mouse and Drosophila in the :ref:`Downloads` section. 
 
@@ -212,15 +218,15 @@ By default, ChimPipe produces 4 main output files:
 
 * :ref:`First mapping BAM <output-bam>`.
 * :ref:`Second mapping MAP <output-map>`.
-* :ref:`Final chimeric junctions <output-chimeras>` (chimericJunctions_[sample_id].txt).
-* :ref:`Discarded chimeric junctions <output-chimeras>` (chimericJunctions_filtered_[sample_id].txt).
+* :ref:`Final chimeric junctions <output-chimeras>`.
+* :ref:`Discarded chimeric junctions <output-chimeras>`.
 
 .. tip:: If you want to keep intermediate output files, run ChimPipe with the ``--no-cleanup`` option. 
 
 First mapping BAM file
 ~~~~~~~~~~~~~~~~~~~~~~
 
-`BAM`_ file (``$outDir/MappingPhase/FirstMapping/[sample_id]_firstMap.bam``) containing the reads mapped in the genome, transcriptome and *de novo* transcriptome with the `GEMtools RNA-seq pipeline`_. 
+`BAM`_ file (``${outDir}/MappingPhase/FirstMapping/${sample_id}_firstMap.bam``) containing the reads mapped in the genome, transcriptome and *de novo* transcriptome with the `GEMtools RNA-seq pipeline`_. 
 
 BAM is the standandard format for aligned RNA-seq reads, meaning that most analysis tools work with this format. The bam file produced can therefore be used to do other downstream analyses such as gene and transcript expression quantification.
 
@@ -229,11 +235,11 @@ BAM is the standandard format for aligned RNA-seq reads, meaning that most analy
 
 Second mapping MAP file
 ~~~~~~~~~~~~~~~~~~~~~~~
-MAP file (``$outDir/MappingPhase/SecondMapping/[sample_id]_secondMap.map``) containing the reads split-mapped in the genome allowing for interchromosomal, different strand and unexpected genomic order mappings. 
+MAP file (``${outDir}/MappingPhase/SecondMapping/${sample_id}_secondMap.map``) containing the reads split-mapped in the genome allowing for interchromosomal, different strand and unexpected genomic order mappings. 
 
 Final and filtered chimeric junction files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Two tabular text files with the detected (``$outDir/chimericJunctions_[sample_id].txt``) and filtered out (``$outDir/chimericJunctions_filtered_[sample_id].txt``) chimeric splice junctions from your RNA-seq dataset. They consist on rows of 35 fields, where each row corresponds to a chimeric junction and each field contains a piece of information about the chimera. Here is a brief description of the 35 fields (most relevant fields highlighted in bold):
+Two tabular text files with the detected (``${outDir}/chimericJunctions_${sample_id}.txt``) and filtered out (``${outDir}/chimericJunctions_filtered_${sample_id}.txt``) chimeric splice junctions from your RNA-seq dataset. They consist on rows of 35 fields, where each row corresponds to a chimeric junction and each field contains a piece of information about the chimera. Here is a brief description of the 35 fields (most relevant fields highlighted in bold):
 
 1. **juncCoord** - Position of the chimeric splice junction in the genome described as follows: chrA"_"coordA"_"strandA":"chrB"_"coordB"_"strandB. E. g., "chr4_90653092_+:chr17_22023757_-" is a chimeric junction between the position 90653092 of chromosome 4 in plus strand, and the position 22023757 of chromosome chr17 in minus strand. Junction coordinates defined using 1-based system.
 
