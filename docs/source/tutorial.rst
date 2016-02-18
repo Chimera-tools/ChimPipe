@@ -37,7 +37,10 @@ This package contains all the needed files for executing ChimPipe on MCF-7 RNA-s
 * Transcriptome keys: gencode.v19.annotation.long.gtf.junctions.keys
 * Similarity matrix: gencode.v19.annotation.long.similarity.txt
 
-Click here to download.
+Click `here`_ to download.
+
+.. _here: http://public-docs.crg.es/rguigo/Papers/ChimPipe/ChimPipe_tutorial.tar.gz
+
 
 3. Execute ChimPipe on MCF-7
 =============================
