@@ -1057,7 +1057,7 @@ fi
 # Similarity between gene pairs file
 if [[ "$simGnPairs" == "" ]]
 then
-    simGnPairs="NOT PROVIDED";
+    simGnPairs="NOT_PROVIDED";
 elif [ ! -s "$simGnPairs" ]
 then 
     log "Your text file containing similarity information between gene pairs in the annotation does not exist. Option --similarity-gene-pairs\n" "ERROR" >&2; 
@@ -1087,7 +1087,10 @@ secondMappingDir=$mappingPhaseDir/SecondMapping
 chimeraDetPhaseDir=$outDir/ChimeraDetectionPhase
 chimSpliceDir=$chimeraDetPhaseDir/ChimSplice
 chimPEDir=$chimeraDetPhaseDir/ChimPE
-genePairSimDir=$chimeraDetPhaseDir/genePairSim
+
+# 4. Gene similarity 
+simDir=$outDir/GnSimilarity
+
 
 # The temporary directory will be exported as an environmental variable since it will 
 # be used by every ChimPipe's scripts 
@@ -1219,7 +1222,6 @@ if [[ ! -d $annotDir ]]; then mkdir $annotDir; fi
 
 # Mapping phase
 if [[ ! -d $mappingPhaseDir ]]; then mkdir $mappingPhaseDir; fi
-if [[ ! -d $firstMappingDir ]] ; then mkdir $firstMappingDir; fi
 if [[ ! -d $secondMappingDir ]]; then mkdir $secondMappingDir; fi
 
 # Chimera detection phase
@@ -1253,11 +1255,6 @@ longestChrLength=`sort -k2 -n -r $annotDir/chromosomes_length.txt | awk '{print 
 #########################
 
 awk -f $processAnnot $annot | awk '($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -f $gff2Gff | sort -V -k1,1 -k4,4n -k5,5n | gzip > $annotDir/annotatedExons.gff.gz
-
-## Define variable with annotation name
-b=`basename $annot`
-b2tmp=${b%.gtf}
-b2=${b2tmp%.gff}
     	
 
 ####################    	
@@ -1283,7 +1280,7 @@ then
 	
 	if [ ! -s $bamFirstMap ]; 
 	then
-
+		if [[ ! -d $firstMappingDir ]] ; then mkdir $firstMappingDir; fi
 		firstMapping_FASTQinput		## Call function to run the gemtools rna-pipeline
 	else
 		printHeader "First mapping BAM file already exists... skipping first mapping step";
@@ -1519,20 +1516,27 @@ fi
 # 2.4) Compute the gene similarity matrix in case the user does not provide it
 ###############################################################################
 # Output:
-# - $genePairSimDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
+# - $outDir/$b2\_gnPair_similarity_matrix.txt
 # - $outDir/chimeric_spliceJunctions_candidates_${lid}.txt
 
 if [ ! -e "$simGnPairs" ]
 then
-    if [[ ! -d $genePairSimDir ]]; then mkdir $genePairSimDir; fi
-    cd $genePairSimDir
+ 	if [[ ! -d $simDir ]]; then mkdir $simDir; fi
+	cd $simDir
+    
     printHeader "Executing ChimSimilarity"
     step="CHIMSIM"
     startTime=$(date +%s)
     log "Computing similarity between annotated genes..." $step
-    run "$sim $annot $genomeIndex" "$ECHO"
+    run "$sim $annot $genomeIndex  1> $simDir/sim.out 2> $simDir/sim.err" "$ECHO"
     
-    simGnPairs=$genePairSimDir/$b2\_gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
+    ## Define variable with annotation name:
+	b=`basename $annot`
+	b2tmp=${b%.gtf}
+	b2=${b2tmp%.gff}
+    
+    ## Output file name:
+    simGnPairs=$simDir/$b2.similarity.txt
     
     if [ ! -s $simGnPairs ]; 
 	then
@@ -1564,7 +1568,10 @@ then
 	then
 	    log "Error adding similarity information\n" "ERROR" 
 	    exit -1
+	else
+		rm $ChimIntegrateOut 
 	fi
+	
 	endTime=$(date +%s)
 	printHeader "Add sequence similarity information step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else
@@ -1620,7 +1627,10 @@ then
 	then
 		log "Error filtering chimeric junction candidates\n" "ERROR" 
     	exit -1
-	fi
+	else
+		rm $classifiedCandidates $chimJuncCandidatesFiltered
+	fi 
+	
 	endTime=$(date +%s)
 	printHeader "ChimFilter completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
 else 
@@ -1631,14 +1641,12 @@ fi
 # 3) CLEANUP AND END #
 ######################
 
-rm -r $annotDir $ChimIntegrateOut $classifiedCandidates $chimJuncCandidatesFiltered 
-
 if [[ "$cleanup" == "TRUE" ]]; 
 then 
 	step="CLEAN-UP"
 	startTime=$(date +%s)
 	log "Removing intermediate files..." $step
-	rm -r $chimeraDetPhaseDir $firstMappingDir/*firstMap.map* $firstMappingDir/${lid}_map2bam_conversion.log $secondMappingDir/*reads2remap*
+	rm -r $annotDir $firstMappingDir/${lid}_firstMap.map.gz $firstMappingDir/${lid}_firstMap_filtered.map.gz $secondMappingDir/${lid}_reads2remap.fastq $chimeraDetPhaseDir $outDir/chimericJunction_candidates_${lid}.txt 
 	log "done\n" 
 	endTime=$(date +%s)
 	printHeader "Clean up step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"

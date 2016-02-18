@@ -87,8 +87,6 @@ bashDir=$rootDir
 # Programs
 ##########
 EXTRACT_TRANSC_SEQS=$bashDir/gtf2fasta.sh
-MAKEDB=$binDir/makeblastdb
-BLAST=$binDir/blastn
 
 # START
 ########
@@ -110,20 +108,20 @@ echo done >&2
 # 2. make BLAST DB out of the transcript sequences
 ##################################################
 echo I am making a BLAST database out of the transcript sequences >&2
-$MAKEDB -in $b2\_tr.fasta -input_type 'fasta' -dbtype 'nucl' -parse_seqids 
+makeblastdb -in $b2\_tr.fasta -input_type 'fasta' -dbtype 'nucl' -parse_seqids 
 echo done >&2
 
 # 3. run Blast on all against all to detect local similarity between transcripts (long)
 #######################################################################################
 # -task blastn 
 echo I am running Blast on all against all to detect local similarity between transcripts >&2
-$BLAST -num_threads 4 -query $b2\_tr.fasta -db $b2\_tr.fasta -lcase_masking -dust 'no' -ungapped -outfmt '7' | gzip > $b2\_tr_vs_$b2\_tr.blastout.tsv.gz
+blastn -num_threads 4 -query $b2\_tr.fasta -db $b2\_tr.fasta -lcase_masking -dust 'no' -ungapped -outfmt '7' | gzip > $b2\_tr_vs_$b2\_tr.blastout.tsv.gz
 echo done >&2
 
 # 4. get a gene pair file with % similarity, alignment length and other information (10 minutes)
 ##################################################################################################
 echo I am making a gene pair file with % similarity, alignment length and other information >&2
-zcat $b2\_tr_vs_$b2\_tr.blastout.tsv.gz | awk -v fileRef=$annot 'BEGIN{while (getline < fileRef >0){if($3=="exon"){split($10,a,"\""); split($12,b,"\""); gene[b[2]]=a[2]}}} $1!~/#/{gp=((gene[$1]<=gene[$2]) ? (gene[$1]"-"gene[$2]) : (gene[$2]"-"gene[$1])); if((sim[gp]=="")||(sim[gp]<=$3)){if((lgal[gp]=="")||(lgal[gp]<$4)){sim[gp]=$3; lgal[gp]=$4; tr[gp]=((gene[$1]<=gene[$2]) ? ($1"-"$2) : ($2"-"$1))}}} END{for(gp in sim){split(gp,a,"-"); split(tr[gp],b,"-"); print a[1], a[2], sim[gp], lgal[gp], b[1], b[2]}}' | awk '$1!=$2{print $1, $2, $3, $4, $5, $6}' | sort | uniq > $b2"_"gene1_gene2_alphaorder_pcentsim_lgalign_trpair.txt
+zcat $b2\_tr_vs_$b2\_tr.blastout.tsv.gz | awk -v fileRef=$annot 'BEGIN{while (getline < fileRef >0){if($3=="exon"){split($10,a,"\""); split($12,b,"\""); gene[b[2]]=a[2]}}} $1!~/#/{gp=((gene[$1]<=gene[$2]) ? (gene[$1]"-"gene[$2]) : (gene[$2]"-"gene[$1])); if((sim[gp]=="")||(sim[gp]<=$3)){if((lgal[gp]=="")||(lgal[gp]<$4)){sim[gp]=$3; lgal[gp]=$4; tr[gp]=((gene[$1]<=gene[$2]) ? ($1"-"$2) : ($2"-"$1))}}} END{for(gp in sim){split(gp,a,"-"); split(tr[gp],b,"-"); print a[1], a[2], sim[gp], lgal[gp], b[1], b[2]}}' | awk '$1!=$2{print $1, $2, $3, $4, $5, $6}' | sort | uniq > $b2.similarity.txt
 echo done >&2
 
 # 5. clean
