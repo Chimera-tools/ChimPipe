@@ -25,8 +25,7 @@
 
 # Description
 ###############
-
-# Takes as input a file 
+# Takes as input a raw gencode gene annotation file in gff format and report a gff with a non-reduntant list of exons (one per row) with basic information associated (genomic coordinates, gene id, gene name and gene type)  
 
 ### input
 # chr1	HAVANA	exon	11869	12227	.	+	.	gene_id "ENSG00000223972.4"; transcript_id "ENST00000456328.2"; gene_type "pseudogene"; gene_status "KNOWN"; gene_name "DDX11L1"; transcript_type "processed_transcript"; transcript_status "KNOWN"; transcript_name "DDX11L1-002"; exon_number 1; exon_id "ENSE00002234944.1"; level 2; tag "basic"; havana_gene "OTTHUMG00000000961.2"; havana_transcript "OTTHUMT00000362751.1";
@@ -35,6 +34,7 @@
 ### output
 # chr1	HAVANA	exon	11869	12227	.	+	.	gene_id "ENSG00000223972.4"; gene_name "DDX11L1";  gene_type "pseudogene"; 
 # chr1	ENSEMBL	exon	12613	12721	.	+	.	gene_id "ENSG00000223972.4"; gene_name "DDX11L1"; gene_type "pseudogene"; 
+
 
 # Usage example:
 ################
@@ -49,28 +49,33 @@ $3=="exon"{
 	
 	for(i=9; i<=(NF); i++)
 	{	
-		if ($i=="gene_name")
+		if ($i=="gene_id")
 		{
 			split($(i+1), a,"\"" );
 			
-			if (gene_name[exon]=="")
+			# A) No gene id associated to the exon -> Asign gene id to the exon
+			if (gene_id[exon]=="")
 			{
-				gene_name[exon]=a[2];
+				gene_id[exon]=a[2];
 			}
+			# B) Already at least one gene id associated to the exon
 			else
 			{
-				split(gene_name[exon], geneNameList, ",");
-				for (name in geneNameList)
+				# Check if the gene id is already in the list of the genes associated to the exon
+				split(gene_id[exon], geneIdList, ",");
+				for (id in geneIdList)
 				{
-					if (geneNameList[name] == a[2])
+					# Gene id already in the list -> do not add it
+					if (geneIdList[id] == a[2])
 					{
 						addGene="0";
 					}
 				}
 				
+				# Gene not in the list -> add it
 				if (addGene=="1")
 				{
-					gene_name[exon]=gene_name[exon]","a[2];
+					gene_id[exon]=gene_id[exon]","a[2];
 				}
 			}
 			break
@@ -79,7 +84,7 @@ $3=="exon"{
 	
 	for(i=9; i<=(NF); i++)
 	{		
-		##
+		## A) Add gene type if gene not in the list of genes associated to the exon
 		if (($i=="gene_type")&&(addGene=="1"))
 		{
 			split($(i+1), a,"\"" );
@@ -93,30 +98,18 @@ $3=="exon"{
 				gene_type[exon]=gene_type[exon]","a[2];
 			}
 		}
-		else if (($i=="gene_id")&&(addGene=="1"))
+		## Add gene name if gene not in the list of genes associated to the exon
+		else if (($i=="gene_name")&&(addGene=="1"))
 		{			
 			split($(i+1), a,"\"" );
 			
-			if (gene_id[exon]=="")
+			if (gene_name[exon]=="")
 			{
-				gene_id[exon]=a[2];
+				gene_name[exon]=a[2];
 			}
 			else
 			{
-				gene_id[exon]=gene_id[exon]","a[2];
-			}
-		}
-		else if (($i=="transcript_id")&&(addGene=="1"))
-		{			
-			split($(i+1), a,"\"" );
-			
-			if (transcript_id[exon]=="")
-			{
-				transcript_id[exon]=a[2];
-			}
-			else
-			{
-				transcript_id[exon]=transcript_id[exon]","a[2];
+				gene_name[exon]=gene_name[exon]","a[2];
 			}
 		}
 	}
@@ -131,17 +124,20 @@ END{
 		end=pos[3]; 
 		strand=pos[4]; 
 		
-		if (gene_id[exon]=="")
+		# A) If gene_name information not provided use "na"
+		if (gene_name[exon]=="")
 		{
-			gene_id[exon]="NA"; 
+			gene_name[exon]="na"; 
 		}
 		
+		# B) If gene_type information not provided use "na"
 		if (gene_type[exon]=="")
 		{
-			gene_type[exon]="NA";
+			gene_type[exon]="na";
 		}
-			
-		printf chr"\t"source[exon]"\texon\t"beg"\t"end"\t"score[exon]"\t"strand"\t"frame[exon]"\tgene_id ""\""gene_id[exon]"\"; gene_name ""\""gene_name[exon]"\";"" gene_type ""\""gene_type[exon]"\";"" transcript_id ""\""transcript_id[exon]"\";\n"; 
+		
+		# Print exon information in gtf format as output
+		printf chr"\t"source[exon]"\texon\t"beg"\t"end"\t"score[exon]"\t"strand"\t"frame[exon]"\tgene_id ""\""gene_id[exon]"\"; gene_name ""\""gene_name[exon]"\";"" gene_type ""\""gene_type[exon]"\";\n"; 
 	}
 }
 
