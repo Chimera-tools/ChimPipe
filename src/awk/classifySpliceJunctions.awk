@@ -90,7 +90,10 @@ BEGIN{
 			nbA=split(gnIdA, gnListA, ","); 
 			nbB=split(gnIdB,gnListB, ",");
 		}
-		# If gene name available use gene name (better, since for gencode there are several different gene ids for some gene within the same annotation)
+		# If gene name available use gene name 
+		# Priority given to gene name since for some gene names there are several gene ids in gencode annotation.
+		# Explanation: each gene id corresponds to a different haplotype of the same gene. 
+		# https://www.biostars.org/p/119540/ 
 		else 
  		{
 			nbA=split(gnNameA, gnListA, ","); 
