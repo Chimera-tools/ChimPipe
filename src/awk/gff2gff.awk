@@ -25,7 +25,7 @@
 
 # Description
 ##############
-# Needs to be done..
+# Takes as input a gff file and adjust the fields separator to the gff format specifications (tabs separating mandatory fields, while spaces separating info fields)
 
 $1!~/#/{
     for (i=1;i<=7;i++)
