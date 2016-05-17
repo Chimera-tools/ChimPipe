@@ -121,9 +121,9 @@ awkDir=$rootDir/../awk
 ########################
 
 ## Awk
-BED2GFF=$awkDir/bed2gff.awk
-GFF_CORRECT_STRAND=$awkDir/gffCorrectStrand.awk
-GFF2GFF=$awkDir/gff2gff.awk
+
+GFF2BED=$awkDir/gff2bed_exons.awk
+BED_CORRECT_STRAND=$awkDir/bed12CorrectStrand.awk
 SELECT_OVERLAPPING_GENE=$awkDir/select_overlappingGene_contiguousMapping_intersection.awk
 MAKE_LIST_OVERLAPPING_GENES=$awkDir/makeList_overlappingGenes_contiguousMapping.awk
 CLASSIFY_PE=$awkDir/classifyPairedEnds.awk
@@ -131,16 +131,28 @@ DETECT_DISCORDANT=$awkDir/detect_discordantPEs_1mateSplitmap_1mateMapContiguousl
 
 
 #####################################################
-# 1) MAKE GFF CONTAINING THE ALIGNMENT COORDINATES  #
+# 0) CONVERT ANNOTATED EXONS FROM GFF TO BED FORMAT #
+#####################################################
+# - $outDir/annotatedExons.bed.gz 
+# NOTE: We used to use gff files directly. However, intersectbed version 2.25 introduced a bug and does not handle 
+# gtf files well. It produces a segmentation fault due to some problem with the attribute field. So, we decided to 
+# substitute the gff by a bed file
+
+echo "0. Convert annotated exons from gff to bed format" >&2
+
+zcat $annot | awk -f $GFF2BED | gzip > $outDir/annotatedExons.bed.gz
+
+
+#####################################################
+# 1) MAKE BED CONTAINING THE ALIGNMENT COORDINATES  #
 #    FOR THE CONTIGUOUSLY MAPPED READS              #
 #####################################################
-# - $outDir/contiguousAlignments.gff.gz
-# NOTE: for now it only considers unique mappings. Multimapped reads are discarded. 
+# - $outDir/contiguousAlignments.bed.gz
+# NOTE: for now it only considers unique mappings. Multimapped reads are discarded ($5==1). 
 
-echo "1. Make GFF containg the alingment coordinates for the contiguously mapped reads" >&2
+echo "1. Make BED containing the alignment coordinates for the contiguously mapped reads" >&2
 
-## Only unique mappings considered ($5==1)
-samtools view -bF 4 $bam | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($5==1) && ($10==1) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -f $BED2GFF | awk -v OFS='\t' -v readDirectionality=$readDirectionality -f $GFF_CORRECT_STRAND | awk -f $GFF2GFF | gzip > $outDir/contiguousAlignments.gff.gz
+samtools view -bF 4 $bam | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($5==1) && ($10==1) && ($1 !~ /M/) && ($1 !~ /Mt/) && ($1 !~ /MT/)' | awk -v OFS='\t' -v readDirectionality=$readDirectionality -f $BED_CORRECT_STRAND | gzip > $outDir/contiguousAlignments.bed.gz
 	
 
 #########################################################
@@ -150,10 +162,10 @@ samtools view -bF 4 $bam | bedtools bamtobed -bed12 -tag NH -i stdin | awk '($5=
 
 echo "2. Intersect read alignments with the annotated exons" >&2
 
-bedtools intersect -wao -a $outDir/contiguousAlignments.gff.gz -b $annot | gzip > $outDir/contiguousAlignments_intersected.txt.gz
+bedtools intersect -wao -a $outDir/contiguousAlignments.bed.gz -b $outDir/annotatedExons.bed.gz | gzip > $outDir/contiguousAlignments_intersected.txt.gz
 
 # Remove intermediate files:
-rm $outDir/contiguousAlignments.gff.gz
+rm $outDir/contiguousAlignments.bed.gz $outDir/annotatedExons.bed.gz
 
 ###########################################################
 # 3) FOR EACH MAPPED READ MAKE LIST OF OVERLAPPING GENES  #
