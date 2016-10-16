@@ -95,10 +95,9 @@ E.g:
 	
 	# Example of an annotated human exon in GTF format. 	
 	# The attributes are gene_id (mandatory), gene type and gene name (optional) 
-	# plus some additional "tag,value" pairs that will not be considered by ChimPipe.   
 	
 	chr1	HAVANA	exon	69091	70008	.	+	.	
-        gene_id "ENSG00000186092.4"; gene_type "protein_coding"; gene_status "KNOWN"; gene_name "OR4F5";
+        gene_id "ENSG00000186092.4"; gene_type "protein_coding"; gene_name "OR4F5";
 
 .. tip:: We have extensively tested and applied ChimPipe to analyse human and mouse RNA-seq data with `Gencode`_ annotations. So, we suggest to use Gencode if possible.   
 
@@ -182,16 +181,16 @@ All these files and parameters given as input to ChimPipe are **mandatory argume
 
 .. code-block:: bash
 
-        --fastq_1                       <FASTQ>         First mate sequencing reads in FASTQ format. 
+        --fastq_1                       <FASTQ>         First mate sequencing reads. 
                                                         It can be gzip compressed [.gz].
-        --fastq_2                       <FASTQ>         Second mate sequencing reads in FASTQ format. 
+        --fastq_2                       <FASTQ>         Second mate sequencing reads. 
                                                         It can be gzip compressed [.gz].
-        -g|--genome-index               <GEM>           Reference genome index in GEM format.
-        -a|--annotation                 <GTF>           Reference gene annotation file in GTF format.                                
-        -t|--transcriptome-index        <GEM>           Annotated transcriptome index in GEM format.
-        -k|--transcriptome-keys         <KEYS>          Transcriptome to genome indices coordinate conversion keys 
-                                                        (generated when producing transcriptome index).  
-        --sample-id                     <STRING>        Sample identifier (output files are named according to this id).  
+        -g|--genome-index               <GEM>           Reference genome index.
+        -a|--annotation                 <GTF>           Reference gene annotation.                                
+        -t|--transcriptome-index        <GEM>           Annotated transcriptome index.
+        -k|--transcriptome-keys         <KEYS>          Transcriptome to genome index 
+                                                        conversion keys. 
+        --sample-id                     <STRING>        Sample identifier. 
 
 B) BAM
 --------
@@ -202,10 +201,10 @@ B) BAM
 
 .. code-block:: bash
 
-        --bam                           <BAM>           Already mapped reads in BAM format, then first mapping step skipped.
-        -g|--genome-index               <GEM>           Reference genome index in GEM format.
-        -a|--annotation                 <GTF>           Reference genome annotation file in GTF format.
-        --sample-id                     <STRING>        Sample identifier (the output files will be named according to this id).  
+        --bam                           <BAM>           Pre-aligned reads in BAM format.
+        -g|--genome-index               <GEM>           Reference genome index.
+        -a|--annotation                 <GTF>           Reference gene annotation.
+        --sample-id                     <STRING>        Sample identifier.  
 
 						 
 **Optional arguments.** Do ``ChimPipe.sh -h or --help`` to see a short help with the main options. You can also do ``ChimPipe.sh --full-help`` to see the all the possible 
@@ -245,7 +244,7 @@ Final and filtered chimeric junction files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Two tabular text files with the detected (``${outDir}/chimericJunctions_${sample_id}.txt``) and filtered out (``${outDir}/chimericJunctions_filtered_${sample_id}.txt``) chimeric splice junctions from your RNA-seq dataset. They consist on rows of 35 fields, where each row corresponds to a chimeric junction and each field contains a piece of information about the chimera. Here is a brief description of the 35 fields (most relevant fields highlighted in bold):
 
-1. **juncCoord** - Position of the chimeric splice junction in the genome described as follows: chrA"_"coordA"_"strandA":"chrB"_"coordB"_"strandB. E. g., "chr4_90653092_+\:chr17_22023757_-" is a chimeric junction between the position 90653092 of chromosome 4 in plus strand, and the position 22023757 of chromosome chr17 in minus strand. Junction coordinates defined using 1-based system.
+1. **juncCoord** - Position of the chimeric splice junction in the genome described as follows: chrA"_"coordA"_"strandA":"chrB"_"coordB"_"strandB. E. g. ``chr4_90653092_+:chr17_22023757_-`` is a chimeric junction between the position 90653092 of chromosome 4 in plus strand, and the position 22023757 of chromosome chr17 in minus strand. Junction coordinates defined using 1-based system.
 
 2. **type** - Type of chimeric splice junction. Junctions classified in 5 different categories:
 	

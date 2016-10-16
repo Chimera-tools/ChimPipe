@@ -80,11 +80,3 @@ Similarity between gene pair matrices
 .. _Ensembl v65 similarity matrix: http://public-docs.crg.es/rguigo/Data/brodriguez/annotations/m.musculus/ensembl65/ensembl_mm65_similarity_gn_pairs.tar.gz
 
 
-*D. melanogaster*
------------------
-
-* `FlyBase v5.46 similarity matrix`_
-
-
-
-

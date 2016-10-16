@@ -69,7 +69,7 @@ In case your FASTQ files do not meet this format you should modify the identifie
 
 .. code-block:: bash
 	
-	# Mate 1 reads without a proper identifier. Three fields: NCBI-assigned identifier and the description holds the original identifier from Solexa/Illumina (without mate information) plus the read length.
+	# Mate 1 reads without a proper identifier.  
 	
 	@SRR018259.1 BI:080831_SL-XAN_0004_30BV1AAXX:5:1:708:1868 length=51
 	GTAACATATTCACAGACATGTCAGTGTGCACTCAGGAACACTGGTTTCATT

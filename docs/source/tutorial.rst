@@ -12,12 +12,12 @@ A total of 6 different fusion genes have been experimentally validated by Edgren
 =============== =================================== ============
  Fusion Gene		Chimeric splice-junction		  Detected
 ===============	=================================== ============
-BCAS4-BCAS3     chr20_49411710_+\:chr17_59445688_+       Yes
-ARFGEF2-SULF2   chr20_47538547_+\:chr20_46365686_-       Yes
-RPS6KB1-VMP1    chr17_57992064_+\:chr17_57917129_+       Yes
-GCN1L1-MSI1     chr12_120628101_-\:chr12_120785317_-     No
-AC099850.1-VMP1 chr17_57184952_+\:chr17_57915656_+       Yes
-SMARCA4-CARM1   chr19_11097269_+\:chr19_11015627_+       Yes
+BCAS4-BCAS3     ``chr20_49411710_+:chr17_59445688_+``       Yes
+ARFGEF2-SULF2   ``chr20_47538547_+:chr20_46365686_-``       Yes
+RPS6KB1-VMP1    ``chr17_57992064_+:chr17_57917129_+``       Yes
+GCN1L1-MSI1     ``chr12_120628101_-:chr12_120785317_-``     No
+AC099850.1-VMP1 ``chr17_57184952_+:chr17_57915656_+``       Yes
+SMARCA4-CARM1   ``chr19_11097269_+:chr19_11015627_+``       Yes
 =============== =================================== ============
 
 
