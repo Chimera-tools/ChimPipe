@@ -40,9 +40,12 @@ Please check ChimPipe [documentation] (https://chimpipe.readthedocs.org/) to fin
 * How ChimPipe works
 * Installation
 * Execute ChimPipe
-* Contact us
 
 ## License
 ChimPipe is distributed under the GPLv3. Consult the [LICENSE] (https://github.com/Chimera-tools/ChimPipe/blob/master/LICENSE.txt) file for more information.
 
+## Contact
+Please feel free to join the ChimPipe’s [mailing list] (https://groups.google.com/forum/#!forum/chimpipe-mailing-list/) in case you have a question, you want to report an issue or request a feature.
+
+You can also directly contact us at: chimpipe.pipeline@gmail.com
 
