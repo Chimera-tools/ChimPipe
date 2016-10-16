@@ -12,12 +12,12 @@ A total of 6 different fusion genes have been experimentally validated by Edgren
 =============== =================================== ============
  Fusion Gene		Chimeric splice-junction		  Detected
 ===============	=================================== ============
-BCAS4-BCAS3     chr20_49411710_+:chr17_59445688_+       Yes
-ARFGEF2-SULF2   chr20_47538547_+:chr20_46365686_-       Yes
-RPS6KB1-VMP1    chr17_57992064_+:chr17_57917129_+       Yes
-GCN1L1-MSI1     chr12_120628101_-:chr12_120785317_-     No
-AC099850.1-VMP1 chr17_57184952_+:chr17_57915656_+       Yes
-SMARCA4-CARM1   chr19_11097269_+:chr19_11015627_+       Yes
+BCAS4-BCAS3     chr20_49411710_+\:chr17_59445688_+       Yes
+ARFGEF2-SULF2   chr20_47538547_+\:chr20_46365686_-       Yes
+RPS6KB1-VMP1    chr17_57992064_+\:chr17_57917129_+       Yes
+GCN1L1-MSI1     chr12_120628101_-\:chr12_120785317_-     No
+AC099850.1-VMP1 chr17_57184952_+\:chr17_57915656_+       Yes
+SMARCA4-CARM1   chr19_11097269_+\:chr19_11015627_+       Yes
 =============== =================================== ============
 
 
@@ -47,7 +47,10 @@ Click `here`_ to download.
 
 .. code-block:: bash
 	
-	ChimPipe.sh --fastq_1 MCF-7_1.fastq.gz --fastq_2 MCF-7_2.fastq.gz -g Homo_sapiens.GRCh37.chromosomes.chr.M.gem -a gencode.v19.annotation.long.gtf -t gencode.v19.annotation.long.gtf.junctions.gem -k gencode.v19.annotation.long.gtf.junctions.keys --sample-id MCF-7 --threads 4 --similarity-gene-pairs gencode.v19.annotation.long.similarity.txt
+	ChimPipe.sh --fastq_1 MCF-7_1.fastq.gz --fastq_2 MCF-7_2.fastq.gz 
+        -g Homo_sapiens.GRCh37.chromosomes.chr.M.gem -a gencode.v19.annotation.long.gtf 
+        -t gencode.v19.annotation.long.gtf.junctions.gem -k gencode.v19.annotation.long.gtf.junctions.keys 
+        --sample-id MCF-7 --threads 4 --similarity-gene-pairs gencode.v19.annotation.long.similarity.txt
 	
 4. Examine your output
 =======================
