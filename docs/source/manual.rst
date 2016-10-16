@@ -97,8 +97,8 @@ E.g:
 	# The attributes are gene_id (mandatory), gene type and gene name (optional) 
 	# plus some additional "tag,value" pairs that will not be considered by ChimPipe.   
 	
-	chr1	HAVANA	exon	69091	70008	.	+	.	gene_id "ENSG00000186092.4"; gene_type "protein_coding"; gene_status "KNOWN"; gene_name "OR4F5";
-	transcript_type "protein_coding"; transcript_status "KNOWN"; transcript_name "OR4F5-001"; exon_number 1; exon_id "ENSE00002319515.1"; level 2; tag "basic"; tag "appris_principal"; tag	"CCDS"; ccdsid "CCDS30547.1"; havana_gene "OTTHUMG00000001094.1"; havana_transcript "OTTHUMT00000003223.1";
+	chr1	HAVANA	exon	69091	70008	.	+	.	
+        gene_id "ENSG00000186092.4"; gene_type "protein_coding"; gene_status "KNOWN"; gene_name "OR4F5";
 
 .. tip:: We have extensively tested and applied ChimPipe to analyse human and mouse RNA-seq data with `Gencode`_ annotations. So, we suggest to use Gencode if possible.   
 
@@ -163,7 +163,7 @@ As explained in the :ref:`installation` section, to execute ChimPipe you need to
 .. code-block:: bash
 
 	$ # Example about how to export your binaries under your environmnet
-	$ export PATH=<BEDTOOLS_BINARIES_PATH>:<SAMTOOLS_BINARIES_PATH><BLAST_BINARIES_PATH>:$PATH
+	$ export PATH=<BEDTOOLS_PATH>:<SAMTOOLS_PATH><BLAST_PATH>:$PATH
 	$ export PATH=~/bin/bedtools2-2.20.1/bin:~/bin/samtools-0.1.19:~/bin/blastn:$PATH
 
 2. Running ChimPipe
@@ -175,18 +175,22 @@ A) FASTQ
 
 .. code-block:: bash
 	
-	ChimPipe.sh --fastq_1 <mate1_fastq> --fastq_2 <mate2_fastq> -g <genome_index> -a <annotation> -t <transcriptome_index> -k <transcriptome_keys> [OPTIONS]
+	ChimPipe.sh --fastq_1 <mate1_fastq> --fastq_2 <mate2_fastq> -g <genome_index> 
+        -a <annotation> -t <transcriptome_index> -k <transcriptome_keys> [OPTIONS]
 
-All these files and parameters given as input to ChimPipe are **mandatory arguments**. Please see bellow their descripion: 
+All these files and parameters given as input to ChimPipe are **mandatory arguments**. See bellow a detailed descripion: 
 
 .. code-block:: bash
 
-        --fastq_1                       <FASTQ>         First mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
-        --fastq_2                       <FASTQ>         Second mate sequencing reads in FASTQ format. It can be gzip compressed [.gz].
+        --fastq_1                       <FASTQ>         First mate sequencing reads in FASTQ format. 
+                                                        It can be gzip compressed [.gz].
+        --fastq_2                       <FASTQ>         Second mate sequencing reads in FASTQ format. 
+                                                        It can be gzip compressed [.gz].
         -g|--genome-index               <GEM>           Reference genome index in GEM format.
         -a|--annotation                 <GTF>           Reference gene annotation file in GTF format.                                
         -t|--transcriptome-index        <GEM>           Annotated transcriptome index in GEM format.
-        -k|--transcriptome-keys         <KEYS>          Transcriptome to genome indices coordinate conversion keys (generated when producing transcriptome index).  
+        -k|--transcriptome-keys         <KEYS>          Transcriptome to genome indices coordinate conversion keys 
+                                                        (generated when producing transcriptome index).  
         --sample-id                     <STRING>        Sample identifier (output files are named according to this id).  
 
 B) BAM
@@ -241,7 +245,7 @@ Final and filtered chimeric junction files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Two tabular text files with the detected (``${outDir}/chimericJunctions_${sample_id}.txt``) and filtered out (``${outDir}/chimericJunctions_filtered_${sample_id}.txt``) chimeric splice junctions from your RNA-seq dataset. They consist on rows of 35 fields, where each row corresponds to a chimeric junction and each field contains a piece of information about the chimera. Here is a brief description of the 35 fields (most relevant fields highlighted in bold):
 
-1. **juncCoord** - Position of the chimeric splice junction in the genome described as follows: chrA"_"coordA"_"strandA":"chrB"_"coordB"_"strandB. E. g., "chr4_90653092_+:chr17_22023757_-" is a chimeric junction between the position 90653092 of chromosome 4 in plus strand, and the position 22023757 of chromosome chr17 in minus strand. Junction coordinates defined using 1-based system.
+1. **juncCoord** - Position of the chimeric splice junction in the genome described as follows: chrA"_"coordA"_"strandA":"chrB"_"coordB"_"strandB. E. g., "chr4_90653092_+\:chr17_22023757_-" is a chimeric junction between the position 90653092 of chromosome 4 in plus strand, and the position 22023757 of chromosome chr17 in minus strand. Junction coordinates defined using 1-based system.
 
 2. **type** - Type of chimeric splice junction. Junctions classified in 5 different categories:
 	
