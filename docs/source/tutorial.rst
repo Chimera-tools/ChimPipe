@@ -9,16 +9,16 @@ The follow tutorial explains how to execute ChimPipe to identify already known f
 
 A total of 6 different fusion genes have been experimentally validated by Edgren et al. (Genome Biology, 2011) and Kangaspeska et al. (PLOSone, 2012). 5 of them are detected by ChimPipe:
 
-=============== =================================== ============
- Fusion Gene		Chimeric splice-junction		  Detected
-===============	=================================== ============
+=============== ====================================== ============
+ Fusion Gene		Chimeric splice-junctions        Detected
+===============	====================================== ============
 BCAS4-BCAS3     chr20\_49411710\_+:chr17_59445688\_+       Yes
 ARFGEF2-SULF2   chr20\_47538547\_+:chr20_46365686\_-       Yes
 RPS6KB1-VMP1    chr17\_57992064\_+:chr17_57917129\_+       Yes
 GCN1L1-MSI1     chr12\_120628101\_-:chr12_120785317\_-     No
 AC099850.1-VMP1 chr17\_57184952\_+:chr17_57915656\_+       Yes
 SMARCA4-CARM1   chr19\_11097269\_+:chr19_11015627\_+       Yes
-=============== =================================== ============
+=============== ====================================== ============
 
 
 1. Download ChimPipe
