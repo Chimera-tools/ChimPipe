@@ -35,8 +35,14 @@
 
 # Usage:
 ########
-# awk -f make_chimJunc_fusionMap_output.awk fusionMap_output_chimeras
+# awk -f make_chimJunc_fusionMap.awk fusionMap_output_chimeras
 
+### Input: FusionMap output file for chimeric junctions (*.FusionReport.txt file)
+# FusionID      DatasetP2_SimulatedReads.UniqueCuttingPositionCount     DatasetP2_SimulatedReads.SeedCount      DatasetP2_SimulatedReads.RescuedCount   Strand  Chromosome1     Position1       Chromosome2     Position2       KnownGene1      KnownTranscript1        KnownExonNumber1        KnownTranscriptStrand1  KnownGene2      KnownTranscript2        KnownExonNumber2        KnownTranscriptStrand2  FusionJunctionSequence  FusionGene      SplicePattern   SplicePatternClass      FrameShift      FrameShiftClass Distance        OnExonBoundary  Filter
+# FUS_11184689_446432191(++)    27      32      6       --      11      61646784        1       11184690        FADS3   NM_021727_chr11 3       -       MTOR    NM_004958_chr1  47      -       AGACAAATGTAGGAAAAAACCAGAAGACTTCTCAAATTGTTGCCATTTCAGGGTTTCTGAATACCTGAGGTTTTTCCGAAGAGATGTTGGGTCATTGGCCAGAAGGGTGTTAACCAGGCCGAAGAGCTGCATCACACGCTCATCCTGGCGCAGATCTTCATGGCCTTTTAGAAGGAAAACAAACTCATGTCCGTTGCTGC@ctgagagatggccaggatgaaggcggccagggcactgggcacccagccaggacccaggaggtagataaggagccaggccagcacctccatggccaggatgtggcccagtaggaaagcaaagaaggtgggactggcatcaaacagcttcatgtcctcggctgcctggtgcagggctcggaagtcctcgaccagctgcgcct       FADS3->MTOR     GT-AG   CanonicalPattern[Major] 2->1    FrameShift      -1      Both
+
+### Output:
+# chr11_61646784_-:1_11184690_-	27	32	6	
 
 BEGIN{
     OFS="\t";

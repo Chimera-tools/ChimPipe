@@ -4,6 +4,10 @@
 ###############
 # Takes as input TopHat output file for chimeric junction (--fusion-search option has to be enabled) and produces chimeric junctions in ChimPipe's format plus their support
 
+# Usage:
+########
+# awk -f make_chimJunc_topHatFusion.awk topHatFusion_output_chimeras
+
 ### Input: TopHat-fusion output file for chimeric junctions (fusions.out file)
 # chr20-chr17 49411707 59445685 ff 106 116 167 0 37 36 0.569598 11 25 38 49 63 CAGCGGGG........ GGTTAGGT........ 106 106 106 106 106 106 106 106..... 106 106 106 106 106 106 106 106....... -6:1 11:0 16:-3 18:1 14:6 14:6 15:7 23:0 5:21 31:5 18:19 36:-1 ...
 
@@ -17,13 +21,8 @@
 # The last fields group is the distances (distance1:distance2) between a mate pair and the fusion, i.e., distance1 bewtween the left end of a pair and the left side of the fusion and distance2 between the right end of a pair and the right side of the fusion. 
 
 ### Output: Chimeric junctions in ChimPipe's format + number of reads supporting each junction
-# chimJunc nbSupportingReads	nbSupportingPairs	nbSupportingReadsConsistentPair	nbContradictoryReads
-# chr4_76807216_+:chr2_191402746_- 10	5	8	0	
-
-# Usage:
-########
-# awk -f make_chimJunc_topHatFusion_output.awk topHatFusion_output_chimeras
-
+# chimJunc nbSupportingReads    nbSupportingPairs       nbSupportingReadsConsistentPair nbContradictoryReads
+# chr4_76807216_+:chr2_191402746_- 10   5       8       0       
 
 BEGIN{
     OFS="\t";

@@ -1,14 +1,14 @@
+#!/usr/bin/env awk
 
-# ~sdjebali/Awk/prada_candidates_to_cp_format.awk
+# Description
+###############
+# Takes as input PRADA candidate file for chimeric junction and produces chimeric junctions in ChimPipe's format ((donchr_doncoord_donstrand:accchr_acccoord_accstrand))
 
-# converts a set of chimeric junctions provided by prada (candidate file) into a 1 colum file proper for benchmark script
-# with the coord in chimpipe's format (donchr_doncoord_donstrand:accchr_acccoord_accstrand)
+# Usage:
+########
+# awk -f make_chimJunc_prada.awk prada_output_chimeras
 
-# example
-# cd /no_backup/rg/sdjebali/Chimeras/Benchmark/Programs/PRADA/Simulated_Chimeras_Normal 
-# awk -f ~sdjebali/Awk/prada_candidates_to_cp_format.awk fusim.fus.candidates.txt > fusim.fus.candidates.cpformat.tsv 
-
-# input
+### Input: PRADA output file for chimeric junctions (fusim.fus.candidates.txt file)
 # Gene_A        Gene_B  A_chr   B_chr   A_strand        B_strand        Discordant_n    JSR_n   perfectJSR_n    Junc_n  Position_Consist        Junction
 # AMHR2   TMTC2   12      12      1       1       14      24      24      1       PARTIALLY       AMHR2:12:53818254_TMTC2:12:83358803,24
 # GLCCI1  WEE2    7       7       1       1       8       15      15      1       PARTIALLY       GLCCI1:7:8099878_WEE2:7:141420735,15
@@ -16,11 +16,11 @@
 # 7 (11 fields)
 # 198 (12 fields)  
 
-# output
+### output: Chimeric junctions in ChimPipe's format
 # junc_id
 # chr12_53818254_+:chr12_83358803_+
 # chr7_8099878_+:chr7_141420735_+
-# 198 (1 fields)   *** seems to be working
+
 
 NR==1{
     print "junc_id";

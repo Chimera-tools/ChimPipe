@@ -4,17 +4,17 @@
 ###############
 # Takes as input CRAC output file for chimeric junction (--chimera option has to be enabled) and produces chimeric junctions in ChimPipe's format plus their support (nb. reads spanning the junction point)
 
+# Usage:
+########
+# awk -f make_chimJunc_crac.awk crac_output_chimeras
+
 ## Input: CRAC output file for chimeric junctions
 #read_id tag_chimera loc_end_first_exon_on_genome loc_start_second_exon_on_genome pos_junction_on_read single_loc_on_genome(private) pos_single_loc_on_read(private) read p_support p_loc
 # 29456 duplicate chr4|1,76807216 chr2|-1,191402746 pos_junction=23 chr4|1,76807192 pos_location=3 GACAGGTTAGTTTTACCCTACTGATGATGTGTTGTTGCCATGGTAATCCT 20318,20391,21933,21663,21662,25106,24953,24585,
 
 ## Output: Chimeric junctions in ChimPipe's format + number of reads supporting each junction
-# chimJunc nbSupporingReads
-# chr4_76807216_+:chr2_191402746_-
-
-# Usage:
-########
-# awk -f make_chimJunjc_crac_output.awk crac_output_chimeras
+# chimJunc nbSupportingReads
+# chr4_76807216_+:chr2_191402746_- 10
 
 
 BEGIN{
