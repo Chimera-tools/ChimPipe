@@ -49,3 +49,13 @@ Please feel free to join the ChimPipe’s [mailing list] (https://groups.google.
 
 You can also directly contact us at: chimpipe.pipeline@gmail.com
 
+
+## Citation
+
+Please cite the following article if you use ChimPipe in your research:
+
+```
+Rodríguez-Martín et al., 2017. ChimPipe: accurate detection of fusion genes and transcription-induced chimeras from RNA-seq data. BMC Genomics 18:7. DOI: 10.1186/s12864-016-3404-9
+```
+
+
