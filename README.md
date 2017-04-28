@@ -45,9 +45,9 @@ Please check ChimPipe [documentation] (https://chimpipe.readthedocs.org/) to fin
 ChimPipe is distributed under the GPLv3. Consult the [LICENSE] (https://github.com/Chimera-tools/ChimPipe/blob/master/LICENSE.txt) file for more information.
 
 ## Contact
-Please feel free to join the ChimPipe’s [mailing list] (https://groups.google.com/forum/#!forum/chimpipe-mailing-list/) in case you have a question, you want to report an issue or request a feature.
+Please feel free to submit an issue in our github repository in case you have a question
 
-You can also directly contact us at: chimpipe.pipeline@gmail.com
+join the ChimPipe’s [mailing list] (https://groups.google.com/forum/#!forum/chimpipe-mailing-list/) in case you have a question, you want to report an issue or request a feature.
 
 
 ## Citation

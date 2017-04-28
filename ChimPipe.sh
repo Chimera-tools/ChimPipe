@@ -19,8 +19,6 @@
 	
 	Documentation - https://chimpipe.readthedocs.org/
 
-	Contact - chimpipe.pipeline@gmail.com
-	
 	Licenced under the GNU General Public License 3.0 license.
 ******************************************************************************
 authors
