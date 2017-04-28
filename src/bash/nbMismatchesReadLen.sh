@@ -92,7 +92,7 @@ avMatesLen=`printf "$avMate1Len\t$avMate2Len\n" | awk '{mean = ($1 + $2)/2; prin
 
 # 2. Set maximum number of mismatches == X% of the pair length 
 ################################################################
-nbMism=`echo $avMatesLen | awk -v percMism=$percMism '{avMatesLen=$1; nbMism=(avMatesLen*percMism)*2/100; print nbMism;}' | python -c "print int(round(float(raw_input())))"`
+nbMism=`echo $avMatesLen | awk -v percMism=$percMism '{avMatesLen=$1; nbMism=(avMatesLen*percMism)*2/100; print nbMism;}' | LC_ALL=C xargs printf "%.*f\n" 0`
 
 echo $nbMism
 
