@@ -335,7 +335,7 @@ function firstMapping_FASTQinput {
 	copyToTmp "index"	
 	log "Converting $lid to bam..." $step
 	run "$pigz -p $hthreads -dc $gemFirstMapFiltered | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | 
-	-@ $threads -m 4G - -o $bamFirstMap >> $firstMappingDir/${lid}_map2bam_conversion.log 2>&1" "$ECHO"
+	samtools sort -@ $threads -m 4G - -o $bamFirstMap >> $firstMappingDir/${lid}_map2bam_conversion.log 2>&1" "$ECHO"
 	if [ -s $bamFirstMap ];
 	then
 		endTime=$(date +%s)
