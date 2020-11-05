@@ -1309,7 +1309,7 @@ then
 	step="READS2REMAP"
 	startTime=$(date +%s)
 	printHeader "Executing extract reads to remap step" 
-	run "samtools view -h -f 4 -@ $threads $bamFirstMap | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | bedtools bamtofastq -i - -fq $reads2remap >> $secondMappingDir/${lid}_reads2remap.log 2>&1" "$ECHO"	
+	run "samtools view -h -f 4 -@ $threads $bamFirstMap | awk -v OFS="'\\\t'" -f $addMateInfoSam | samtools view -@ $threads -bS - | samtools bam2fq - > $reads2remap 2> $secondMappingDir/${lid}_reads2remap.log" "$ECHO"	
 
     if [ -s $reads2remap ]; 
     then
