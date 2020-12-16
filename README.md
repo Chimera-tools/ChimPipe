@@ -30,6 +30,7 @@ ChimPipe does not require any further installation step. It already comes with p
 2. Software:
 
     * 64-bit Linux System
+    * GNU awk
     * Bedtools v2.20.1 or higher
     * Samtools v0.1.19 or higher
     * Blast v2.2.29+ or higher 
