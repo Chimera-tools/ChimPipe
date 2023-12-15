@@ -1234,7 +1234,11 @@ if [[ "$bamAsInput" == "FALSE" ]];
 then
 	step="PRELIM"
 	log "Determining the offset quality of the reads for ${lid}..." $step
-	run "quality=\`$qual $fastq1 | awk '{print \$2}'\`" "$ECHO" 
+	run "quality=\`$qual $fastq1 | awk '{print \$2}'\`" "$ECHO"
+	if [[ -z "$quality" ]]
+	then
+	    quality=33
+	fi
 	log " The read quality is $quality\n"
 	log "done\n"
 else
