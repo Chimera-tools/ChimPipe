@@ -280,8 +280,8 @@ function firstMapping_FASTQinput {
 	copyToTmp "index,annotation,t-index,keys"
 	
 	log "Running GEMtools rna pipeline on ${lid}..." $step
-	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q $quality --max-read-length $maxReadLength --max-intron-length $longestChrLength --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads >> $firstMappingDir/${lid}_firstMap.log 2>&1" "$ECHO" 
-   
+	run "$gemtools --loglevel $logLevel rna-pipeline -f $fastq1 $fastq2 -i $TMPDIR/`basename $genomeIndex` -a $TMPDIR/`basename $annot` -r $TMPDIR/`basename $transcriptomeIndex` -k $TMPDIR/`basename $transcriptomeKeys` -q offset-$quality --max-read-length $maxReadLength --max-intron-length $longestChrLength --min-split-size $splitSizeFM --refinement-step $refinementFM --junction-consensus $spliceSitesFM --no-filtered --no-bam --no-xs $stats --no-count -n `basename ${gemFirstMap%.map.gz}` --compress-all --output-dir $TMPDIR -t $threads >> $firstMappingDir/${lid}_firstMap.log 2>&1" "$ECHO"
+	   
 	if [ -s $TMPDIR/`basename $gemFirstMap` ]; 
 	then 
 			# Copy files from temporary to output directory
@@ -336,6 +336,8 @@ function firstMapping_FASTQinput {
 	log "Converting $lid to bam..." $step
 	run "$pigz -p $hthreads -dc $gemFirstMapFiltered | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q offset-$quality -l | samtools view -@ $threads -bS - | 
 	samtools sort -@ $threads -m 4G - -o $bamFirstMap >> $firstMappingDir/${lid}_map2bam_conversion.log 2>&1" "$ECHO"
+	# run "$pigz -p $hthreads -dc $gemFirstMapFiltered | $gem2sam -T $hthreads -I $TMPDIR/`basename $genomeIndex` --expect-paired-end-reads -q ignore -l | samtools view -@ $threads -bS - | 
+	# samtools sort -@ $threads -m 4G - -o $bamFirstMap >> $firstMappingDir/${lid}_map2bam_conversion.log 2>&1" "$ECHO"
 	if [ -s $bamFirstMap ];
 	then
 		endTime=$(date +%s)
@@ -650,7 +652,7 @@ done
 ############################
 
 # ChimPipe version 
-version=v0.9.6
+version=v0.9.9
 
 # Enable extended pattern matching 
 shopt -s extglob
@@ -1245,6 +1247,8 @@ else
 	quality="33"
 fi
 
+quality=33
+
 ## 0.3) Generate genome file and 
 #################################
 # retrieve length longest chromosome    	
@@ -1343,7 +1347,7 @@ then
 	startTime=$(date +%s)
 	printHeader "Executing second split-mapping step"
 	log "Remapping reads allowing them to split-map in different chromosomes, strand and non genomic order..." $step	
-	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q 'offset-33' -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  >> $secondMappingDir/${lid}_secondMap.log 2>&1" "$ECHO"
+	run "$gemrnatools split-mapper -I $genomeIndex -i $reads2remap -q offset-$quality -o ${gemSecondMap%.map} -t 10 -T $threads --min-split-size $splitSizeSM --refinement-step-size $refinementSM --splice-consensus $spliceSitesSM  >> $secondMappingDir/${lid}_secondMap.log 2>&1" "$ECHO"
 	
 	if [ ! -s $gemSecondMap ]; 
 	then
@@ -1649,7 +1653,7 @@ then
 	step="CLEAN-UP"
 	startTime=$(date +%s)
 	log "Removing intermediate files..." $step
-	rm -r $annotDir $firstMappingDir/${lid}_firstMap.map.gz $firstMappingDir/${lid}_firstMap_filtered.map.gz $secondMappingDir/${lid}_reads2remap.fastq $chimeraDetPhaseDir $outDir/chimericJunction_candidates_${lid}.txt 
+	rm $firstMappingDir/${lid}_firstMap.map.gz $firstMappingDir/${lid}_firstMap_filtered.map.gz $firstMappingDir/${lid}_firstMap.bam $secondMappingDir/${lid}_reads2remap.fastq 
 	log "done\n" 
 	endTime=$(date +%s)
 	printHeader "Clean up step completed in $(echo "($endTime-$startTime)/60" | bc -l | xargs printf "%.2f\n") min"
